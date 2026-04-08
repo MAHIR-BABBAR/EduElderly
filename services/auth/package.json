@@ -1,0 +1,28 @@
+{
+  "name": "@eduelderly/auth-service",
+  "version": "1.0.0",
+  "description": "Auth service - Registration, login, OTP, JWT, password reset",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.1.1",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "express-validator": "^7.0.1",
+    "@eduelderly/shared": "*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^30.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

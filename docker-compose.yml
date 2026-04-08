@@ -1,0 +1,188 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: eduelderly-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - eduelderly-net
+
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./services/gateway:/app
+      - /app/node_modules
+    env_file:
+      - ./services/gateway/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-auth
+    volumes:
+      - ./services/auth:/app
+      - /app/node_modules
+    env_file:
+      - ./services/auth/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  user:
+    build:
+      context: ./services/user
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-user
+    volumes:
+      - ./services/user:/app
+      - /app/node_modules
+    env_file:
+      - ./services/user/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  course:
+    build:
+      context: ./services/course
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-course
+    volumes:
+      - ./services/course:/app
+      - /app/node_modules
+    env_file:
+      - ./services/course/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  enrollment:
+    build:
+      context: ./services/enrollment
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-enrollment
+    volumes:
+      - ./services/enrollment:/app
+      - /app/node_modules
+    env_file:
+      - ./services/enrollment/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  quiz:
+    build:
+      context: ./services/quiz
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-quiz
+    volumes:
+      - ./services/quiz:/app
+      - /app/node_modules
+    env_file:
+      - ./services/quiz/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  payment:
+    build:
+      context: ./services/payment
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-payment
+    volumes:
+      - ./services/payment:/app
+      - /app/node_modules
+    env_file:
+      - ./services/payment/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  notification:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-notification
+    volumes:
+      - ./services/notification:/app
+      - /app/node_modules
+    env_file:
+      - ./services/notification/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  admin:
+    build:
+      context: ./services/admin
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-admin
+    volumes:
+      - ./services/admin:/app
+      - /app/node_modules
+    env_file:
+      - ./services/admin/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  certificate:
+    build:
+      context: ./services/certificate
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-certificate
+    volumes:
+      - ./services/certificate:/app
+      - /app/node_modules
+    env_file:
+      - ./services/certificate/.env
+    depends_on:
+      - mongo
+    networks:
+      - eduelderly-net
+
+  client:
+    build:
+      context: ./packages/client
+      dockerfile: Dockerfile.dev
+    container_name: eduelderly-client
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./packages/client:/app
+      - /app/node_modules
+    env_file:
+      - ./packages/client/.env
+    depends_on:
+      - gateway
+    networks:
+      - eduelderly-net
+
+networks:
+  eduelderly-net:
+    driver: bridge
+
+volumes:
+  mongo-data:

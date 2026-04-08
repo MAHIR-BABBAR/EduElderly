@@ -1,0 +1,28 @@
+{
+  "name": "@eduelderly/notification-service",
+  "version": "1.0.0",
+  "description": "Notification service - Email dispatch, inactivity reminders",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.1.1",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "nodemailer": "^6.9.8",
+    "handlebars": "^4.7.8",
+    "node-cron": "^3.0.3",
+    "@eduelderly/shared": "*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^30.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

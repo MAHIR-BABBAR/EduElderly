@@ -1,0 +1,11 @@
+{
+  "name": "@eduelderly/shared",
+  "version": "1.0.0",
+  "description": "Shared constants, DTOs, error classes, and middleware for EduElderly microservices",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "license": "ISC"
+}

@@ -1,0 +1,42 @@
+const { ROLES } = require('./constants/roles');
+const { CONTENT_TYPES, CONTENT_TYPE_VALUES } = require('./constants/contentTypes');
+const { DIFFICULTY, DIFFICULTY_VALUES } = require('./constants/difficulty');
+const { TX_STATUS, TX_TYPE } = require('./constants/transactionTypes');
+
+const { AppError } = require('./errors/AppError');
+const { ERROR_CODES } = require('./errors/errorCodes');
+
+const { globalErrorHandler, catchAsync } = require('./middleware/globalErrorHandler');
+const { serviceAuth } = require('./middleware/serviceAuth');
+
+const { toPublicUserDTO, toAccessibilityDTO } = require('./dtos/UserDTO');
+const { toPublicCourseDTO, toInstructorCourseDTO } = require('./dtos/CourseDTO');
+const { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO } = require('./dtos/EnrollmentDTO');
+
+module.exports = {
+  // Constants
+  ROLES,
+  CONTENT_TYPES,
+  CONTENT_TYPE_VALUES,
+  DIFFICULTY,
+  DIFFICULTY_VALUES,
+  TX_STATUS,
+  TX_TYPE,
+
+  // Errors
+  AppError,
+  ERROR_CODES,
+
+  // Middleware
+  globalErrorHandler,
+  catchAsync,
+  serviceAuth,
+
+  // DTOs
+  toPublicUserDTO,
+  toAccessibilityDTO,
+  toPublicCourseDTO,
+  toInstructorCourseDTO,
+  toPublicEnrollmentDTO,
+  toEnrollmentWithCourseDTO
+};
