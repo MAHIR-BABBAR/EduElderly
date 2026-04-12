@@ -1,21 +1,20 @@
-/**
- * Gateway Proxy Configuration
- * Phase 0: Routes to all 9 downstream services
- */
-
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { logger } = require('./logger');
 const { authValidation } = require('./authValidation');
+const { ERROR_CODES } = require('@eduelderly/shared');
+const { ROUTES_CONFIG } = require('../../../routes.config');
+
+
 
 // Service configuration
 const services = {
   auth: {
-    target: process.env.AUTH_SERVICE_URL || 'http://auth:3001',
+    target: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
     pathRewrite: { '^/api/v1/auth': '' },
     changeOrigin: true,
   },
   users: {
-    target: process.env.USER_SERVICE_URL || 'http://user:3002',
+    target: process.env.USER_SERVICE_URL || 'http://localhost:3002',
     pathRewrite: { '^/api/v1/users': '' },
     changeOrigin: true,
   },
@@ -56,21 +55,14 @@ const services = {
   },
 };
 
-// Proxy event handlers
+
 const onProxyReq = (proxyReq, req, _res) => {
-  // Remove Authorization header — downstream uses X-User-Id
   proxyReq.removeHeader('Authorization');
-
-  // Add internal service key for inter-service authentication
   proxyReq.setHeader('X-Service-Key', process.env.INTERNAL_SERVICE_KEY || 'dev-key');
-
-  // Forward request ID for tracing
   const requestId =
-    req.get('X-Request-ID') ||
-    `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    req.get('X-Request-ID') || `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   proxyReq.setHeader('X-Request-ID', requestId);
 
-  // Forward user info if authenticated
   if (req.user) {
     proxyReq.setHeader('X-User-Id', req.user.userId);
     proxyReq.setHeader('X-User-Role', req.user.role);
@@ -78,7 +70,6 @@ const onProxyReq = (proxyReq, req, _res) => {
 };
 
 const onProxyRes = (proxyRes, req, _res) => {
-  // Add CORS headers to proxied responses
   proxyRes.headers['Access-Control-Allow-Origin'] = req.headers.origin || '*';
   proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
 };
@@ -95,19 +86,18 @@ const onError = (err, req, res, target) => {
     res.status(503).json({
       success: false,
       error: {
-        code: 'SERVICE_UNAVAILABLE',
+        code: ERROR_CODES.E_SERVICE_UNAVAILABLE,
         message: 'The requested service is temporarily unavailable',
       },
     });
   }
 };
 
-/**
- * Creates a proxy middleware with shared event handlers
- */
-const createProxy = (serviceConfig) => {
+const createProxy = (target, prefix) => {
   return createProxyMiddleware({
-    ...serviceConfig,
+    target,
+    pathRewrite: { [`^${prefix}`]: '' },
+    changeOrigin: true,
     onProxyReq,
     onProxyRes,
     onError,
@@ -115,28 +105,21 @@ const createProxy = (serviceConfig) => {
   });
 };
 
-/**
- * Mount all proxy routes on the Express app
- * Phase 0: authValidation is a stub that always returns 200
- */
-const setupProxy = (app) => {
-  // Global auth validation — skips public routes internally
+const setupProxy = app => {
+
   app.use(authValidation);
+  for (const key in ROUTES_CONFIG) {
+    const service = ROUTES_CONFIG[key];
 
-  app.use('/api/v1/auth', createProxy(services.auth));
-  app.use('/api/v1/users', createProxy(services.users));
-  app.use('/api/v1/courses', createProxy(services.courses));
-  app.use('/api/v1/enrollments', createProxy(services.enrollments));
-  app.use('/api/v1/quizzes', createProxy(services.quizzes));
-  app.use('/api/v1/payments', createProxy(services.payments));
-  app.use('/api/v1/notifications', createProxy(services.notifications));
-  app.use('/api/v1/admin', createProxy(services.admin));
-  app.use('/api/v1/certificates', createProxy(services.certificates));
+    if (service.target) {
+      app.use(service.prefix, createProxy(service.target, service.prefix));
+    }
+  }
 
-  logger.info('Proxy routes mounted for all 9 services');
+  logger.info(`Proxy routes mounted dynamically for ${Object.keys(ROUTES_CONFIG).length - 1} services`);
+
 };
 
-// Service URLs map for health checks
 const serviceUrls = {
   auth: services.auth.target,
   user: services.users.target,

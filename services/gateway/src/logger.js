@@ -32,8 +32,10 @@ const logsDir = path.join(__dirname, '../logs');
 
 // Create the logger
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'warn' : 'debug'),
+
   defaultMeta: { service: 'gateway' },
+  
   format: logFormat,
   transports: [
     // Console transport (always enabled)

@@ -2,7 +2,7 @@
  * Gateway Rate Limiting Configuration
  * Phase 0: Global 200 req/min, Login 10 req/min
  */
-
+const { ERROR_CODES } = require('@eduelderly/shared');
 const rateLimit = require('express-rate-limit');
 
 // Global rate limiter: 200 requests per minute per IP
@@ -22,7 +22,7 @@ const globalLimiter = rateLimit({
     res.status(429).json({
       success: false,
       error: {
-        code: 'RATE_LIMIT_EXCEEDED',
+        code: ERROR_CODES.E_RATE_LIMIT,
         message: 'Too many requests, please try again later'
       }
     });
@@ -30,13 +30,13 @@ const globalLimiter = rateLimit({
 });
 
 // Login rate limiter: 10 requests per minute per IP
-const loginLimiter = rateLimit({
+const authLimiter = rateLimit({
   windowMs: 60000, // 1 minute
   max: parseInt(process.env.LOGIN_RATE_LIMIT_MAX, 10) || 10,
   message: {
     success: false,
     error: {
-      code: 'LOGIN_RATE_LIMIT_EXCEEDED',
+      code: ERROR_CODES.E_RATE_LIMIT,
       message: 'Too many login attempts, please try again later'
     }
   },
@@ -47,11 +47,11 @@ const loginLimiter = rateLimit({
     res.status(429).json({
       success: false,
       error: {
-        code: 'LOGIN_RATE_LIMIT_EXCEEDED',
+        code: ERROR_CODES.E_RATE_LIMIT,
         message: 'Too many login attempts, please try again later'
       }
     });
   }
 });
 
-module.exports = { globalLimiter, loginLimiter };
+module.exports = { globalLimiter, authLimiter };

@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 const { logger, requestLogger } = require('./logger');
 const { setupProxy } = require('./proxy');
 const { corsOptions } = require('./cors');
-const { globalLimiter, loginLimiter } = require('./rateLimiter');
+const { globalLimiter, authLimiter } = require('./rateLimiter');
 const { AppError,ERROR_CODES,globalErrorHandler } = require('@eduelderly/shared');
 
 dotenv.config();
@@ -13,24 +13,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Security headers
 app.use(helmet());
-
-// CORS
 app.use(cors(corsOptions));
 
-// Parse JSON and URL-encoded bodies
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging
 app.use(requestLogger);
-
-// Rate limiting - global (200 requests/minute)
 app.use(globalLimiter);
 
-// Rate limiting - login endpoint (10 requests/minute)
-app.use('/api/v1/auth/login', loginLimiter);
+app.use('/api/v1/auth', authLimiter);
 
 // Health check for gateway itself
 app.get('/health', (_req, res) => {
@@ -92,6 +82,8 @@ app.get('/health/:service', async (req, res,next) => {
     });
   }
 });
+
+
 
 // Setup proxy routes to all downstream services
 setupProxy(app);
