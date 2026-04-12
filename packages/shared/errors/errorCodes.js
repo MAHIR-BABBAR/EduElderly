@@ -8,6 +8,7 @@ const ERROR_CODES = Object.freeze({
   E_OTP_INVALID:          'E_OTP_INVALID',         // wrong OTP entered
   E_OTP_EXPIRED:          'E_OTP_EXPIRED',         // OTP past 10-min window
   E_OTP_MAX_ATTEMPTS:     'E_OTP_MAX_ATTEMPTS',    // 5 wrong attempts locked
+  E_OTP_GENERATION_ERROR: 'E_OTP_GENERATION_ERROR',  
 
   // User / Registration
   E_EMAIL_TAKEN:          'E_EMAIL_TAKEN',         // duplicate registration
@@ -17,6 +18,7 @@ const ERROR_CODES = Object.freeze({
   // Validation
   E_VALIDATION:           'E_VALIDATION',          // express-validator failures
   E_FORBIDDEN:            'E_FORBIDDEN',           // role mismatch
+
 
   // Course / Enrollment
   E_COURSE_NOT_FOUND:     'E_COURSE_NOT_FOUND',
@@ -31,7 +33,8 @@ const ERROR_CODES = Object.freeze({
   E_NOT_FOUND:            'E_NOT_FOUND',
   E_INTERNAL:             'E_INTERNAL',
   E_RATE_LIMIT:           'E_RATE_LIMIT',
-  E_ROUTE_NOT_FOUND:      'E_ROUTE_NOT_FOUND'
+  E_ROUTE_NOT_FOUND:      'E_ROUTE_NOT_FOUND',
+  ERROR_CODES:            'E_SERVICE_UNAVAILABLE'
 });
 
 module.exports = { ERROR_CODES };

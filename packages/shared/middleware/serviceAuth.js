@@ -9,13 +9,11 @@ const serviceAuth = (req, res, next) => {
     return next(new AppError('Service key missing', 401, ERROR_CODES.E_AUTH_TOKEN_INVALID));
   }
 
-  // Use constant-time comparison to prevent timing attacks
   const expected = process.env.INTERNAL_SERVICE_KEY;
   if (!expected || key.length !== expected.length) {
     return next(new AppError('Unauthorized service call', 401, ERROR_CODES.E_AUTH_TOKEN_INVALID));
   }
 
-  // crypto.timingSafeEqual prevents timing-based key guessing
   const keyBuf = Buffer.from(key);
   const expBuf = Buffer.from(expected);
   if (!crypto.timingSafeEqual(keyBuf, expBuf)) {

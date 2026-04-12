@@ -36,6 +36,21 @@ EduElderly follows a **microservices architecture** with an API Gateway as the s
 
 ---
 
+## Gateway Dynamic Routing
+
+The platform uses a centralized `routes.config.js` in the root to manage service proxies and public route access. This ensures that:
+- **JWT Stripping**: Sensitive `Authorization` headers are stripped by the gateway before proxying to downstream services.
+- **Service Authentication**: The gateway injects an `X-Service-Key` for internal service-to-service authentication.
+- **User Identity**: User context (`X-User-Id`, `X-User-Role`) is propagated to downstream services via headers.
+
+Current configuration supports:
+- **Public Routes**: Authentication bypass for `/register`, `/login`, `/verify-email`, etc.
+- **Regex Matching**: Support for dynamic paths (e.g., public course GET requests).
+
+---
+
+---
+
 ## Service Map
 
 | Service | Port | Description |
@@ -288,8 +303,8 @@ npx jest --coverage
 | Phase | Focus | Status |
 |-------|-------|--------|
 | **0** | Foundation — monorepo, Docker, shared, gateway | ✅ Complete |
-| **1** | Auth Service — register, OTP, login, JWT | 🔜 Next |
-| **2** | User + Course Services | ⬜ Planned |
+| **1** | Auth Service — register, OTP, login, JWT, 2FA | ✅ Complete |
+| **2** | User + Course Services | 🔜 Next |
 | **3** | Enrollment + XP | ⬜ Planned |
 | **4** | Quiz Service | ⬜ Planned |
 | **5** | Payment Service | ⬜ Planned |

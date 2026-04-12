@@ -1,8 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
-const { globalErrorHandler } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
+const authRoutes = require('./routes/authRoutes');
 
 dotenv.config();
 
@@ -10,32 +12,50 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SERVICE_NAME = 'auth-service';
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true, 
+}));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.status(200).json({
+  const dbReady = mongoose.connection.readyState === 1;
+  res.status(dbReady ? 200 : 503).json({
     service: SERVICE_NAME,
-    status: 'healthy',
+    status: dbReady ? 'healthy' : 'unhealthy',
+    database: dbReady ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
 });
 
-// TODO Phase 1: Mount auth routes here
-// app.use('/', authRoutes);
+// Database connectivity guard – returns 503 if Mongoose is not connected
+app.use((req, _res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return next(
+      new AppError(
+        'Backend down, please wait',
+        503,
+        ERROR_CODES.E_INTERNAL || 'E_SERVICE_UNAVAILABLE'
+      )
+    );
+  }
+  next();
+});
 
+// Routes 
+app.use(authRoutes);
 
 // 404 handler
-app.use((_req, res, next) => {
-  // We didn't find a route, so we CREATE a 404 error and pass it down
+app.use((_req, _res, next) => {
   next(new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
 });
 
-
-// Global error handler (from shared package)
+// Global error handler 
 app.use(globalErrorHandler);
 
 // Database connection & server start
@@ -46,6 +66,16 @@ const startServer = async () => {
     });
     console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
 
+    mongoose.connection.on('disconnected', () => {
+      console.warn(`[${SERVICE_NAME}] MongoDB disconnected – requests will receive 503`);
+    });
+    mongoose.connection.on('error', (err) => {
+      console.error(`[${SERVICE_NAME}] MongoDB connection error:`, err.message);
+    });
+    mongoose.connection.on('reconnected', () => {
+      console.log(`[${SERVICE_NAME}] MongoDB reconnected – service restored`);
+    });
+
     app.listen(PORT, () => {
       console.log(`[${SERVICE_NAME}] Running on port ${PORT}`);
     });
@@ -55,6 +85,8 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 module.exports = app;

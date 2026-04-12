@@ -1,4 +1,4 @@
-const { ERROR_CODES } = require('../errors/errorCodes');
+const { ERROR_CODES } = require('../errors/ErrorCodes');
 
 const globalErrorHandler = (err, req, res, next) => {
   // 1. Ensure defaults exist (programmer error may not have statusCode)
@@ -39,9 +39,10 @@ const globalErrorHandler = (err, req, res, next) => {
     return res.status(401).json({
       success: false,
       statusCode: 401,
-      code: err.name === 'TokenExpiredError'
-        ? ERROR_CODES.E_AUTH_TOKEN_EXPIRED
-        : ERROR_CODES.E_AUTH_TOKEN_INVALID,
+      code:
+        err.name === 'TokenExpiredError'
+          ? ERROR_CODES.E_AUTH_TOKEN_EXPIRED
+          : ERROR_CODES.E_AUTH_TOKEN_INVALID,
       message: 'Authentication failed',
     });
   }
@@ -67,7 +68,7 @@ const globalErrorHandler = (err, req, res, next) => {
   });
 };
 
-const catchAsync = (fn) => {
+const catchAsync = fn => {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
