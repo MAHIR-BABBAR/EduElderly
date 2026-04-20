@@ -1,7 +1,9 @@
 const request = require('supertest');
-const app = require('../src/index');
+const { createApp } = require('../src/index');
 const { User } = require('../src/models/User');
 const { RefreshToken } = require('../src/models/RefreshToken');
+
+const app = createApp();
 const { verifyEmailVerificationToken, signPasswordResetToken, signRefreshToken } = require('../src/utils/jwtHelper');
 const bcrypt = require('bcrypt');
 

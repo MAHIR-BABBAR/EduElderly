@@ -9,7 +9,7 @@ const { ERROR_CODES } = require('./errors/errorCodes');
 const { globalErrorHandler, catchAsync } = require('./middleware/globalErrorHandler');
 const { serviceAuth } = require('./middleware/serviceAuth');
 
-const { toPublicUserDTO, toAccessibilityDTO } = require('./dtos/UserDTO');
+
 const { toPublicCourseDTO, toInstructorCourseDTO } = require('./dtos/CourseDTO');
 const { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO } = require('./dtos/EnrollmentDTO');
 
@@ -33,8 +33,7 @@ module.exports = {
   serviceAuth,
 
   // DTOs
-  toPublicUserDTO,
-  toAccessibilityDTO,
+
   toPublicCourseDTO,
   toInstructorCourseDTO,
   toPublicEnrollmentDTO,

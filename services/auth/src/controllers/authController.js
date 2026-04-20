@@ -60,6 +60,7 @@ const UserData = (user) => ({
   email: user.email,
   role: user.role,
   isVerified: user.isVerified,
+  is2FAEnabled: user.is2FAEnabled,
 });
 
 // ─── Controllers ─────────────────────────────────────────────────────────────
@@ -96,7 +97,7 @@ const register = catchAsync(async (req, res) => {
 
     const verificationToken = signEmailVerificationToken(newUser.userId, newUser.email);
 
-    console.log(`[DEV] Verification link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`);
+
 
     res.status(201).json({
       success: true,
@@ -104,7 +105,6 @@ const register = catchAsync(async (req, res) => {
       data: UserData(newUser),
     });
   } catch (error) {
-    console.error('REGISTER ERROR:', error);
     throw error;
   }
 });
@@ -190,7 +190,7 @@ const login = catchAsync(async (req, res) => {
 
   if (user.is2FAEnabled) {
     const [rawOtp] = await generateOTP(email, 'login');
-    console.log(`[DEV] Login OTP for ${email}: ${rawOtp}`);
+
 
     return res.status(200).json({
       success: true,
@@ -303,7 +303,7 @@ const forgotPassword = catchAsync(async (req, res) => {
 
   const resetToken = signPasswordResetToken(user.userId, user.email);
 
-  console.log(`[DEV] Reset link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`);
+
 
   res.status(200).json({
     success: true,
@@ -388,7 +388,7 @@ const resendOtp = catchAsync(async (req, res) => {
 
   const [rawOtp] = await generateOTP(email, type);
   // TODO: Send OTP via notification service
-  console.log(`[DEV] Resent OTP for ${email}: ${rawOtp}`);
+
 
   res.status(200).json({
     success: true,
@@ -415,7 +415,7 @@ const resendVerificationEmail = catchAsync(async (req, res) => {
   const verificationToken = signEmailVerificationToken(user.userId, user.email);
 
   // TODO: Send verification email via notification service
-  console.log(`[DEV] Verification link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`);
+
 
   res.status(200).json({
     success: true,

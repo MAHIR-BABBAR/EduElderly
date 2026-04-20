@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { AppError, ERROR_CODES } = require('@eduelderly/shared');
-const { ROUTES_CONFIG } = require('../../../routes.config');
+const { ROUTES_CONFIG } = require('../routes.config');
 
 const isKnownRoute = (reqPath) => {
   // Convert the config object to an array of services and check their prefixes
