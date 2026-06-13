@@ -17,7 +17,9 @@
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.4.1"
+    "mongoose": "^9.4.1",
+    "redis": "^5.6.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "ioredis-mock": "^8.13.1",

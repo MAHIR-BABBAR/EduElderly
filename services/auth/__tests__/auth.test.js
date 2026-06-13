@@ -18,6 +18,7 @@ let userCookies = [];
 describe('Auth Service - Comprehensive Test Suite', () => {
   describe('POST /register', () => {
     it('should successfully register a user', async () => {
+      const { sendVerificationEmail } = require('../src/services/mailService');
       const res = await request(app).post('/register').send(VALID_USER_DATA);
 
       if (res.status === 500) {
@@ -27,8 +28,8 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.email).toBe(VALID_USER_DATA.email);
+      expect(sendVerificationEmail).toHaveBeenCalled();
 
-      // Verify the user was created in the mock DB
       const user = await User.findOne({ email: VALID_USER_DATA.email });
       expect(user).toBeTruthy();
       expect(user.isVerified).toBe(false);
@@ -57,7 +58,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
 
   describe('POST /verify-email', () => {
     it('should verify email with valid token', async () => {
-      // Direct DB insert for cleanly unverified user
+      const { createUserProfile } = require('../src/clients/userClient');
       const user = await User.create({
         name: 'Unverified',
         email: 'unverified@test.com',
@@ -65,8 +66,6 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         isVerified: false,
       });
 
-      // To generate token, we'll manually call their helper logic or mock it.
-      // Easiest is to utilize the endpoint if we had the token. Let's use jwtHelper
       const jwtHelper = require('../src/utils/jwtHelper');
       const token = jwtHelper.signEmailVerificationToken(user.userId, user.email);
 
@@ -75,6 +74,12 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.message).toMatch(/verified successfully/i);
+      expect(createUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: user.userId,
+          email: user.email,
+        }),
+      );
 
       const updatedUser = await User.findById(user._id);
       expect(updatedUser.isVerified).toBe(true);
@@ -158,6 +163,24 @@ describe('Auth Service - Comprehensive Test Suite', () => {
 
       expect(res.status).toBe(423); // Locked Out
       expect(res.body.message).toMatch(/Account locked/i);
+    });
+
+    it('should send OTP when 2FA is enabled', async () => {
+      const { sendOtpEmail } = require('../src/services/mailService');
+      verifiedUser.is2FAEnabled = true;
+      await verifiedUser.save();
+
+      const res = await request(app).post('/login').send({
+        email: 'login@test.com',
+        password: 'Password123!',
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.requiresOtp).toBe(true);
+      expect(sendOtpEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'login@test.com' }),
+        expect.any(String),
+      );
     });
   });
 

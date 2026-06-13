@@ -17,7 +17,6 @@ const createApp = () => {
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(cookieParser());
 
-  // Health check
   app.get('/health', (_req, res) => {
     const dbReady = mongoose.connection.readyState === 1;
     res.status(dbReady ? 200 : 503).json({
@@ -29,7 +28,6 @@ const createApp = () => {
     });
   });
 
-  // Database connectivity guard – returns 503 if Mongoose is not connected
   app.use((req, _res, next) => {
     if (mongoose.connection.readyState !== 1) {
       return next(
@@ -43,15 +41,12 @@ const createApp = () => {
     next();
   });
 
-  // Routes 
   app.use(authRoutes);
 
-  // 404 handler
   app.use((_req, _res, next) => {
     next(new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
   });
 
-  // Global error handler 
   app.use(globalErrorHandler);
 
   return app;
@@ -59,8 +54,7 @@ const createApp = () => {
 
 const bootstrap = async () => {
   const requiredEnvVars = ['MONGO_URI'];
-  // Check for essential env variables before attempting connection
-  requiredEnvVars.forEach(key => {
+  requiredEnvVars.forEach((key) => {
     if (!process.env[key]) {
       console.error(`[${SERVICE_NAME}] Missing required env var: ${key}`);
       process.exit(1);
@@ -90,7 +84,6 @@ const bootstrap = async () => {
       console.log(`[${SERVICE_NAME}] Running on port ${PORT}`);
     });
 
-    // Graceful Shutdown
     const shutdown = async () => {
       console.log(`[${SERVICE_NAME}] Shutting down gracefully...`);
       server.close(async () => {
@@ -100,7 +93,6 @@ const bootstrap = async () => {
         process.exit(0);
       });
 
-      // Force close after 10 seconds
       setTimeout(() => {
         console.error(`[${SERVICE_NAME}] Could not close connections in time, forcefully shutting down`);
         process.exit(1);

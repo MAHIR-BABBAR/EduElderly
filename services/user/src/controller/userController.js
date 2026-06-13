@@ -1,23 +1,22 @@
-
 const { UserProfile } = require('../models/UserProfile');
-const { ERROR_CODES, AppError } = require('@eduelderly/shared');
+const { ERROR_CODES, AppError, catchAsync } = require('@eduelderly/shared');
 
-const getUserProfile = async (req, res) => {
-    const profile = await UserProfile.findOne({userId:req.user.userId});
+const getUserProfile = catchAsync(async (req, res) => {
+    const profile = await UserProfile.findOne({ userId: req.user.userId });
     if (!profile) {
         throw new AppError('User not found', 404, ERROR_CODES.E_NOT_FOUND);
     }
     res.status(200).json({
         success: true,
-        data: profile
-    })
-}
+        data: profile,
+    });
+});
 
-const updateUserProfile = async (req, res) => {
+const updateUserProfile = catchAsync(async (req, res) => {
     const { userId } = req.user;
     const allowedFields = ['avatarUrl', 'fontSizePref', 'highContrast', 'lang', 'bio'];
     const updates = {};
-    allowedFields.forEach(field => {
+    allowedFields.forEach((field) => {
         if (req.body[field] !== undefined) {
             updates[field] = req.body[field];
         }
@@ -28,59 +27,76 @@ const updateUserProfile = async (req, res) => {
     }
 
     const profile = await UserProfile.findOneAndUpdate(
-        { userId, isActive: true },
+        { userId },
         { $set: updates },
         {
             new: true,
             runValidators: true,
-        }
-    )
+        },
+    );
 
     if (!profile) {
         throw new AppError('User not found', 404, ERROR_CODES.E_NOT_FOUND);
     }
     res.status(200).json({
         success: true,
-        data: profile
-    })
-}
+        data: profile,
+    });
+});
 
-const createUserProfile = async (req, res) => {
-    const { userId } = req.body;
+const createUserProfile = catchAsync(async (req, res) => {
+    const { userId, name, email, role } = req.body;
 
-    const existing = await UserProfile.findOne({userId});
+    if (!userId) {
+        throw new AppError('userId is required', 400, ERROR_CODES.E_VALIDATION);
+    }
+
+    const existing = await UserProfile.findOne({ userId });
     if (existing) {
         return res.status(200).json({
             success: true,
-            data: { profile: existing }
-        })
+            data: existing,
+        });
     }
 
-    const userProfile = await UserProfile.create({ userId });
+    const userProfile = await UserProfile.create({
+        userId,
+        name,
+        email,
+        role,
+    });
+
     res.status(201).json({
         success: true,
         message: 'Profile created successfully',
-        data: userProfile
-    })
-}
+        data: userProfile,
+    });
+});
 
-const listUsers = async (req, res) => {
+const listUsers = catchAsync(async (req, res) => {
     const users = await UserProfile.find();
     res.status(200).json({
         success: true,
-        data: users
-    })
-}
+        data: users,
+    });
+});
 
-const getUserById = async (req, res) => {
+const getUserById = catchAsync(async (req, res) => {
     const { userId } = req.params;
-    const profile = await UserProfile.findOne({userId});
+    const profile = await UserProfile.findOne({ userId });
     if (!profile) {
         throw new AppError('User not found', 404, ERROR_CODES.E_NOT_FOUND);
     }
     res.status(200).json({
         success: true,
-        data: profile
-    })
-}
+        data: profile,
+    });
+});
 
+module.exports = {
+    getUserProfile,
+    updateUserProfile,
+    createUserProfile,
+    listUsers,
+    getUserById,
+};

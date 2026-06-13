@@ -1,14 +1,31 @@
+const mongoose = require('mongoose');
+const { ROLES } = require('@eduelderly/shared/constants/roles');
+
 const UserProfileSchema = new mongoose.Schema({
     userId: {
         type: String,
         required: [true, 'userId is required'],
         unique: true,
         index: true,
-        // UUID string from auth-service — the cross-service link
+    },
+    name: {
+        type: String,
+        trim: true,
+        maxlength: [80, 'Name cannot exceed 80 characters'],
+    },
+    email: {
+        type: String,
+        lowercase: true,
+        trim: true,
+    },
+    role: {
+        type: String,
+        enum: Object.values(ROLES),
+        default: ROLES.LEARNER,
     },
     avatarUrl: {
         type: String,
-        default: null,   // null = show initials avatar in UI
+        default: null,
         validate: {
             validator: (v) => !v || v.startsWith('https://'),
             message: 'avatarUrl must be HTTPS',
@@ -17,7 +34,7 @@ const UserProfileSchema = new mongoose.Schema({
     fontSizePref: {
         type: String,
         enum: ['default', 'large', 'xl', 'huge'],
-        default: 'large',  // 18px default — accessibility-first for elderly
+        default: 'large',
     },
     highContrast: {
         type: Boolean,
@@ -26,7 +43,7 @@ const UserProfileSchema = new mongoose.Schema({
     lang: {
         type: String,
         default: 'en',
-        enum: ['en'],   // v1 English only — extend enum in v2
+        enum: ['en'],
     },
     totalXP: {
         type: Number,
@@ -44,15 +61,13 @@ const UserProfileSchema = new mongoose.Schema({
     toJSON: {
         transform: (doc, ret) => {
             delete ret.__v;
-            delete ret._id; 
+            delete ret._id;
             return ret;
         },
     },
 });
 
-// Full-text search for admin user listing (name + email)
 UserProfileSchema.index({ name: 'text', email: 'text' });
-// Sort by XP for leaderboard queries
 UserProfileSchema.index({ totalXP: -1 });
 
 const UserProfile = mongoose.model('UserProfile', UserProfileSchema);

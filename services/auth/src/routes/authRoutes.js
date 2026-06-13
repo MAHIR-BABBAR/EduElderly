@@ -1,36 +1,31 @@
 const express = require('express');
-const router = express.Router();
 const {
   register,
   verifyEmail,
+  resendVerificationEmail,
   login,
   verifyOtpHandler,
+  resendOtp,
   refresh,
   logout,
   forgotPassword,
   resetPassword,
   changePassword,
-  resendOtp,
-  resendVerificationEmail,
-} = require('../controllers/authController');
+} = require('../controllers/auth.controller');
 
-// ─── Public routes (no auth required) ────────────────────────────────────────
+const router = express.Router();
 
-// Registration & email verification
 router.post('/register', register);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerificationEmail);
 
-// Login & 2FA
 router.post('/login', login);
 router.post('/verify-otp', verifyOtpHandler);
 router.post('/resend-otp', resendOtp);
 
-// Token management
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 
-// Password management
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/change-password', changePassword);

@@ -1,26 +1,26 @@
 const express = require('express');
-const { protect, restrictTo } = require('../middlewares/authMiddleware');
-const { getUserProfile, updateUserProfile, updateAvatar, updateSettings, getLeaderboard, getUserById } = require('../controller/userController');
+const { serviceAuth } = require('@eduelderly/shared');
+const { extractUser, requireAdmin } = require('../middleware/extractUser');
+const {
+    getUserProfile,
+    updateUserProfile,
+    createUserProfile,
+    listUsers,
+    getUserById,
+} = require('../controller/userController');
 
 const router = express.Router();
 
-// ── INTERNAL routes — service-to-service only ──────────────────
-router.post('/users/create', serviceAuth, userController.createUserProfile);
-router.post('/users/:userId/xp', serviceAuth, userController.addXP);
+router.post('/users/create', serviceAuth, createUserProfile);
 
+router.get('/users/profile', extractUser, getUserProfile);
+router.put('/users/profile', extractUser, updateUserProfile);
 
-// ── LEARNER routes — require authenticated user ────────────────
-router.get('/users/profile', extractUser, userController.getUserProfile);
-router.put('/users/profile', extractUser, userController.updateUserProfile);
+router.get('/users', extractUser, requireAdmin, listUsers);
+router.get('/users/:userId', extractUser, requireAdmin, getUserById);
 
-
-// ── ADMIN routes — require admin role ─────────────────────────
-router.get('/users', extractUser, requireAdmin, userController.listUsers);
-router.get('/users/:userId', extractUser, requireAdmin, userController.getUserById);
-
-// Health
-router.get('/health', (req, res) =>
-    res.json({ status: 'ok', service: 'user-service', uptime: process.uptime() })
+router.get('/health', (_req, res) =>
+    res.json({ status: 'ok', service: 'user-service', uptime: process.uptime() }),
 );
 
 module.exports = router;
