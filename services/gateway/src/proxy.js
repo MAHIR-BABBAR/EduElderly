@@ -2,7 +2,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const { logger } = require('./logger');
 const { authValidation } = require('./authValidation');
 const { ERROR_CODES } = require('@eduelderly/shared');
-const { ROUTES_CONFIG } = require('../../../routes.config');
+const { ROUTES_CONFIG } = require('../routes.config');
 
 
 
@@ -98,9 +98,11 @@ const createProxy = (target, prefix) => {
     target,
     pathRewrite: { [`^${prefix}`]: '' },
     changeOrigin: true,
-    onProxyReq,
-    onProxyRes,
-    onError,
+    on: {
+      proxyReq: onProxyReq,
+      proxyRes: onProxyRes,
+      error: onError,
+    },
     logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'silent',
   });
 };

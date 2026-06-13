@@ -11,7 +11,19 @@ process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 process.env.BCRYPT_SALT_ROUNDS = '1';
 process.env.INTERNAL_SERVICE_KEY = 'test_internal_key';
 process.env.REDIS_URL = 'redis://localhost:6379';
-process.env.REDIS_PASSWORD = 'password';
+process.env.NOTIFICATION_SERVICE_URL = 'http://localhost:3007';
+process.env.USER_SERVICE_URL = 'http://localhost:3002';
+process.env.APP_URL = 'http://localhost:5173';
+
+jest.mock('../src/services/mailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+  sendOtpEmail: jest.fn().mockResolvedValue(undefined),
+  sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../src/clients/userClient', () => ({
+  createUserProfile: jest.fn().mockResolvedValue(undefined),
+}));
 
 // Mock Redis (ioredis-mock or minimal mock since we only use hSet, expire, hGetAll, del)
 jest.mock('redis', () => {
@@ -37,13 +49,22 @@ jest.mock('uuid', () => {
 });
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }
-  await mongoose.connect(uri);
+
+  const fallbackUri = process.env.TEST_MONGO_URI;
+
+  try {
+    mongoServer = await MongoMemoryServer.create();
+    await mongoose.connect(mongoServer.getUri());
+  } catch (error) {
+    if (!fallbackUri) {
+      throw error;
+    }
+    console.warn('MongoMemoryServer unavailable; using TEST_MONGO_URI fallback');
+    await mongoose.connect(fallbackUri);
+  }
 });
 
 afterAll(async () => {
