@@ -9,6 +9,12 @@ services:
     networks:
       - eduelderly-net
 
+  redis:
+    image: redis:7-alpine
+    container_name: eduelderly-redis
+    networks:
+      - eduelderly-net
+
   gateway:
     build:
       context: .
@@ -38,8 +44,11 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/auth/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - mongo
+      - redis
     networks:
       - eduelderly-net
 
