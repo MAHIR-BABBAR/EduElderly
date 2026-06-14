@@ -34,7 +34,7 @@ const ERROR_CODES = Object.freeze({
   E_INTERNAL:             'E_INTERNAL',
   E_RATE_LIMIT:           'E_RATE_LIMIT',
   E_ROUTE_NOT_FOUND:      'E_ROUTE_NOT_FOUND',
-  ERROR_CODES:            'E_SERVICE_UNAVAILABLE'
+  E_SERVICE_UNAVAILABLE:  'E_SERVICE_UNAVAILABLE',
 });
 
 module.exports = { ERROR_CODES };

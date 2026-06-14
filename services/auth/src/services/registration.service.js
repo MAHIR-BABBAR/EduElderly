@@ -54,15 +54,16 @@ const verifyEmailWithToken = async (token) => {
     return { user, alreadyVerified: true };
   }
 
-  user.isVerified = true;
-  await user.save();
-
   await createUserProfile({
     userId: user.userId,
     name: user.name,
     email: user.email,
     role: user.role,
+    isActive: user.isActive,
   });
+
+  user.isVerified = true;
+  await user.save();
 
   return { user, alreadyVerified: false };
 };

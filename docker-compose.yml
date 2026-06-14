@@ -12,6 +12,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: eduelderly-redis
+    ports:
+      - "6379:6379"
     networks:
       - eduelderly-net
 

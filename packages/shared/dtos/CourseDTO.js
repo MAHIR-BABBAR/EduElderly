@@ -1,48 +1,42 @@
 /**
+ * MVP public course shape — see .cursor/plans/course-service.md
  * @param {Object} courseDoc - Mongoose Course document or plain object
- * @returns {Object} Safe course shape — no internal fields
+ * @returns {Object} Safe course shape for public API responses
  */
 const toPublicCourseDTO = (courseDoc) => {
   const course = courseDoc.toObject ? courseDoc.toObject() : { ...courseDoc };
+  const moduleIds = course.moduleIds || [];
   return {
-    courseId: course.courseId || course._id?.toString(),
+    courseId: course.courseId,
     title: course.title,
+    slug: course.slug,
     description: course.description,
-    instructorId: course.instructorId,
-    category: course.category,
-    difficulty: course.difficulty,
-    price: course.price,
-    currency: course.currency || 'USD',
-    durationMinutes: course.durationMinutes,
-    isPublished: course.isPublished,
+    categoryId: course.categoryId,
     thumbnailUrl: course.thumbnailUrl || null,
-    totalModules: course.totalModules || 0,
-    totalLessons: course.totalLessons || 0,
-    tags: course.tags || [],
-    prerequisites: course.prerequisites || [],
-    learningOutcomes: course.learningOutcomes || [],
-    rating: course.rating || { average: 0, count: 0 },
-    enrollmentCount: course.enrollmentCount || 0,
+    isPublished: Boolean(course.isPublished),
+    isPaid: Boolean(course.isPaid),
+    price: course.price ?? 0,
+    difficulty: course.difficulty,
+    estimatedHours: course.estimatedHours ?? 0,
+    instructorName: course.instructorName,
+    moduleCount: course.moduleCount ?? moduleIds.length,
     createdAt: course.createdAt,
     updatedAt: course.updatedAt,
   };
 };
 
 /**
- * @param {Object} courseDoc - Full course document for instructor view
- * @returns {Object} Shape with additional instructor details
+ * @param {Object} courseDoc - Full course document for admin/instructor view
+ * @param {Object} [options]
+ * @param {Array} [options.modules]
+ * @returns {Object} Admin course shape with nested content when provided
  */
-const toInstructorCourseDTO = (courseDoc) => {
+const toInstructorCourseDTO = (courseDoc, { modules = [] } = {}) => {
   const base = toPublicCourseDTO(courseDoc);
   return {
     ...base,
-    modules: courseDoc.modules || [],
-    isDraft: courseDoc.isPublished === false,
-    analytics: courseDoc.analytics || {
-      totalRevenue: 0,
-      completionRate: 0,
-      avgTimeToComplete: 0,
-    },
+    moduleIds: courseDoc.moduleIds || [],
+    modules,
   };
 };
 

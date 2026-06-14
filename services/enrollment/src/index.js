@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { globalErrorHandler } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
 
 dotenv.config();
 
