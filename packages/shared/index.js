@@ -8,10 +8,12 @@ const { ERROR_CODES } = require('./errors/errorCodes');
 
 const { globalErrorHandler, catchAsync } = require('./middleware/globalErrorHandler');
 const { serviceAuth } = require('./middleware/serviceAuth');
+const { extractUser, requireAdmin } = require('./middleware/extractUser');
 
 
 const { toPublicCourseDTO, toInstructorCourseDTO } = require('./dtos/CourseDTO');
 const { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO } = require('./dtos/EnrollmentDTO');
+const { toPublicProfileDTO } = require('./dtos/UserDTO');
 
 module.exports = {
   // Constants
@@ -31,11 +33,14 @@ module.exports = {
   globalErrorHandler,
   catchAsync,
   serviceAuth,
+  extractUser,
+  requireAdmin,
 
   // DTOs
 
   toPublicCourseDTO,
   toInstructorCourseDTO,
   toPublicEnrollmentDTO,
-  toEnrollmentWithCourseDTO
+  toEnrollmentWithCourseDTO,
+  toPublicProfileDTO,
 };

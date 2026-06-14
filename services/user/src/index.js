@@ -2,7 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
-const userRoutes = require('./routes/userRoute');
+const internalRoutes = require('./routes/internalRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 dotenv.config();
 
@@ -40,8 +41,8 @@ const createApp = () => {
     next();
   });
 
-  // Mount user routes
-  app.use('/', userRoutes);
+  app.use('/internal', internalRoutes);
+  app.use('/', profileRoutes);
 
   // 404 handler
   app.use((_req, _res, next) => {

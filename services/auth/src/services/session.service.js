@@ -37,7 +37,7 @@ const authenticateCredentials = async (email, password) => {
   await clearLoginFailures(user);
 
   if (user.is2FAEnabled) {
-    const [rawOtp] = await generateOTP(email, 'login');
+    const [rawOtp] = await generateOTP(user.userId, 'login');
     await sendOtpEmail(user, rawOtp);
     return { user, requiresOtp: true };
   }
@@ -55,7 +55,7 @@ const verifyLoginOtp = async (email, otp, type) => {
     throw new AppError('User not found', 404, ERROR_CODES.E_USER_NOT_FOUND);
   }
 
-  const isValid = await verifyOtp(email, type, otp);
+  const isValid = await verifyOtp(user.userId, type, otp);
   if (!isValid) {
     throw new AppError('Invalid or expired OTP', 401, ERROR_CODES.E_OTP_INVALID);
   }
@@ -73,7 +73,7 @@ const resendLoginOtp = async (email, type) => {
     throw new AppError('User not found', 404, ERROR_CODES.E_USER_NOT_FOUND);
   }
 
-  const [rawOtp] = await generateOTP(email, type);
+  const [rawOtp] = await generateOTP(user.userId, type);
   await sendOtpEmail(user, rawOtp);
 
   return user;
