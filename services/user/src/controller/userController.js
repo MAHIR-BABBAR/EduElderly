@@ -1,102 +1,72 @@
-const { UserProfile } = require('../models/UserProfile');
-const { ERROR_CODES, AppError, catchAsync } = require('@eduelderly/shared');
+const { catchAsync, toPublicProfileDTO } = require('@eduelderly/shared');
+const profileService = require('../services/profile.service');
 
 const getUserProfile = catchAsync(async (req, res) => {
-    const profile = await UserProfile.findOne({ userId: req.user.userId });
-    if (!profile) {
-        throw new AppError('User not found', 404, ERROR_CODES.E_NOT_FOUND);
-    }
-    res.status(200).json({
-        success: true,
-        data: profile,
-    });
+  const profile = await profileService.getProfileByUserId(req.user.userId);
+  res.status(200).json({
+    success: true,
+    data: toPublicProfileDTO(profile),
+  });
 });
 
 const updateUserProfile = catchAsync(async (req, res) => {
-    const { userId } = req.user;
-    const allowedFields = ['avatarUrl', 'fontSizePref', 'highContrast', 'lang', 'bio'];
-    const updates = {};
-    allowedFields.forEach((field) => {
-        if (req.body[field] !== undefined) {
-            updates[field] = req.body[field];
-        }
-    });
-
-    if (Object.keys(updates).length === 0) {
-        throw new AppError('No updates provided', 400, ERROR_CODES.E_VALIDATION);
-    }
-
-    const profile = await UserProfile.findOneAndUpdate(
-        { userId },
-        { $set: updates },
-        {
-            new: true,
-            runValidators: true,
-        },
-    );
-
-    if (!profile) {
-        throw new AppError('User not found', 404, ERROR_CODES.E_NOT_FOUND);
-    }
-    res.status(200).json({
-        success: true,
-        data: profile,
-    });
+  const profile = await profileService.updateProfile(req.user.userId, req.body);
+  res.status(200).json({
+    success: true,
+    data: toPublicProfileDTO(profile),
+  });
 });
 
 const createUserProfile = catchAsync(async (req, res) => {
-    const { userId, name, email, role } = req.body;
-
-    if (!userId) {
-        throw new AppError('userId is required', 400, ERROR_CODES.E_VALIDATION);
-    }
-
-    const existing = await UserProfile.findOne({ userId });
-    if (existing) {
-        return res.status(200).json({
-            success: true,
-            data: existing,
-        });
-    }
-
-    const userProfile = await UserProfile.create({
-        userId,
-        name,
-        email,
-        role,
-    });
-
-    res.status(201).json({
-        success: true,
-        message: 'Profile created successfully',
-        data: userProfile,
-    });
+  const { profile, created } = await profileService.createProfile(req.body);
+  res.status(created ? 201 : 200).json({
+    success: true,
+    message: created ? 'Profile created successfully' : undefined,
+    data: toPublicProfileDTO(profile),
+  });
 });
 
 const listUsers = catchAsync(async (req, res) => {
-    const users = await UserProfile.find();
-    res.status(200).json({
-        success: true,
-        data: users,
-    });
+  const { users, pagination } = await profileService.listProfiles(req.query);
+  res.status(200).json({
+    success: true,
+    data: {
+      users: users.map(toPublicProfileDTO),
+      pagination,
+    },
+  });
 });
 
 const getUserById = catchAsync(async (req, res) => {
-    const { userId } = req.params;
-    const profile = await UserProfile.findOne({ userId });
-    if (!profile) {
-        throw new AppError('User not found', 404, ERROR_CODES.E_NOT_FOUND);
-    }
-    res.status(200).json({
-        success: true,
-        data: profile,
-    });
+  const profile = await profileService.getProfileByUserId(req.params.userId);
+  res.status(200).json({
+    success: true,
+    data: toPublicProfileDTO(profile),
+  });
+});
+
+const syncUserProfile = catchAsync(async (req, res) => {
+  const profile = await profileService.syncProfile(req.body);
+  res.status(200).json({
+    success: true,
+    data: toPublicProfileDTO(profile),
+  });
+});
+
+const incrementUserXP = catchAsync(async (req, res) => {
+  const profile = await profileService.incrementXP(req.params.userId, req.body.amount);
+  res.status(200).json({
+    success: true,
+    data: toPublicProfileDTO(profile),
+  });
 });
 
 module.exports = {
-    getUserProfile,
-    updateUserProfile,
-    createUserProfile,
-    listUsers,
-    getUserById,
+  getUserProfile,
+  updateUserProfile,
+  createUserProfile,
+  listUsers,
+  getUserById,
+  syncUserProfile,
+  incrementUserXP,
 };

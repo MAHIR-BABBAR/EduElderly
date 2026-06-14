@@ -90,6 +90,49 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       expect(res.status).toBe(400);
       expect(res.body.message).toMatch(/Invalid or expired/i);
     });
+
+    it('should not mark user verified when profile creation fails', async () => {
+      const { createUserProfile } = require('../src/clients/userClient');
+      createUserProfile.mockRejectedValueOnce(new Error('User service unavailable'));
+
+      const user = await User.create({
+        name: 'Fail Profile',
+        email: 'failprofile@test.com',
+        passHash: 'dummy',
+        isVerified: false,
+      });
+
+      const jwtHelper = require('../src/utils/jwtHelper');
+      const token = jwtHelper.signEmailVerificationToken(user.userId, user.email);
+
+      const res = await request(app).post(`/verify-email?token=${token}`);
+
+      expect(res.status).toBe(500);
+      const updatedUser = await User.findById(user._id);
+      expect(updatedUser.isVerified).toBe(false);
+    });
+
+    it('should verify idempotently when profile already exists', async () => {
+      const { createUserProfile } = require('../src/clients/userClient');
+      createUserProfile.mockResolvedValueOnce(undefined);
+
+      const user = await User.create({
+        name: 'Idempotent',
+        email: 'idempotent@test.com',
+        passHash: 'dummy',
+        isVerified: false,
+      });
+
+      const jwtHelper = require('../src/utils/jwtHelper');
+      const token = jwtHelper.signEmailVerificationToken(user.userId, user.email);
+
+      const res = await request(app).post(`/verify-email?token=${token}`);
+
+      expect(res.status).toBe(200);
+      expect(createUserProfile).toHaveBeenCalled();
+      const updatedUser = await User.findById(user._id);
+      expect(updatedUser.isVerified).toBe(true);
+    });
   });
 
   describe('POST /login', () => {
@@ -181,6 +224,102 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         expect.objectContaining({ email: 'login@test.com' }),
         expect.any(String),
       );
+    });
+  });
+
+  describe('POST /verify-otp', () => {
+    let user;
+    let capturedOtp;
+
+    beforeEach(async () => {
+      const { sendOtpEmail } = require('../src/services/mailService');
+      sendOtpEmail.mockImplementation((_user, otp) => {
+        capturedOtp = otp;
+        return Promise.resolve();
+      });
+
+      const salt = await bcrypt.genSalt(1);
+      const passHash = await bcrypt.hash('Password123!', salt);
+      user = await User.create({
+        name: '2FA User',
+        email: '2fa@test.com',
+        passHash,
+        isVerified: true,
+        is2FAEnabled: true,
+      });
+
+      await request(app).post('/login').send({
+        email: '2fa@test.com',
+        password: 'Password123!',
+      });
+    });
+
+    it('should complete login with valid OTP', async () => {
+      const res = await request(app).post('/verify-otp').send({
+        email: '2fa@test.com',
+        otp: capturedOtp,
+        type: 'login',
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.accessToken).toBeDefined();
+    });
+
+    it('should reject invalid OTP', async () => {
+      const res = await request(app).post('/verify-otp').send({
+        email: '2fa@test.com',
+        otp: '000000',
+        type: 'login',
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toMatch(/Invalid or expired OTP/i);
+    });
+
+    it('should lock out after too many invalid OTP attempts', async () => {
+      for (let i = 0; i < 2; i++) {
+        const attempt = await request(app).post('/verify-otp').send({
+          email: '2fa@test.com',
+          otp: '000000',
+          type: 'login',
+        });
+        expect(attempt.status).toBe(401);
+        expect(attempt.body.message).toMatch(/Invalid or expired OTP/i);
+      }
+
+      const res = await request(app).post('/verify-otp').send({
+        email: '2fa@test.com',
+        otp: '000000',
+        type: 'login',
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toMatch(/Too many OTP attempts/i);
+    });
+  });
+
+  describe('POST /resend-otp', () => {
+    it('should resend OTP for 2FA user', async () => {
+      const { sendOtpEmail } = require('../src/services/mailService');
+      const salt = await bcrypt.genSalt(1);
+      const passHash = await bcrypt.hash('Password123!', salt);
+      await User.create({
+        name: 'Resend User',
+        email: 'resend@test.com',
+        passHash,
+        isVerified: true,
+        is2FAEnabled: true,
+      });
+
+      const res = await request(app).post('/resend-otp').send({
+        email: 'resend@test.com',
+        type: 'login',
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(sendOtpEmail).toHaveBeenCalled();
     });
   });
 

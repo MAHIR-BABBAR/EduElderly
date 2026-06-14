@@ -1,5 +1,6 @@
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
-const { ROLES } = require('@eduelderly/shared/constants/roles');
+const { AppError } = require('../errors/AppError');
+const { ERROR_CODES } = require('../errors/errorCodes');
+const { ROLES } = require('../constants/roles');
 
 const extractUser = (req, res, next) => {
   const userId = req.headers['x-user-id'];

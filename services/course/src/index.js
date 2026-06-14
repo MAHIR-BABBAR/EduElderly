@@ -1,65 +1,104 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const dotenv = require('dotenv');
-const { globalErrorHandler } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
+const categoryRoutes = require('./routes/categoryRoutes');
+const moduleRoutes = require('./routes/moduleRoutes');
+const topicRoutes = require('./routes/topicRoutes');
+const courseRoutes = require('./routes/courseRoutes');
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3003;
 const SERVICE_NAME = 'course-service';
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+const createApp = () => {
+  const app = express();
 
-// Health check
-app.get('/health', (_req, res) => {
-  res.status(200).json({
-    service: SERVICE_NAME,
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+  app.use(express.json({ limit: '1mb' }));
+
+  app.get('/health', (_req, res) => {
+    const dbReady = mongoose.connection.readyState === 1;
+    res.status(dbReady ? 200 : 503).json({
+      service: SERVICE_NAME,
+      status: dbReady ? 'healthy' : 'unhealthy',
+      database: dbReady ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    });
   });
-});
 
-// TODO Phase 2: Mount course, category, module, topic, media routes here
-// app.use('/categories', categoryRoutes);
-// app.use('/courses', courseRoutes);
-// app.use('/modules', moduleRoutes);
-// app.use('/topics', topicRoutes);
-// app.use('/upload', mediaRoutes);
+  app.use((req, _res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+      return next(
+        new AppError(
+          'Backend down, please wait',
+          503,
+          ERROR_CODES.E_SERVICE_UNAVAILABLE,
+        ),
+      );
+    }
+    next();
+  });
 
+  app.use('/categories', categoryRoutes);
+  app.use('/', moduleRoutes);
+  app.use('/', topicRoutes);
+  app.use('/', courseRoutes);
 
-// 404 handler
-app.use((_req, res, next) => {
-  // We didn't find a route, so we CREATE a 404 error and pass it down
-  next(new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
-});
+  app.use((_req, _res, next) => {
+    next(new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
+  });
 
+  app.use(globalErrorHandler);
 
-// Global error handler (from shared package)
-app.use(globalErrorHandler);
+  return app;
+};
 
+const bootstrap = async () => {
+  const requiredEnvVars = ['MONGO_URI'];
+  requiredEnvVars.forEach((key) => {
+    if (!process.env[key]) {
+      console.error(`[${SERVICE_NAME}] Missing required env var: ${key}`);
+      process.exit(1);
+    }
+  });
 
-// Database connection & server start
-const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
       dbName: 'eduelderly-course',
     });
     console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
 
-    app.listen(PORT, () => {
+    mongoose.connection.on('disconnected', () => {
+      console.warn(`[${SERVICE_NAME}] MongoDB disconnected – requests will receive 503`);
+    });
+
+    const app = createApp();
+    const PORT = process.env.PORT || 3003;
+
+    const server = app.listen(PORT, () => {
       console.log(`[${SERVICE_NAME}] Running on port ${PORT}`);
     });
+
+    const shutdown = async () => {
+      console.log(`[${SERVICE_NAME}] Shutting down gracefully...`);
+      server.close(async () => {
+        await mongoose.disconnect();
+        process.exit(0);
+      });
+      setTimeout(() => process.exit(1), 10000);
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
   } catch (error) {
     console.error(`[${SERVICE_NAME}] Failed to start:`, error.message);
     process.exit(1);
   }
 };
 
-startServer();
+if (require.main === module) {
+  bootstrap();
+}
 
-module.exports = app;
+module.exports = { createApp, bootstrap };

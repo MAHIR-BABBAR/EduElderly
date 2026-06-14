@@ -1,31 +1,36 @@
 const getBaseUrl = () => process.env.USER_SERVICE_URL || 'http://user:3002';
 
-const createUserProfile = async (payload) => {
+const internalRequest = async (path, { method = 'GET', body } = {}) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const response = await fetch(`${getBaseUrl()}/users/create`, {
-      method: 'POST',
+    const response = await fetch(`${getBaseUrl()}${path}`, {
+      method,
       headers: {
         'Content-Type': 'application/json',
         'X-Service-Key': process.env.INTERNAL_SERVICE_KEY || '',
       },
-      body: JSON.stringify(payload),
+      body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
 
     if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`User service responded ${response.status}: ${body}`);
+      const text = await response.text();
+      throw new Error(`User service responded ${response.status}: ${text}`);
     }
 
     return response.json();
   } catch (error) {
-    console.error('[auth-user] Failed to create user profile:', error.message);
+    console.error(`[auth-user] ${method} ${path} failed:`, error.message);
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
 };
 
-module.exports = { createUserProfile };
+const createUserProfile = (payload) => internalRequest('/internal/profile', { method: 'POST', body: payload });
+
+const syncUserProfile = (payload) => internalRequest('/internal/sync', { method: 'PATCH', body: payload });
+
+module.exports = { createUserProfile, syncUserProfile };
