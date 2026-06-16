@@ -1,4 +1,5 @@
 const { Category } = require('../models/Category');
+const { Course } = require('../models/Course');
 const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 const { slugify } = require('../utils/slug');
 
@@ -52,6 +53,14 @@ const updateCategory = async (categoryId, { name, description }) => {
 };
 
 const deleteCategory = async (categoryId) => {
+  const inUse = await Course.countDocuments({ categoryId, isDeleted: false });
+  if (inUse > 0) {
+    throw new AppError(
+      'Cannot delete category while courses are assigned to it',
+      400,
+      ERROR_CODES.E_VALIDATION,
+    );
+  }
   const category = await Category.findOneAndDelete({ categoryId });
   if (!category) {
     throw new AppError('Category not found', 404, ERROR_CODES.E_NOT_FOUND);

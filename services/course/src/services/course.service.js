@@ -35,8 +35,56 @@ const listPublishedCourses = async ({ page = 1, limit = 20 }) => {
     Course.countDocuments(filter),
   ]);
 
+  const courseIds = courses.map((c) => c.courseId);
+  const topicCounts = courseIds.length
+    ? await Topic.aggregate([
+      { $match: { courseId: { $in: courseIds } } },
+      { $group: { _id: '$courseId', count: { $sum: 1 } } },
+    ])
+    : [];
+  const countByCourse = Object.fromEntries(topicCounts.map((r) => [r._id, r.count]));
+
   return {
-    courses,
+    courses: courses.map((c) => ({
+      ...c.toObject(),
+      totalTopics: countByCourse[c.courseId] || 0,
+    })),
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit) || 1,
+    },
+  };
+};
+
+const listAdminCourses = async ({ page = 1, limit = 20, isPublished, categoryId } = {}) => {
+  const safePage = Math.max(1, parseInt(page, 10) || 1);
+  const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  const skip = (safePage - 1) * safeLimit;
+  const filter = { isDeleted: false };
+  if (isPublished !== undefined) filter.isPublished = isPublished === 'true' || isPublished === true;
+  if (categoryId) filter.categoryId = categoryId;
+
+  const [courses, total] = await Promise.all([
+    Course.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(safeLimit),
+    Course.countDocuments(filter),
+  ]);
+
+  const courseIds = courses.map((c) => c.courseId);
+  const topicCounts = courseIds.length
+    ? await Topic.aggregate([
+      { $match: { courseId: { $in: courseIds } } },
+      { $group: { _id: '$courseId', count: { $sum: 1 } } },
+    ])
+    : [];
+  const countByCourse = Object.fromEntries(topicCounts.map((r) => [r._id, r.count]));
+
+  return {
+    courses: courses.map((c) => ({
+      ...c.toObject(),
+      totalTopics: countByCourse[c.courseId] || 0,
+    })),
     pagination: {
       page: safePage,
       limit: safeLimit,
@@ -63,7 +111,26 @@ const getCourseDetail = async (courseId, { publishedOnly = false }) => {
     topics: topicsByModule[mod.moduleId] || [],
   }));
 
-  return { course, modules: modulesWithTopics };
+  return { course, modules: modulesWithTopics, totalTopics: topics.length };
+};
+
+const getCourseStats = async (courseId, { publishedOnly = false } = {}) => {
+  const course = await getActiveCourse(courseId, { publishedOnly });
+  const modules = await Module.find({ courseId });
+  const moduleIds = modules.map((m) => m.moduleId);
+  const topics = await Topic.find({ moduleId: { $in: moduleIds } });
+
+  return {
+    courseId: course.courseId,
+    title: course.title,
+    isPublished: course.isPublished,
+    isDeleted: course.isDeleted,
+    isPaid: course.isPaid,
+    price: course.price,
+    moduleCount: modules.length,
+    topicCount: topics.length,
+    topicIds: topics.map((t) => t.topicId),
+  };
 };
 
 const createCourse = async (payload) => {
@@ -129,7 +196,9 @@ const softDeleteCourse = async (courseId) => {
 
 module.exports = {
   listPublishedCourses,
+  listAdminCourses,
   getCourseDetail,
+  getCourseStats,
   createCourse,
   updateCourse,
   togglePublish,

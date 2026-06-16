@@ -1,0 +1,394 @@
+{
+  "categories": [
+    {
+      "slug": "health-wellness",
+      "name": "Health & Wellness",
+      "description": "Trusted health information and healthy aging resources."
+    },
+    {
+      "slug": "digital-skills",
+      "name": "Digital Skills",
+      "description": "Learn to find reliable health information and use digital tools safely."
+    },
+    {
+      "slug": "life-learning",
+      "name": "Life & Learning",
+      "description": "Explore aging, society, and lifelong learning topics."
+    }
+  ],
+  "courses": [
+    {
+      "slug": "healthy-living-older-adults",
+      "title": "Healthy Living for Older Adults",
+      "description": "Practical guidance on staying active, eating well, and managing common health concerns. Video lessons from NIA, ACL, and NIDDK (U.S. Gov).",
+      "categorySlug": "health-wellness",
+      "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Woman_walking_along_the_beach_%28Unsplash%29.jpg/640px-Woman_walking_along_the_beach_%28Unsplash%29.jpg",
+      "isPublished": true,
+      "isPaid": false,
+      "price": 0,
+      "difficulty": "beginner",
+      "estimatedHours": 3,
+      "instructorName": "EduElderly Team",
+      "modules": [
+        {
+          "slug": "staying-active",
+          "title": "Staying Active",
+          "order": 0,
+          "topics": [
+            {
+              "slug": "exercise-basics",
+              "title": "Exercise and Physical Activity",
+              "order": 0,
+              "sourcePageUrl": "https://medlineplus.gov/exerciseandphysicalactivity.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=Ev6yE55kYGw",
+              "durationMinutes": 15
+            },
+            {
+              "slug": "nutrition-older-adults",
+              "title": "Nutrition for Older Adults",
+              "order": 1,
+              "sourcePageUrl": "https://medlineplus.gov/nutritionforolderadults.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=RERcdAGeTZ8",
+              "durationMinutes": 4
+            }
+          ]
+        },
+        {
+          "slug": "common-conditions",
+          "title": "Common Conditions",
+          "order": 1,
+          "topics": [
+            {
+              "slug": "osteoporosis",
+              "title": "Osteoporosis Overview",
+              "order": 0,
+              "sourcePageUrl": "https://medlineplus.gov/osteoporosis.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=pRvYsHKzG2Q",
+              "durationMinutes": 48
+            },
+            {
+              "slug": "diabetes-older",
+              "title": "Diabetes in Older Adults",
+              "order": 1,
+              "sourcePageUrl": "https://medlineplus.gov/diabetes.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=IYg25EzdCKQ",
+              "durationMinutes": 3
+            }
+          ]
+        },
+        {
+          "slug": "mental-wellbeing",
+          "title": "Mental Wellbeing",
+          "order": 2,
+          "topics": [
+            {
+              "slug": "mental-health-older",
+              "title": "Older Adult Mental Health",
+              "order": 0,
+              "sourcePageUrl": "https://medlineplus.gov/olderadultmentalhealth.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=-hKUHiIwbrM",
+              "durationMinutes": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "nutrition-healthy-aging",
+      "title": "Nutrition and Healthy Aging",
+      "description": "Learn how nutrition supports wellness as we age. Video lessons from NIA and ACL (U.S. Gov) plus CC BY OER references.",
+      "categorySlug": "health-wellness",
+      "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/640px-Good_Food_Display_-_NCI_Visuals_Online.jpg",
+      "isPublished": true,
+      "isPaid": false,
+      "price": 0,
+      "difficulty": "beginner",
+      "estimatedHours": 4,
+      "instructorName": "EduElderly Team",
+      "modules": [
+        {
+          "slug": "nutrition-foundations",
+          "title": "Nutrition Foundations",
+          "order": 0,
+          "topics": [
+            {
+              "slug": "nutrition-intro",
+              "title": "Nutrition and Aging: Introduction",
+              "order": 0,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/119812/student/?section=1",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=RERcdAGeTZ8",
+              "durationMinutes": 4
+            },
+            {
+              "slug": "wellness-ages",
+              "title": "Wellness for the Ages",
+              "order": 1,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/119812/student/?section=3",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=kCQ6irSQwYA",
+              "durationMinutes": 11
+            }
+          ]
+        },
+        {
+          "slug": "aging-nutrition",
+          "title": "Nutrition in Later Life",
+          "order": 1,
+          "topics": [
+            {
+              "slug": "physiology-aging",
+              "title": "Physiology of Aging and Nutrition",
+              "order": 0,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/119812/student/?section=4",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=qMm5renQibo",
+              "durationMinutes": 4
+            },
+            {
+              "slug": "nutrition-older-adults-oer",
+              "title": "Nutrition Considerations in Older Adults",
+              "order": 1,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/119812/student/?section=6",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=pUYxcRvdal8",
+              "durationMinutes": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "discover-digital-health",
+      "title": "Discover Digital — Health & Wellbeing",
+      "description": "Build confidence using digital health tools safely. Content from The Open University OpenLearn Create (CC BY-NC-SA 4.0 — demo use).",
+      "categorySlug": "digital-skills",
+      "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Using_a_tablet_computer_%28Unsplash%29.jpg/640px-Using_a_tablet_computer_%28Unsplash%29.jpg",
+      "isPublished": true,
+      "isPaid": false,
+      "price": 0,
+      "difficulty": "beginner",
+      "estimatedHours": 2,
+      "instructorName": "EduElderly Team",
+      "modules": [
+        {
+          "slug": "digital-health-basics",
+          "title": "Digital Health Basics",
+          "order": 0,
+          "topics": [
+            {
+              "slug": "course-overview",
+              "title": "Course Overview",
+              "order": 0,
+              "sourcePageUrl": "https://www.open.edu/openlearncreate/course/view.php?id=8125",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=mq-zPCQR2qY",
+              "durationMinutes": 3
+            },
+            {
+              "slug": "staying-safe-online",
+              "title": "Staying Safe Online",
+              "order": 1,
+              "sourcePageUrl": "https://www.open.edu/openlearncreate/course/view.php?id=8125",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=fgd-osFId00",
+              "durationMinutes": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "finding-reliable-health-info",
+      "title": "Finding Reliable Health Information Online",
+      "description": "Learn to evaluate health websites and find trustworthy medical information. Sources: MedlinePlus (public domain).",
+      "categorySlug": "digital-skills",
+      "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Internet1.jpg/640px-Internet1.jpg",
+      "isPublished": true,
+      "isPaid": false,
+      "price": 0,
+      "difficulty": "beginner",
+      "estimatedHours": 1,
+      "instructorName": "EduElderly Team",
+      "modules": [
+        {
+          "slug": "evaluate-health-info",
+          "title": "Evaluating Health Information",
+          "order": 0,
+          "topics": [
+            {
+              "slug": "evaluating-sites",
+              "title": "Evaluating Health Websites",
+              "order": 0,
+              "sourcePageUrl": "https://medlineplus.gov/evaluatinghealthinformation.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=LlkR_1ib19o",
+              "durationMinutes": 5
+            },
+            {
+              "slug": "understanding-medical-research",
+              "title": "Understanding Medical Research",
+              "order": 1,
+              "sourcePageUrl": "https://medlineplus.gov/understandingmedicalresearch.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=_L5Tg7ciNNU",
+              "durationMinutes": 4
+            },
+            {
+              "slug": "health-literacy",
+              "title": "Health Literacy",
+              "order": 2,
+              "sourcePageUrl": "https://medlineplus.gov/healthliteracy.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=BG-iY-em7mk",
+              "durationMinutes": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "introducing-ageing",
+      "title": "Introducing Ageing",
+      "description": "Explore key ideas about ageing and later life. Content from OpenLearn (CC BY-NC-SA — demo use).",
+      "categorySlug": "life-learning",
+      "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Community_centre_for_senior_citizens_in_Bhopal.jpg/640px-Community_centre_for_senior_citizens_in_Bhopal.jpg",
+      "isPublished": true,
+      "isPaid": false,
+      "price": 0,
+      "difficulty": "beginner",
+      "estimatedHours": 3,
+      "instructorName": "EduElderly Team",
+      "modules": [
+        {
+          "slug": "understanding-ageing",
+          "title": "Understanding Ageing",
+          "order": 0,
+          "topics": [
+            {
+              "slug": "intro-ageing",
+              "title": "Introduction to Ageing",
+              "order": 0,
+              "sourcePageUrl": "https://www.open.edu/openlearn/health-sports-psychology/introducing-ageing/content-section-2",
+              "contentType": "video",
+              "contentUrl": "https://www.open.edu/openlearn/pluginfile.php/460024/mod_oucontent/oucontent/17932/29746333/4f808dce/k118_2014j_b3_lg13_vid001-320x176_1.mp4",
+              "durationMinutes": 8
+            },
+            {
+              "slug": "ageing-society",
+              "title": "Ageing in Society",
+              "order": 1,
+              "sourcePageUrl": "https://www.open.edu/openlearn/health-sports-psychology/introducing-ageing/content-section-4",
+              "contentType": "video",
+              "contentUrl": "https://www.open.edu/openlearn/pluginfile.php/460024/mod_oucontent/oucontent/17932/8472d70d/bb91f430/k118_lg13_f_interactive_13_1_v2_400_kbits.mp4",
+              "durationMinutes": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "age-friendly-care-basics",
+      "title": "Age-Friendly Care Basics",
+      "description": "Introduction to the 4Ms framework for age-friendly care. Draft course for admin preview. Source: OER Commons (CC BY).",
+      "categorySlug": "health-wellness",
+      "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Caregiver_with_elderly_patient.jpg/640px-Caregiver_with_elderly_patient.jpg",
+      "isPublished": false,
+      "isPaid": false,
+      "price": 0,
+      "difficulty": "intermediate",
+      "estimatedHours": 2,
+      "instructorName": "EduElderly Team",
+      "modules": [
+        {
+          "slug": "four-ms",
+          "title": "The 4Ms Framework",
+          "order": 0,
+          "topics": [
+            {
+              "slug": "what-matters",
+              "title": "What Matters",
+              "order": 0,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/124438",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=fTcXVigjsN8",
+              "durationMinutes": 25
+            },
+            {
+              "slug": "mentation",
+              "title": "Mentation",
+              "order": 1,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/124438",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=g4rziPQ08rw",
+              "durationMinutes": 3
+            },
+            {
+              "slug": "mobility",
+              "title": "Mobility",
+              "order": 2,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/124438",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=TOKxtgKrGCQ",
+              "durationMinutes": 10
+            },
+            {
+              "slug": "medication",
+              "title": "Medication",
+              "order": 3,
+              "sourcePageUrl": "https://oercommons.org/courseware/lesson/124438",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=fTcXVigjsN8",
+              "durationMinutes": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "premium-wellness-workshop",
+      "title": "Premium Wellness Workshop",
+      "description": "A short paid course placeholder for testing enrollment and mock payment flows. Links to NIH exercise resources.",
+      "categorySlug": "health-wellness",
+      "thumbnailUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Yoga_in_the_park.jpg/640px-Yoga_in_the_park.jpg",
+      "isPublished": true,
+      "isPaid": true,
+      "price": 9.99,
+      "difficulty": "beginner",
+      "estimatedHours": 1,
+      "instructorName": "EduElderly Team",
+      "modules": [
+        {
+          "slug": "workshop-week1",
+          "title": "Workshop Week 1",
+          "order": 0,
+          "topics": [
+            {
+              "slug": "getting-started",
+              "title": "Getting Started with Gentle Exercise",
+              "order": 0,
+              "sourcePageUrl": "https://medlineplus.gov/exerciseandphysicalactivity.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=z_GKdFf3qv4",
+              "durationMinutes": 2
+            },
+            {
+              "slug": "building-habits",
+              "title": "Building Healthy Habits",
+              "order": 1,
+              "sourcePageUrl": "https://medlineplus.gov/healthyliving.html",
+              "contentType": "video",
+              "contentUrl": "https://www.youtube.com/watch?v=kCQ6irSQwYA",
+              "durationMinutes": 11
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

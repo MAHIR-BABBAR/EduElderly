@@ -1,9 +1,44 @@
 /**
+ * @param {Object} topicDoc
+ * @returns {Object} Public topic shape (catalog/detail for learners)
+ */
+const toPublicTopicDTO = (topicDoc) => {
+  const topic = topicDoc.toObject ? topicDoc.toObject() : { ...topicDoc };
+  return {
+    topicId: topic.topicId,
+    title: topic.title,
+    contentType: topic.contentType,
+    contentUrl: topic.contentUrl || null,
+    durationMinutes: topic.durationMinutes ?? 0,
+    order: topic.order,
+  };
+};
+
+/**
+ * @param {Object} moduleDoc
+ * @param {Array} [topics]
+ * @returns {Object} Public module shape with nested topics
+ */
+const toPublicModuleDTO = (moduleDoc, topics = []) => {
+  const mod = moduleDoc.toObject ? moduleDoc.toObject() : { ...moduleDoc };
+  const topicList = topics.map((t) => toPublicTopicDTO(t));
+  return {
+    moduleId: mod.moduleId,
+    title: mod.title,
+    order: mod.order,
+    topicCount: topicList.length,
+    topics: topicList,
+  };
+};
+
+/**
  * MVP public course shape — see .cursor/plans/course-service.md
  * @param {Object} courseDoc - Mongoose Course document or plain object
+ * @param {Object} [options]
+ * @param {number} [options.totalTopics]
  * @returns {Object} Safe course shape for public API responses
  */
-const toPublicCourseDTO = (courseDoc) => {
+const toPublicCourseDTO = (courseDoc, { totalTopics } = {}) => {
   const course = courseDoc.toObject ? courseDoc.toObject() : { ...courseDoc };
   const moduleIds = course.moduleIds || [];
   return {
@@ -20,6 +55,7 @@ const toPublicCourseDTO = (courseDoc) => {
     estimatedHours: course.estimatedHours ?? 0,
     instructorName: course.instructorName,
     moduleCount: course.moduleCount ?? moduleIds.length,
+    totalTopics: totalTopics ?? course.totalTopics ?? 0,
     createdAt: course.createdAt,
     updatedAt: course.updatedAt,
   };
@@ -40,4 +76,9 @@ const toInstructorCourseDTO = (courseDoc, { modules = [] } = {}) => {
   };
 };
 
-module.exports = { toPublicCourseDTO, toInstructorCourseDTO };
+module.exports = {
+  toPublicCourseDTO,
+  toPublicModuleDTO,
+  toPublicTopicDTO,
+  toInstructorCourseDTO,
+};

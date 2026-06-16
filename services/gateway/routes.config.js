@@ -31,6 +31,15 @@ const ROUTES_CONFIG = {
     ],
   },
 
+  categories: {
+    prefix: '/api/v1/categories',
+    target: process.env.COURSE_SERVICE_URL || 'http://course:3003',
+    pathRewrite: { '^/api/v1/categories': '/categories' },
+    public: [
+      { method: 'GET', match: 'prefix', path: '/' },
+    ],
+  },
+
   users: {
     prefix: '/api/v1/users',
     target: process.env.USER_SERVICE_URL || 'http://localhost:3002',
