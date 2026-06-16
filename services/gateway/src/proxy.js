@@ -23,6 +23,11 @@ const services = {
     pathRewrite: { '^/api/v1/courses': '' },
     changeOrigin: true,
   },
+  categories: {
+    target: process.env.COURSE_SERVICE_URL || 'http://course:3003',
+    pathRewrite: { '^/api/v1/categories': '/categories' },
+    changeOrigin: true,
+  },
   enrollments: {
     target: process.env.ENROLLMENT_SERVICE_URL || 'http://enrollment:3004',
     pathRewrite: { '^/api/v1/enrollments': '' },
@@ -93,10 +98,10 @@ const onError = (err, req, res, target) => {
   }
 };
 
-const createProxy = (target, prefix) => {
+const createProxy = (target, prefix, pathRewrite) => {
   return createProxyMiddleware({
     target,
-    pathRewrite: { [`^${prefix}`]: '' },
+    pathRewrite: pathRewrite || { [`^${prefix}`]: '' },
     changeOrigin: true,
     on: {
       proxyReq: onProxyReq,
@@ -114,7 +119,7 @@ const setupProxy = app => {
     const service = ROUTES_CONFIG[key];
 
     if (service.target) {
-      app.use(service.prefix, createProxy(service.target, service.prefix));
+      app.use(service.prefix, createProxy(service.target, service.prefix, service.pathRewrite));
     }
   }
 
@@ -126,6 +131,7 @@ const serviceUrls = {
   auth: services.auth.target,
   user: services.users.target,
   course: services.courses.target,
+  categories: services.categories.target,
   enrollment: services.enrollments.target,
   quiz: services.quizzes.target,
   payment: services.payments.target,

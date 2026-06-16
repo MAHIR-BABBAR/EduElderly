@@ -11,7 +11,12 @@ const { serviceAuth } = require('./middleware/serviceAuth');
 const { extractUser, requireAdmin } = require('./middleware/extractUser');
 
 
-const { toPublicCourseDTO, toInstructorCourseDTO } = require('./dtos/CourseDTO');
+const {
+  toPublicCourseDTO,
+  toPublicModuleDTO,
+  toPublicTopicDTO,
+  toInstructorCourseDTO,
+} = require('./dtos/CourseDTO');
 const { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO } = require('./dtos/EnrollmentDTO');
 const { toPublicProfileDTO } = require('./dtos/UserDTO');
 
@@ -39,6 +44,8 @@ module.exports = {
   // DTOs
 
   toPublicCourseDTO,
+  toPublicModuleDTO,
+  toPublicTopicDTO,
   toInstructorCourseDTO,
   toPublicEnrollmentDTO,
   toEnrollmentWithCourseDTO,
