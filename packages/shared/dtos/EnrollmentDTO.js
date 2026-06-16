@@ -11,6 +11,7 @@ const toPublicEnrollmentDTO = (enrollmentDoc) => {
     status: enrollment.status,
     progressPercent: enrollment.progressPercent || 0,
     completedModules: enrollment.completedModules || [],
+    completedTopics: enrollment.completedTopics || [],
     currentModuleId: enrollment.currentModuleId,
     currentLessonId: enrollment.currentLessonId,
     enrolledAt: enrollment.enrolledAt,

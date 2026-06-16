@@ -153,12 +153,19 @@ Starts MongoDB, Redis, backend services on the internal network, gateway on **80
 
 ### 5. Run services locally (without Docker)
 
-Ensure MongoDB and Redis are running, then:
+Ensure MongoDB and Redis are running. Copy `.env` files and use **localhost** URLs in `services/gateway/.env` (see `services/gateway/.env.example`). `JWT_ACCESS_SECRET` must match auth.
+
+Start core services (separate terminals):
 
 ```bash
-cd services/gateway && npm run dev
 cd services/auth && npm run dev
+cd services/user && npm run dev
+cd services/course && npm run dev
+cd services/enrollment && npm run dev
+cd services/gateway && npm run dev
 ```
+
+Gateway loads `dotenv` before proxy setup so `COURSE_SERVICE_URL` / `ENROLLMENT_SERVICE_URL` apply correctly.
 
 ### 6. Health checks
 
@@ -166,6 +173,7 @@ cd services/auth && npm run dev
 curl http://localhost:8080/health
 curl http://localhost:8080/health/auth
 curl http://localhost:8080/health/course
+curl http://localhost:8080/health/enrollment
 ```
 
 Expected response shape:
@@ -189,6 +197,8 @@ Expected response shape:
 | `INTERNAL_SERVICE_KEY` | — | Shared inter-service key |
 | `AUTH_SERVICE_URL` | `http://auth:3001` | Auth service URL |
 | `USER_SERVICE_URL` | `http://user:3002` | User service URL |
+| `COURSE_SERVICE_URL` | `http://course:3003` | Course service URL |
+| `ENROLLMENT_SERVICE_URL` | `http://enrollment:3004` | Enrollment service URL |
 | `NOTIFICATION_SERVICE_URL` | `http://notification:3007` | Notification service URL |
 | `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS origins |
 | `RATE_LIMIT_WINDOW_MS` | `60000` | Rate limit window |
@@ -217,6 +227,16 @@ See `services/gateway/.env.example` for all downstream service URLs.
 | `BREVO_SENDER_NAME` | Display name (default: EduElderly) |
 | `INTERNAL_SERVICE_KEY` | Protects `/internal/send` |
 
+### Enrollment (`services/enrollment/.env`)
+
+| Variable | Description |
+|----------|-------------|
+| `MONGO_URI` | Enrollment database |
+| `COURSE_SERVICE_URL` | Course stats + internal topic content |
+| `USER_SERVICE_URL` | XP awards on progress |
+| `PAYMENT_SERVICE_URL` | Paid enroll checkout (stub until Phase 5) |
+| `INTERNAL_SERVICE_KEY` | Must match gateway |
+
 ### All backend services
 
 | Variable | Description |
@@ -232,19 +252,44 @@ See `services/gateway/.env.example` for all downstream service URLs.
 | `/api/v1/auth/*` | auth | Public routes listed in `routes.config.js`; others require JWT |
 | `/api/v1/users/*` | user | JWT required |
 | `/api/v1/courses/*` | course | JWT required (public GET catalog) |
-| `/api/v1/enrollments/*` | enrollment | JWT required |
+| `/api/v1/enrollments/*` | enrollment | JWT required (enroll, progress, content gate) |
 | `/api/v1/quizzes/*` | quiz | JWT required |
 | `/api/v1/payments/*` | payment | JWT required |
 | `/api/v1/notifications/*` | notification | JWT required |
 | `/api/v1/admin/*` | admin | JWT required (admin role) |
 | `/api/v1/certificates/*` | certificate | JWT required |
 
+## Enrollment flow (Phase 3)
+
+Learners enroll through the enrollment service; topic `contentUrl` is **not** exposed on public course APIs.
+
+```
+Client → Gateway /api/v1/enrollments → Enrollment
+              │                              │
+              │                              ├─ GET course stats (course :3003)
+              │                              ├─ POST checkout (payment :3006) — paid only
+              │                              ├─ Award XP (user :3002) — on progress
+              │                              └─ GET topic content (course internal /internal/topics/:id)
+```
+
+| Action | Endpoint | Notes |
+|--------|----------|-------|
+| Enroll (free) | `POST /api/v1/enrollments` | Body: `{ "courseId" }` → `201` |
+| Enroll (paid) | `POST /api/v1/enrollments` | → `202` + `{ requiresPayment, checkout }` (payment service stub) |
+| List enrollments | `GET /api/v1/enrollments` | Current user |
+| Resume learning | `GET /api/v1/enrollments/:id/resume` | Next topic + position |
+| Mark progress | `PATCH /api/v1/enrollments/:id/progress` | Body: `{ "topicId" }` |
+| Content gate | `GET /api/v1/enrollments/:id/topics/:topicId/content` | Returns `contentUrl` for enrolled learners only |
+| Drop | `DELETE /api/v1/enrollments/:id` | Soft drop |
+
+See `services/enrollment/README.md` for internal routes (`/internal/enroll` after payment).
+
 ## Shared package (`@eduelderly/shared`)
 
-- **Constants**: roles, content types, difficulty, transaction types
+- **Constants**: roles, content types, difficulty, transaction types, `enrollmentStatus`, `xpRewards`
 - **Errors**: `AppError`, `ERROR_CODES`
 - **Middleware**: `globalErrorHandler`, `catchAsync`, `serviceAuth`
-- **DTOs**: public user/course/enrollment shapes
+- **DTOs**: public user/course/enrollment shapes (`contentUrl` stripped from public course topics)
 
 ```javascript
 const { AppError, ERROR_CODES, globalErrorHandler, catchAsync } = require('@eduelderly/shared');
@@ -252,19 +297,26 @@ const { AppError, ERROR_CODES, globalErrorHandler, catchAsync } = require('@edue
 
 ## Testing
 
-```bash
-npm test
-```
-
-Per-service:
+Implemented services have Jest + Supertest suites. Run per service (MongoDB required for auth, user, course, enrollment):
 
 ```bash
-cd services/auth && npm test
-cd services/gateway && npm test
-cd services/notification && npm test
+cd services/auth && npm test          # 22 tests
+cd services/user && npm test          # 22 tests
+cd services/course && npm test        # 12 tests
+cd services/enrollment && npm test    # 12 tests
+cd services/gateway && npm test       # 4 tests
+cd services/notification && npm test  # 2 tests
 ```
 
-**Windows note:** auth tests use a real MongoDB URI (`TEST_MONGO_URI`) because MongoMemoryServer can fail with `spawn EFTYPE`. Example:
+Enrollment and course tests default to `mongodb://127.0.0.1:27017/eduelderly-*-test`. Start Mongo first:
+
+```bash
+docker compose up -d mongo
+```
+
+Root `npm test` runs all workspaces; stub services (admin, quiz, payment, certificate, shared) have no tests yet and exit non-zero — use the per-service commands above for CI-style checks on implemented code.
+
+**Windows note:** auth/user tests use a real MongoDB URI (`TEST_MONGO_URI`) because MongoMemoryServer can fail with `spawn EFTYPE`. Example:
 
 ```powershell
 $env:TEST_MONGO_URI="mongodb://127.0.0.1:27017/eduelderly-auth-test"
@@ -286,8 +338,8 @@ cd services/auth; npm test
 |-------|-------|--------|
 | **0** | Monorepo, Docker, shared, gateway | Done |
 | **1** | Auth — register, OTP, login, JWT, password reset, email via Brevo | Done |
-| **2** | User + course services | Next |
-| **3** | Enrollment + XP | Planned |
+| **2** | User + course services | Done |
+| **3** | Enrollment + XP, content gate, paid-checkout delegate | Done |
 | **4** | Quiz service | Planned |
 | **5** | Payment service | Planned |
 | **6** | Notification (auth emails) + certificate | In progress |

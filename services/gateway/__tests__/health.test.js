@@ -56,12 +56,19 @@ describe('Gateway Health Endpoints', () => {
         'certificate',
       ];
 
-      for (const service of validServices) {
-        const res = await request(app).get(`/health/${service}`);
-        // Services are not running in test, so expect 503 (not 404)
-        expect(res.status).toBe(503);
-        expect(res.body).toHaveProperty('service', service);
-        expect(res.body).toHaveProperty('status', 'unhealthy');
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503 });
+
+      try {
+        for (const service of validServices) {
+          const res = await request(app).get(`/health/${service}`);
+          // Services are not running in test, so expect 503 (not 404)
+          expect(res.status).toBe(503);
+          expect(res.body).toHaveProperty('service', service);
+          expect(res.body).toHaveProperty('status', 'unhealthy');
+        }
+      } finally {
+        global.fetch = originalFetch;
       }
     });
   });
