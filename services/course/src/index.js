@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
 const categoryRoutes = require('./routes/categoryRoutes');
+const internalRoutes = require('./routes/internalRoutes');
 const moduleRoutes = require('./routes/moduleRoutes');
 const topicRoutes = require('./routes/topicRoutes');
 const courseRoutes = require('./routes/courseRoutes');
@@ -15,6 +16,7 @@ const createApp = () => {
   const app = express();
 
   app.use(express.json({ limit: '1mb' }));
+  // Note: No cors middleware. Let the API gateway handle CORS for consistency.
 
   app.get('/health', (_req, res) => {
     const dbReady = mongoose.connection.readyState === 1;
@@ -40,6 +42,7 @@ const createApp = () => {
     next();
   });
 
+  app.use('/internal', internalRoutes);
   app.use('/categories', categoryRoutes);
   app.use('/', moduleRoutes);
   app.use('/', topicRoutes);
@@ -72,6 +75,12 @@ const bootstrap = async () => {
     mongoose.connection.on('disconnected', () => {
       console.warn(`[${SERVICE_NAME}] MongoDB disconnected – requests will receive 503`);
     });
+    mongoose.connection.on('error', (err) => {
+      console.error(`[${SERVICE_NAME}] MongoDB connection error:`, err.message);
+    });
+    mongoose.connection.on('reconnected', () => {
+      console.log(`[${SERVICE_NAME}] MongoDB reconnected – service restored`);
+    });
 
     const app = createApp();
     const PORT = process.env.PORT || 3003;
@@ -83,10 +92,16 @@ const bootstrap = async () => {
     const shutdown = async () => {
       console.log(`[${SERVICE_NAME}] Shutting down gracefully...`);
       server.close(async () => {
+        console.log(`[${SERVICE_NAME}] Closed out remaining connections`);
         await mongoose.disconnect();
+        console.log(`[${SERVICE_NAME}] MongoDB disconnected`);
         process.exit(0);
       });
-      setTimeout(() => process.exit(1), 10000);
+
+      setTimeout(() => {
+        console.error(`[${SERVICE_NAME}] Could not close connections in time, forcefully shutting down`);
+        process.exit(1);
+      }, 10000);
     };
 
     process.on('SIGTERM', shutdown);
@@ -101,4 +116,4 @@ if (require.main === module) {
   bootstrap();
 }
 
-module.exports = { createApp, bootstrap };
+module.exports = { createApp };

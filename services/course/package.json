@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest --runInBand --detectOpenHandles",
+    "seed": "node scripts/seed-courses.js",
+    "seed:reset": "node scripts/seed-courses.js --reset"
   },
   "dependencies": {
     "express": "^5.2.1",

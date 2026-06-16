@@ -4,7 +4,7 @@ const {
   createTopic,
   updateTopic,
   deleteTopic,
-} = require('../controllers/topicController');
+} = require('../controller/topicController');
 const {
   createTopicRules,
   updateTopicRules,

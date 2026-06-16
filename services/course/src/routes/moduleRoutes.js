@@ -5,7 +5,7 @@ const {
   createModule,
   updateModule,
   deleteModule,
-} = require('../controllers/moduleController');
+} = require('../controller/moduleController');
 const {
   createModuleRules,
   updateModuleRules,
