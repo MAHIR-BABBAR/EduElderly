@@ -69,7 +69,7 @@ Tests use `mongodb://127.0.0.1:27017/eduelderly-course-test` by default.
 
 ## Content protection roadmap
 
-**Today (MVP):** topic `contentUrl` values are public links (MedlinePlus, OpenLearn, etc.). Anyone with the URL can open them directly. The catalog only shows published courses; draft URLs stay in admin responses.
+**Today:** Public `GET /:courseId` returns topic metadata **without** `contentUrl`. Enrolled learners fetch URLs via `GET /api/v1/enrollments/:id/topics/:topicId/content`.
 
 **Phase 2 — Enrollment gate (recommended next step):**
 

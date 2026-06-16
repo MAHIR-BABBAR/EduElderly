@@ -8,9 +8,21 @@ const toPublicTopicDTO = (topicDoc) => {
     topicId: topic.topicId,
     title: topic.title,
     contentType: topic.contentType,
-    contentUrl: topic.contentUrl || null,
     durationMinutes: topic.durationMinutes ?? 0,
     order: topic.order,
+  };
+};
+
+/**
+ * Full topic shape for admin/instructor and internal service-to-service use.
+ */
+const toInstructorTopicDTO = (topicDoc) => {
+  const topic = topicDoc.toObject ? topicDoc.toObject() : { ...topicDoc };
+  return {
+    ...toPublicTopicDTO(topic),
+    moduleId: topic.moduleId,
+    courseId: topic.courseId,
+    contentUrl: topic.contentUrl || null,
   };
 };
 
@@ -80,5 +92,6 @@ module.exports = {
   toPublicCourseDTO,
   toPublicModuleDTO,
   toPublicTopicDTO,
+  toInstructorTopicDTO,
   toInstructorCourseDTO,
 };

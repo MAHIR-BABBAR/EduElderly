@@ -24,7 +24,7 @@ const ROUTES_CONFIG = {
 
   courses: {
     prefix: '/api/v1/courses',
-    target: process.env.COURSE_SERVICE_URL || 'http://course:3003',
+    target: process.env.COURSE_SERVICE_URL || 'http://localhost:3003',
     public: [
       { method: 'GET', match: 'exact', path: '' },
       { method: 'GET', match: 'regex', pattern: /^\/[\w-]+$/ },
@@ -33,7 +33,7 @@ const ROUTES_CONFIG = {
 
   categories: {
     prefix: '/api/v1/categories',
-    target: process.env.COURSE_SERVICE_URL || 'http://course:3003',
+    target: process.env.COURSE_SERVICE_URL || 'http://localhost:3003',
     pathRewrite: { '^/api/v1/categories': '/categories' },
     public: [
       { method: 'GET', match: 'prefix', path: '/' },
@@ -43,6 +43,12 @@ const ROUTES_CONFIG = {
   users: {
     prefix: '/api/v1/users',
     target: process.env.USER_SERVICE_URL || 'http://localhost:3002',
+    public: [],
+  },
+
+  enrollments: {
+    prefix: '/api/v1/enrollments',
+    target: process.env.ENROLLMENT_SERVICE_URL || 'http://localhost:3004',
     public: [],
   },
 };

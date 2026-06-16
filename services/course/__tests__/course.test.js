@@ -113,7 +113,8 @@ describe('Course Service', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.modules).toHaveLength(1);
-      expect(res.body.data.modules[0].topics[0].contentUrl).toBe('https://medlineplus.gov/example');
+      expect(res.body.data.modules[0].topics[0].contentUrl).toBeUndefined();
+      expect(res.body.data.modules[0].topics[0].title).toBe('Lesson 1');
       expect(res.body.data.totalTopics).toBe(1);
       expect(res.body.data.moduleIds).toBeUndefined();
     });
@@ -228,6 +229,45 @@ describe('Course Service', () => {
 
     it('should reject missing service key', async () => {
       const res = await request(app).get('/internal/courses/fake-id/stats');
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('GET /internal/topics/:topicId', () => {
+    it('should return topic with contentUrl for service key', async () => {
+      const category = await createCategory();
+      const course = await Course.create({
+        ...createCoursePayload(category.categoryId),
+        slug: 'internal-topic',
+        isPublished: true,
+      });
+      const mod = await Module.create({
+        courseId: course.courseId,
+        title: 'M1',
+        order: 0,
+        topicIds: [],
+      });
+      const topic = await Topic.create({
+        courseId: course.courseId,
+        moduleId: mod.moduleId,
+        title: 'Gated lesson',
+        contentType: 'video',
+        contentUrl: 'https://example.com/video',
+        order: 0,
+      });
+
+      const res = await request(app)
+        .get(`/internal/topics/${topic.topicId}`)
+        .set(serviceHeaders);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.topicId).toBe(topic.topicId);
+      expect(res.body.data.contentUrl).toBe('https://example.com/video');
+      expect(res.body.data.courseId).toBe(course.courseId);
+    });
+
+    it('should reject missing service key', async () => {
+      const res = await request(app).get('/internal/topics/fake-topic-id');
       expect(res.status).toBe(401);
     });
   });
