@@ -2,12 +2,14 @@ const express = require('express');
 const { extractUser, requireAdmin } = require('@eduelderly/shared');
 const {
   listCourses,
+  listAdminCourses,
   getCourse,
+  getAdminCourse,
   createCourse,
   updateCourse,
   publishCourse,
   deleteCourse,
-} = require('../controllers/courseController');
+} = require('../controller/courseController');
 const {
   paginationRules,
   createCourseRules,
@@ -18,6 +20,8 @@ const {
 
 const router = express.Router();
 
+router.get('/admin/courses', extractUser, requireAdmin, paginationRules, listAdminCourses);
+router.get('/admin/courses/:courseId', extractUser, requireAdmin, courseIdRules, getAdminCourse);
 router.get('/', paginationRules, listCourses);
 router.post('/', extractUser, requireAdmin, createCourseRules, createCourse);
 router.get('/:courseId', courseIdRules, getCourse);

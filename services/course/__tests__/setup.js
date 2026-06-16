@@ -4,6 +4,7 @@ const TEST_DB_URI =
   process.env.TEST_MONGO_URI || 'mongodb://127.0.0.1:27017/eduelderly-course-test';
 
 process.env.NODE_ENV = 'test';
+process.env.INTERNAL_SERVICE_KEY = 'test_internal_key';
 
 jest.mock('uuid', () => ({
   v7: jest.fn(() => `mocked-uuid-${Math.random().toString(36).substring(7)}`),

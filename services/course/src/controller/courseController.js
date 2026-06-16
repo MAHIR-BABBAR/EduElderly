@@ -1,21 +1,62 @@
-const { catchAsync, toPublicCourseDTO, toInstructorCourseDTO } = require('@eduelderly/shared');
+const {
+  catchAsync,
+  toPublicCourseDTO,
+  toPublicModuleDTO,
+  toInstructorCourseDTO,
+} = require('@eduelderly/shared');
 const courseService = require('../services/course.service');
+
+const mapPublicCourseDetail = ({ course, modules, totalTopics }) => {
+  const publicModules = modules.map((mod) => toPublicModuleDTO(mod, mod.topics || []));
+  return {
+    ...toPublicCourseDTO(
+      { ...course.toObject(), moduleCount: course.moduleIds.length },
+      { totalTopics },
+    ),
+    modules: publicModules,
+  };
+};
 
 const listCourses = catchAsync(async (req, res) => {
   const { courses, pagination } = await courseService.listPublishedCourses(req.query);
   res.status(200).json({
     success: true,
     data: {
-      courses: courses.map((c) => toPublicCourseDTO({ ...c.toObject(), moduleCount: c.moduleIds.length })),
+      courses: courses.map((c) => toPublicCourseDTO(c, { totalTopics: c.totalTopics })),
+      pagination,
+    },
+  });
+});
+
+const listAdminCourses = catchAsync(async (req, res) => {
+  const { courses, pagination } = await courseService.listAdminCourses(req.query);
+  res.status(200).json({
+    success: true,
+    data: {
+      courses: courses.map((c) => toInstructorCourseDTO(c)),
       pagination,
     },
   });
 });
 
 const getCourse = catchAsync(async (req, res) => {
-  const { course, modules } = await courseService.getCourseDetail(req.params.courseId, { publishedOnly: true });
+  const { course, modules, totalTopics } = await courseService.getCourseDetail(
+    req.params.courseId,
+    { publishedOnly: true },
+  );
+  res.status(200).json({
+    success: true,
+    data: mapPublicCourseDetail({ course, modules, totalTopics }),
+  });
+});
+
+const getAdminCourse = catchAsync(async (req, res) => {
+  const { course, modules, totalTopics } = await courseService.getCourseDetail(
+    req.params.courseId,
+    { publishedOnly: false },
+  );
   const dto = toInstructorCourseDTO(
-    { ...course.toObject(), moduleCount: course.moduleIds.length },
+    { ...course.toObject(), moduleCount: course.moduleIds.length, totalTopics },
     { modules },
   );
   res.status(200).json({ success: true, data: dto });
@@ -52,7 +93,9 @@ const deleteCourse = catchAsync(async (req, res) => {
 
 module.exports = {
   listCourses,
+  listAdminCourses,
   getCourse,
+  getAdminCourse,
   createCourse,
   updateCourse,
   publishCourse,
