@@ -30,3 +30,6 @@ Thumbs.db
 .agents/
 .cursor/
 skills-lock.json
+
+# Local manual test harness (not committed)
+sample-test-site/

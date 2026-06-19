@@ -1,14 +1,13 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const dotenv = require('dotenv');
 const { logger, requestLogger } = require('./logger');
 const { setupProxy } = require('./proxy');
 const { corsOptions } = require('./cors');
 const { globalLimiter, authLimiter } = require('./rateLimiter');
 const { AppError,ERROR_CODES,globalErrorHandler } = require('@eduelderly/shared');
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
