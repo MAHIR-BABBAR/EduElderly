@@ -6,6 +6,41 @@ const paymentClient = require('../clients/paymentClient');
 
 const ACTIVE_STATUSES = [ENROLLMENT_STATUS.ACTIVE, ENROLLMENT_STATUS.COMPLETED];
 
+const courseSummaryFromStats = (stats) => ({
+  courseId: stats.courseId,
+  title: stats.title,
+  thumbnailUrl: stats.thumbnailUrl ?? null,
+  instructorName: stats.instructorName ?? null,
+});
+
+const computeResumeFields = (enrollment, stats) => {
+  let nextTopicId = null;
+
+  if (enrollment.status === ENROLLMENT_STATUS.ACTIVE) {
+    const completedSet = new Set(enrollment.completedTopics);
+    for (const module of stats.modules || []) {
+      for (const topicId of module.topicIds) {
+        if (!completedSet.has(topicId)) {
+          nextTopicId = topicId;
+          break;
+        }
+      }
+      if (nextTopicId) break;
+    }
+  }
+
+  return {
+    nextTopicId,
+    currentModuleId: enrollment.currentModuleId ?? null,
+    currentLessonId: enrollment.currentLessonId ?? null,
+  };
+};
+
+const fetchCourseSummary = async (courseId) => {
+  const stats = await courseClient.getCourseStats(courseId);
+  return courseSummaryFromStats(stats);
+};
+
 const findActiveEnrollment = async (userId, courseId) =>
   Enrollment.findOne({ userId, courseId, status: { $in: ACTIVE_STATUSES } });
 
@@ -94,7 +129,42 @@ const listEnrollments = async (userId, { page = 1, limit = 20 } = {}) => {
   };
 };
 
+const listEnrollmentsWithCourse = async (userId, query = {}) => {
+  const { enrollments, pagination } = await listEnrollments(userId, query);
+  const uniqueCourseIds = [...new Set(enrollments.map((e) => e.courseId))];
+
+  const summaryEntries = await Promise.all(
+    uniqueCourseIds.map(async (courseId) => {
+      try {
+        const summary = await fetchCourseSummary(courseId);
+        return [courseId, summary];
+      } catch {
+        return [courseId, null];
+      }
+    }),
+  );
+
+  const summaryByCourseId = Object.fromEntries(summaryEntries);
+  const items = enrollments.map((enrollment) => ({
+    enrollment,
+    courseSummary: summaryByCourseId[enrollment.courseId] ?? null,
+  }));
+
+  return { items, pagination };
+};
+
 const getEnrollment = async (enrollmentId, userId) => getEnrollmentForUser(enrollmentId, userId);
+
+const getEnrollmentDetail = async (enrollmentId, userId) => {
+  const enrollment = await getEnrollmentForUser(enrollmentId, userId);
+  const stats = await courseClient.getCourseStats(enrollment.courseId);
+
+  return {
+    enrollment,
+    courseSummary: courseSummaryFromStats(stats),
+    resume: computeResumeFields(enrollment, stats),
+  };
+};
 
 const getEnrollmentStatus = async (userId, courseId) => {
   const enrollment = await findActiveEnrollment(userId, courseId);
@@ -118,24 +188,11 @@ const getResume = async (enrollmentId, userId) => {
   }
 
   const stats = await courseClient.getCourseStats(enrollment.courseId);
-  const completedSet = new Set(enrollment.completedTopics);
-  let nextTopicId = null;
-
-  for (const module of stats.modules || []) {
-    for (const topicId of module.topicIds) {
-      if (!completedSet.has(topicId)) {
-        nextTopicId = topicId;
-        break;
-      }
-    }
-    if (nextTopicId) break;
-  }
+  const resume = computeResumeFields(enrollment, stats);
 
   return {
     enrollment,
-    nextTopicId,
-    currentModuleId: enrollment.currentModuleId,
-    currentLessonId: enrollment.currentLessonId,
+    ...resume,
   };
 };
 
@@ -143,7 +200,9 @@ module.exports = {
   enroll,
   enrollAfterPayment,
   listEnrollments,
+  listEnrollmentsWithCourse,
   getEnrollment,
+  getEnrollmentDetail,
   getEnrollmentStatus,
   dropEnrollment,
   getResume,

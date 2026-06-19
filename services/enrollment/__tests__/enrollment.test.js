@@ -25,6 +25,8 @@ const serviceHeaders = {
 const freeCourse = {
   courseId: 'course-free-1',
   title: 'Free Wellness',
+  thumbnailUrl: 'https://cdn.example/thumb.jpg',
+  instructorName: 'Dr. Smith',
   isPublished: true,
   isDeleted: false,
   isPaid: false,
@@ -140,9 +142,46 @@ describe('Enrollment Service', () => {
       expect(res.body.data.enrollments).toHaveLength(1);
       expect(res.body.data.enrollments[0].courseId).toBe('c1');
     });
+
+    it('should include course title and thumbnail from course service', async () => {
+      await Enrollment.create({
+        userId: 'learner-1',
+        courseId: freeCourse.courseId,
+        status: 'active',
+      });
+
+      const res = await request(app).get('/').set(learnerHeaders);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.enrollments[0].course).toEqual({
+        courseId: freeCourse.courseId,
+        title: freeCourse.title,
+        thumbnailUrl: freeCourse.thumbnailUrl,
+        instructorName: freeCourse.instructorName,
+      });
+      expect(courseClient.getCourseStats).toHaveBeenCalledWith(freeCourse.courseId);
+    });
   });
 
   describe('GET /:enrollmentId', () => {
+    it('should return enrollment with course summary and resume fields', async () => {
+      const enrollment = await Enrollment.create({
+        userId: 'learner-1',
+        courseId: freeCourse.courseId,
+        status: 'active',
+      });
+
+      const res = await request(app)
+        .get(`/${enrollment.enrollmentId}`)
+        .set(learnerHeaders);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.course.title).toBe(freeCourse.title);
+      expect(res.body.data.nextTopicId).toBe('topic-1');
+      expect(res.body.data.currentModuleId).toBeNull();
+      expect(res.body.data.currentLessonId).toBeNull();
+    });
+
     it('should forbid access to another user enrollment', async () => {
       const enrollment = await Enrollment.create({
         userId: 'learner-2',

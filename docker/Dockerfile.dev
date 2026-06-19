@@ -1,0 +1,19 @@
+# Monorepo dev image — build with: docker compose build <service>
+# Requires build-arg SERVICE_DIR (e.g. enrollment, course, gateway)
+FROM node:20-alpine
+
+ARG SERVICE_DIR
+
+RUN npm install -g nodemon
+
+WORKDIR /app
+
+COPY packages/shared /deps/shared
+COPY services/${SERVICE_DIR}/package*.json ./
+
+RUN npm pkg set "dependencies.@eduelderly/shared=file:/deps/shared" \
+    && npm install --omit=dev
+
+COPY services/${SERVICE_DIR}/ .
+
+CMD ["nodemon", "src/index.js"]

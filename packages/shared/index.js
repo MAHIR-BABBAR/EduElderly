@@ -20,7 +20,7 @@ const {
   toInstructorTopicDTO,
   toInstructorCourseDTO,
 } = require('./dtos/CourseDTO');
-const { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO } = require('./dtos/EnrollmentDTO');
+const { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO, toEnrollmentDetailDTO } = require('./dtos/EnrollmentDTO');
 const { toPublicProfileDTO } = require('./dtos/UserDTO');
 
 module.exports = {
@@ -56,5 +56,6 @@ module.exports = {
   toInstructorCourseDTO,
   toPublicEnrollmentDTO,
   toEnrollmentWithCourseDTO,
+  toEnrollmentDetailDTO,
   toPublicProfileDTO,
 };
