@@ -25,22 +25,49 @@ const toPublicEnrollmentDTO = (enrollmentDoc) => {
 };
 
 /**
- * @param {Object} enrollmentDoc - Enrollment with course details
- * @returns {Object} Shape with course information included
+ * @param {Object} enrollmentDoc
+ * @param {Object|null} courseSummary - { courseId, title, thumbnailUrl, instructorName } from course service
  */
-const toEnrollmentWithCourseDTO = (enrollmentDoc) => {
+const toEnrollmentWithCourseDTO = (enrollmentDoc, courseSummary = null) => {
   const base = toPublicEnrollmentDTO(enrollmentDoc);
+  if (!courseSummary) {
+    return base;
+  }
   return {
     ...base,
-    course: enrollmentDoc.courseId && typeof enrollmentDoc.courseId === 'object'
-      ? {
-          courseId: enrollmentDoc.courseId._id?.toString() || enrollmentDoc.courseId.courseId,
-          title: enrollmentDoc.courseId.title,
-          thumbnailUrl: enrollmentDoc.courseId.thumbnailUrl || null,
-          instructorName: enrollmentDoc.courseId.instructorName,
-        }
-      : null,
+    course: {
+      courseId: courseSummary.courseId,
+      title: courseSummary.title,
+      thumbnailUrl: courseSummary.thumbnailUrl ?? null,
+      instructorName: courseSummary.instructorName ?? null,
+    },
   };
 };
 
-module.exports = { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO };
+/**
+ * Enrollment detail with optional course summary and resume fields (learn page / single fetch).
+ * @param {Object} enrollmentDoc
+ * @param {{ courseSummary?: Object|null, resume?: Object|null }} [options]
+ */
+const toEnrollmentDetailDTO = (enrollmentDoc, { courseSummary = null, resume = null } = {}) => {
+  const withCourse = courseSummary
+    ? toEnrollmentWithCourseDTO(enrollmentDoc, courseSummary)
+    : toPublicEnrollmentDTO(enrollmentDoc);
+
+  if (!resume) {
+    return withCourse;
+  }
+
+  return {
+    ...withCourse,
+    nextTopicId: resume.nextTopicId ?? null,
+    currentModuleId: resume.currentModuleId ?? null,
+    currentLessonId: resume.currentLessonId ?? null,
+  };
+};
+
+module.exports = {
+  toPublicEnrollmentDTO,
+  toEnrollmentWithCourseDTO,
+  toEnrollmentDetailDTO,
+};

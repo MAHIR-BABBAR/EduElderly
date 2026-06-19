@@ -129,6 +129,8 @@ const getCourseStats = async (courseId, { publishedOnly = false } = {}) => {
   return {
     courseId: course.courseId,
     title: course.title,
+    thumbnailUrl: course.thumbnailUrl || null,
+    instructorName: course.instructorName,
     isPublished: course.isPublished,
     isDeleted: course.isDeleted,
     isPaid: course.isPaid,

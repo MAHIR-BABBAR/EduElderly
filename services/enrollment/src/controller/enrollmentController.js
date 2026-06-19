@@ -1,6 +1,8 @@
 const {
   catchAsync,
   toPublicEnrollmentDTO,
+  toEnrollmentWithCourseDTO,
+  toEnrollmentDetailDTO,
 } = require('@eduelderly/shared');
 const enrollmentService = require('../services/enrollment.service');
 const progressService = require('../services/progress.service');
@@ -25,27 +27,29 @@ const enroll = catchAsync(async (req, res) => {
 });
 
 const listEnrollments = catchAsync(async (req, res) => {
-  const { enrollments, pagination } = await enrollmentService.listEnrollments(
+  const { items, pagination } = await enrollmentService.listEnrollmentsWithCourse(
     req.user.userId,
     req.query,
   );
   res.status(200).json({
     success: true,
     data: {
-      enrollments: enrollments.map(toPublicEnrollmentDTO),
+      enrollments: items.map(({ enrollment, courseSummary }) =>
+        toEnrollmentWithCourseDTO(enrollment, courseSummary),
+      ),
       pagination,
     },
   });
 });
 
 const getEnrollment = catchAsync(async (req, res) => {
-  const enrollment = await enrollmentService.getEnrollment(
+  const { enrollment, courseSummary, resume } = await enrollmentService.getEnrollmentDetail(
     req.params.enrollmentId,
     req.user.userId,
   );
   res.status(200).json({
     success: true,
-    data: toPublicEnrollmentDTO(enrollment),
+    data: toEnrollmentDetailDTO(enrollment, { courseSummary, resume }),
   });
 });
 
@@ -55,12 +59,9 @@ const getResume = catchAsync(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: {
-      ...toPublicEnrollmentDTO(enrollment),
-      nextTopicId,
-      currentModuleId,
-      currentLessonId,
-    },
+    data: toEnrollmentDetailDTO(enrollment, {
+      resume: { nextTopicId, currentModuleId, currentLessonId },
+    }),
   });
 });
 

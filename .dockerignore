@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+.git
+.gitignore
+**/.env
+**/.env.*
+sample-test-site
+**/coverage
+**/__tests__
+**/*.test.js
+**/*.spec.js
+.cursor
+.agents
+*.md
+!services/**/README.md
