@@ -120,9 +120,17 @@ const getCourseStats = async (courseId, { publishedOnly = false } = {}) => {
   const moduleIds = modules.map((m) => m.moduleId);
   const topics = await Topic.find({ moduleId: { $in: moduleIds } });
 
+  const topicsByModule = topics.reduce((acc, topic) => {
+    if (!acc[topic.moduleId]) acc[topic.moduleId] = [];
+    acc[topic.moduleId].push(topic.topicId);
+    return acc;
+  }, {});
+
   return {
     courseId: course.courseId,
     title: course.title,
+    thumbnailUrl: course.thumbnailUrl || null,
+    instructorName: course.instructorName,
     isPublished: course.isPublished,
     isDeleted: course.isDeleted,
     isPaid: course.isPaid,
@@ -130,6 +138,10 @@ const getCourseStats = async (courseId, { publishedOnly = false } = {}) => {
     moduleCount: modules.length,
     topicCount: topics.length,
     topicIds: topics.map((t) => t.topicId),
+    modules: modules.map((m) => ({
+      moduleId: m.moduleId,
+      topicIds: topicsByModule[m.moduleId] || [],
+    })),
   };
 };
 

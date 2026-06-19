@@ -2,25 +2,41 @@ services:
   mongo:
     image: mongo:7
     container_name: eduelderly-mongo
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - eduelderly-net
 
   redis:
     image: redis:7-alpine
     container_name: eduelderly-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     networks:
       - eduelderly-net
 
   gateway:
     build:
       context: .
-      dockerfile: ./services/gateway/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: gateway
     container_name: eduelderly-gateway
     ports:
       - "8080:8080"
@@ -38,7 +54,9 @@ services:
   auth:
     build:
       context: .
-      dockerfile: ./services/auth/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: auth
     container_name: eduelderly-auth
     volumes:
       - ./services/auth:/app
@@ -57,7 +75,9 @@ services:
   user:
     build:
       context: .
-      dockerfile: ./services/user/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: user
     container_name: eduelderly-user
     volumes:
       - ./services/user:/app
@@ -73,7 +93,9 @@ services:
   course:
     build:
       context: .
-      dockerfile: ./services/course/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: course
     container_name: eduelderly-course
     volumes:
       - ./services/course:/app
@@ -89,7 +111,9 @@ services:
   enrollment:
     build:
       context: .
-      dockerfile: ./services/enrollment/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: enrollment
     container_name: eduelderly-enrollment
     volumes:
       - ./services/enrollment:/app
@@ -105,7 +129,9 @@ services:
   quiz:
     build:
       context: .
-      dockerfile: ./services/quiz/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: quiz
     container_name: eduelderly-quiz
     volumes:
       - ./services/quiz:/app
@@ -121,7 +147,9 @@ services:
   payment:
     build:
       context: .
-      dockerfile: ./services/payment/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: payment
     container_name: eduelderly-payment
     volumes:
       - ./services/payment:/app
@@ -137,7 +165,9 @@ services:
   notification:
     build:
       context: .
-      dockerfile: ./services/notification/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: notification
     container_name: eduelderly-notification
     volumes:
       - ./services/notification:/app
@@ -153,7 +183,9 @@ services:
   admin:
     build:
       context: .
-      dockerfile: ./services/admin/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: admin
     container_name: eduelderly-admin
     volumes:
       - ./services/admin:/app
@@ -169,7 +201,9 @@ services:
   certificate:
     build:
       context: .
-      dockerfile: ./services/certificate/Dockerfile.dev
+      dockerfile: ./docker/Dockerfile.dev
+      args:
+        SERVICE_DIR: certificate
     container_name: eduelderly-certificate
     volumes:
       - ./services/certificate:/app
