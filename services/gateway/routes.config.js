@@ -51,6 +51,18 @@ const ROUTES_CONFIG = {
     target: process.env.ENROLLMENT_SERVICE_URL || 'http://localhost:3004',
     public: [],
   },
+
+  quizzes: {
+    prefix: '/api/v1/quizzes',
+    target: process.env.QUIZ_SERVICE_URL || 'http://localhost:3005',
+    public: [],
+  },
+
+  payments: {
+    prefix: '/api/v1/payments',
+    target: process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006',
+    public: [],
+  },
 };
 
 module.exports = { ROUTES_CONFIG };

@@ -25,6 +25,10 @@ const ERROR_CODES = Object.freeze({
   E_ALREADY_ENROLLED:     'E_ALREADY_ENROLLED',
   E_NOT_ENROLLED:         'E_NOT_ENROLLED',
 
+  // Quiz
+  E_QUIZ_NOT_FOUND:       'E_QUIZ_NOT_FOUND',
+  E_MAX_ATTEMPTS:         'E_MAX_ATTEMPTS',
+
   // Payment
   E_PAY_SIGNATURE:        'E_PAY_SIGNATURE',       // HMAC mismatch
   E_PAY_FAILED:           'E_PAY_FAILED',
