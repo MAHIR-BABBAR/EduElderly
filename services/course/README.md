@@ -26,6 +26,8 @@ curl http://localhost:3003/
 curl http://localhost:8080/api/v1/courses   # via gateway
 ```
 
+To reseed courses, quizzes, and the demo learner together: `npm run reseed` from the repo root.
+
 ## Tests
 
 ```bash

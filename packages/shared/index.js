@@ -22,6 +22,13 @@ const {
 } = require('./dtos/CourseDTO');
 const { toPublicEnrollmentDTO, toEnrollmentWithCourseDTO, toEnrollmentDetailDTO } = require('./dtos/EnrollmentDTO');
 const { toPublicProfileDTO } = require('./dtos/UserDTO');
+const {
+  toPublicQuestionDTO,
+  toPublicQuizDTO,
+  toAttemptResultDTO,
+  toAttemptSummaryDTO,
+} = require('./dtos/QuizDTO');
+const { toPublicTransactionDTO, toAdminTransactionDTO } = require('./dtos/TransactionDTO');
 
 module.exports = {
   // Constants
@@ -58,4 +65,10 @@ module.exports = {
   toEnrollmentWithCourseDTO,
   toEnrollmentDetailDTO,
   toPublicProfileDTO,
+  toPublicQuestionDTO,
+  toPublicQuizDTO,
+  toAttemptResultDTO,
+  toAttemptSummaryDTO,
+  toPublicTransactionDTO,
+  toAdminTransactionDTO,
 };
