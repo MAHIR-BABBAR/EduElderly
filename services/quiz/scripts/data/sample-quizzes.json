@@ -1,0 +1,492 @@
+{
+  "quizzes": [
+    {
+      "courseSlug": "healthy-living-older-adults",
+      "moduleOrder": 0,
+      "title": "Staying Active — Knowledge Check",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Why is regular physical activity especially important for older adults?",
+          "options": [
+            "It helps maintain strength, balance, and independence",
+            "It replaces the need for medical care",
+            "It is only useful for people under 65",
+            "It should be avoided if you have any health condition"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "Which is a safe starting point for many older adults?",
+          "options": [
+            "High-intensity sprinting",
+            "Short walks or gentle movement most days",
+            "Lifting maximum weight on day one",
+            "Skipping warm-up stretches"
+          ],
+          "correctIndex": 1,
+          "order": 1
+        },
+        {
+          "prompt": "Good nutrition for older adults generally includes:",
+          "options": [
+            "Skipping meals to save time",
+            "A variety of nutrient-rich foods and enough fluids",
+            "Only protein and no vegetables",
+            "Large sugary snacks instead of meals"
+          ],
+          "correctIndex": 1,
+          "order": 2
+        },
+        {
+          "prompt": "Before starting a new exercise program, you should:",
+          "options": [
+            "Never consult anyone",
+            "Talk with your health care provider if you have chronic conditions",
+            "Wait until you feel pain to begin",
+            "Copy a professional athlete's routine exactly"
+          ],
+          "correctIndex": 1,
+          "order": 3
+        },
+        {
+          "prompt": "Balance exercises can help reduce the risk of:",
+          "options": ["Falls", "Reading glasses", "Hair loss", "Seasonal allergies"],
+          "correctIndex": 0,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "courseSlug": "healthy-living-older-adults",
+      "moduleOrder": 1,
+      "title": "Common Conditions — Knowledge Check",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Osteoporosis is best described as:",
+          "options": [
+            "Weakened bones that are more likely to fracture",
+            "A type of skin rash",
+            "An eye infection",
+            "A form of diabetes only affecting children"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "To support bone health, older adults are often advised to get enough:",
+          "options": ["Calcium and vitamin D", "Caffeine only", "Salty snacks", "Soda instead of water"],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "Diabetes in older adults may require:",
+          "options": [
+            "Monitoring blood sugar and following a care plan",
+            "Ignoring symptoms until they disappear",
+            "Stopping all medication without advice",
+            "Avoiding all physical activity forever"
+          ],
+          "correctIndex": 0,
+          "order": 2
+        },
+        {
+          "prompt": "If you notice new or worsening symptoms, you should:",
+          "options": [
+            "Contact your health care provider",
+            "Wait several years to mention it",
+            "Only search unreliable websites",
+            "Assume it is always normal aging with no follow-up"
+          ],
+          "correctIndex": 0,
+          "order": 3
+        },
+        {
+          "prompt": "Managing chronic conditions often works best when you:",
+          "options": [
+            "Follow your care plan and keep regular appointments",
+            "Hide symptoms from your doctor",
+            "Change medicines on your own weekly",
+            "Stop treatments once you feel slightly better"
+          ],
+          "correctIndex": 0,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "courseSlug": "healthy-living-older-adults",
+      "moduleOrder": 2,
+      "title": "Mental Wellbeing — Knowledge Check",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Mental health in later life is important because:",
+          "options": [
+            "Emotional wellbeing affects daily life and overall health",
+            "Only physical health matters after 65",
+            "Feeling low is always untreatable",
+            "Social connection never helps"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "Signs that may warrant talking to a professional include:",
+          "options": [
+            "Persistent sadness, anxiety, or loss of interest in activities",
+            "Enjoying a hobby once a week",
+            "Sleeping well most nights",
+            "Having friends visit occasionally"
+          ],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "Staying socially connected can help by:",
+          "options": [
+            "Reducing isolation and supporting mood",
+            "Replacing all medical treatment",
+            "Guaranteeing you never feel stress",
+            "Eliminating the need for sleep"
+          ],
+          "correctIndex": 0,
+          "order": 2
+        },
+        {
+          "prompt": "If you are worried about your mental health, a good first step is:",
+          "options": [
+            "Reach out to a trusted person or health care provider",
+            "Keep it completely secret forever",
+            "Assume nothing can help",
+            "Stop all daily routines immediately"
+          ],
+          "correctIndex": 0,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "courseSlug": "nutrition-healthy-aging",
+      "moduleOrder": 0,
+      "title": "Nutrition Foundations — Quiz",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "As we age, nutrition helps by:",
+          "options": [
+            "Supporting energy, immunity, and recovery",
+            "Making exercise unnecessary",
+            "Replacing all medications",
+            "Eliminating the need for fluids"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "A balanced plate for older adults often includes:",
+          "options": [
+            "Vegetables, fruits, whole grains, and lean protein",
+            "Only processed snacks",
+            "Sugary drinks at every meal",
+            "Skipping breakfast every day"
+          ],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "Wellness across the lifespan means:",
+          "options": [
+            "Healthy habits can benefit you at any age",
+            "Only young people should eat vegetables",
+            "Nutrition stops mattering after retirement",
+            "Supplements alone replace meals"
+          ],
+          "correctIndex": 0,
+          "order": 2
+        },
+        {
+          "prompt": "Dehydration in older adults can:",
+          "options": [
+            "Cause confusion, fatigue, or other health problems",
+            "Never cause symptoms",
+            "Be ignored safely",
+            "Only happen in summer heat"
+          ],
+          "correctIndex": 0,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "courseSlug": "nutrition-healthy-aging",
+      "moduleOrder": 1,
+      "title": "Nutrition in Later Life — Quiz",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Changes in taste or smell with age may lead to:",
+          "options": [
+            "Needing more flavor variety or smaller frequent meals",
+            "Eating nothing for weeks safely",
+            "Only drinking alcohol for calories",
+            "Avoiding protein entirely"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "Fiber in the diet helps with:",
+          "options": ["Digestive health", "Broken bones", "Hearing loss", "Vision prescriptions"],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "Protein is important for older adults because it supports:",
+          "options": ["Muscle maintenance and healing", "Hair color only", "Screen time", "Driving tests"],
+          "correctIndex": 0,
+          "order": 2
+        },
+        {
+          "prompt": "If chewing is difficult, helpful strategies include:",
+          "options": [
+            "Soft foods, smoothies, or dental evaluation",
+            "Skipping all meals",
+            "Only eating hard candy",
+            "Avoiding fluids with meals"
+          ],
+          "correctIndex": 0,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "courseSlug": "discover-digital-health",
+      "moduleOrder": 0,
+      "title": "Digital Health Basics — Quiz",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Digital health tools can help you:",
+          "options": [
+            "Track appointments, medications, or wellness goals",
+            "Replace emergency services entirely",
+            "Share passwords with strangers",
+            "Ignore your doctor's advice"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "A strong password should:",
+          "options": [
+            "Be unique and hard to guess",
+            "Be your birth date posted online",
+            "Be shared with family on social media",
+            "Be the word 'password'"
+          ],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "Phishing emails often try to:",
+          "options": [
+            "Trick you into revealing personal information",
+            "Give you free medical diagnoses",
+            "Improve your vision",
+            "Replace your physician"
+          ],
+          "correctIndex": 0,
+          "order": 2
+        },
+        {
+          "prompt": "Before using a new health app, you should:",
+          "options": [
+            "Check privacy settings and use trusted sources",
+            "Enter your bank PIN in any pop-up",
+            "Disable all security updates",
+            "Share login details with support callers"
+          ],
+          "correctIndex": 0,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "courseSlug": "finding-reliable-health-info",
+      "moduleOrder": 0,
+      "title": "Evaluating Health Information — Quiz",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Trustworthy health websites often:",
+          "options": [
+            "Cite sources and are run by recognized health organizations",
+            "Promise secret cures with no evidence",
+            "Ask for payment before showing any information",
+            "Use only anonymous testimonials"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "When reading medical research summaries, look for:",
+          "options": [
+            "Who conducted the study and how many people were included",
+            "Only dramatic headlines",
+            "Celebrity endorsements",
+            "Claims that one food cures all diseases"
+          ],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "Health literacy means:",
+          "options": [
+            "Finding, understanding, and using health information",
+            "Memorizing every medical textbook",
+            "Never asking questions at appointments",
+            "Believing everything on social media"
+          ],
+          "correctIndex": 0,
+          "order": 2
+        },
+        {
+          "prompt": "If online advice conflicts with your doctor's guidance:",
+          "options": [
+            "Discuss it with your health care provider",
+            "Stop all treatments immediately on your own",
+            "Assume the website is always right",
+            "Share passwords to get a second opinion online"
+          ],
+          "correctIndex": 0,
+          "order": 3
+        },
+        {
+          "prompt": "MedlinePlus and similar government health sites are useful because they:",
+          "options": [
+            "Provide evidence-based information for the public",
+            "Sell unapproved miracle supplements",
+            "Replace emergency care",
+            "Require sharing your social security number to read articles"
+          ],
+          "correctIndex": 0,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "courseSlug": "introducing-ageing",
+      "moduleOrder": 0,
+      "title": "Understanding Ageing — Quiz",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Ageing is best understood as:",
+          "options": [
+            "A lifelong process shaped by biology, society, and experience",
+            "Only a medical disease",
+            "Something that stops all learning",
+            "Identical for every person in every culture"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "Stereotypes about older people can:",
+          "options": [
+            "Lead to unfair assumptions and reduced opportunities",
+            "Always be accurate",
+            "Improve health outcomes automatically",
+            "Replace individual assessment"
+          ],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "Ageing in society involves:",
+          "options": [
+            "How communities support participation and dignity",
+            "Ignoring older voices in policy",
+            "Assuming retirement ends contribution",
+            "Removing access to education"
+          ],
+          "correctIndex": 0,
+          "order": 2
+        },
+        {
+          "prompt": "Lifelong learning in later life can:",
+          "options": [
+            "Support wellbeing and social connection",
+            "Never be enjoyable",
+            "Harm memory always",
+            "Only happen in formal universities"
+          ],
+          "correctIndex": 0,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "courseSlug": "premium-wellness-workshop",
+      "moduleOrder": 0,
+      "title": "Workshop Week 1 — Quiz",
+      "passThreshold": 70,
+      "maxAttempts": 3,
+      "isPublished": true,
+      "questions": [
+        {
+          "prompt": "Gentle exercise for beginners should:",
+          "options": [
+            "Start slowly and build consistency",
+            "Begin with maximum intensity",
+            "Skip warm-up every time",
+            "Ignore pain completely"
+          ],
+          "correctIndex": 0,
+          "order": 0
+        },
+        {
+          "prompt": "Building healthy habits works best when you:",
+          "options": [
+            "Set small realistic goals and track progress",
+            "Change everything overnight",
+            "Never rest or recover",
+            "Compare yourself only to athletes"
+          ],
+          "correctIndex": 0,
+          "order": 1
+        },
+        {
+          "prompt": "After this workshop module, a good next step is:",
+          "options": [
+            "Schedule regular movement you enjoy",
+            "Stop all activity for a month",
+            "Avoid drinking water during exercise",
+            "Skip medical check-ups forever"
+          ],
+          "correctIndex": 0,
+          "order": 2
+        }
+      ]
+    }
+  ]
+}

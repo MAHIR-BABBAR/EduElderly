@@ -46,6 +46,18 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/gateway/.env
+    environment:
+      AUTH_SERVICE_URL: http://auth:3001
+      USER_SERVICE_URL: http://user:3002
+      COURSE_SERVICE_URL: http://course:3003
+      ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      QUIZ_SERVICE_URL: http://quiz:3005
+      PAYMENT_SERVICE_URL: http://payment:3006
+      NOTIFICATION_SERVICE_URL: http://notification:3007
+      ADMIN_SERVICE_URL: http://admin:3008
+      CERTIFICATE_SERVICE_URL: http://certificate:3009
+      JWT_ACCESS_SECRET: dev_access_secret_key_change_in_production
+      INTERNAL_SERVICE_KEY: dev_internal_key_987654321
     depends_on:
       - mongo
     networks:
@@ -65,7 +77,13 @@ services:
     env_file:
       - ./services/auth/.env
     environment:
-      - REDIS_URL=redis://redis:6379
+      MONGO_URI: mongodb://mongo:27017/eduelderly-auth
+      REDIS_URL: redis://redis:6379
+      NOTIFICATION_SERVICE_URL: http://notification:3007
+      USER_SERVICE_URL: http://user:3002
+      JWT_ACCESS_SECRET: dev_access_secret_key_change_in_production
+      JWT_REFRESH_SECRET: dev_refresh_secret_key_change_in_production
+      INTERNAL_SERVICE_KEY: dev_internal_key_987654321
     depends_on:
       - mongo
       - redis
@@ -85,6 +103,8 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/user/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-user
     depends_on:
       - mongo
     networks:
@@ -103,6 +123,8 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/course/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-course
     depends_on:
       - mongo
     networks:
@@ -121,6 +143,12 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/enrollment/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-enrollment
+      COURSE_SERVICE_URL: http://course:3003
+      USER_SERVICE_URL: http://user:3002
+      PAYMENT_SERVICE_URL: http://payment:3006
+      INTERNAL_SERVICE_KEY: dev_internal_key_987654321
     depends_on:
       - mongo
     networks:
@@ -139,6 +167,10 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/quiz/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-quiz
+      ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      INTERNAL_SERVICE_KEY: dev_internal_key_987654321
     depends_on:
       - mongo
     networks:
@@ -157,6 +189,11 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/payment/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-payment
+      ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      INTERNAL_SERVICE_KEY: dev_internal_key_987654321
+      MOCK_CHECKOUT_BASE_URL: http://localhost:5173/#order-pending
     depends_on:
       - mongo
     networks:
@@ -175,6 +212,8 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/notification/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-notification
     depends_on:
       - mongo
     networks:
@@ -193,6 +232,8 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/admin/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-admin
     depends_on:
       - mongo
     networks:
@@ -211,27 +252,36 @@ services:
       - ./packages/shared:/app/node_modules/@eduelderly/shared
     env_file:
       - ./services/certificate/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/eduelderly-certificate
     depends_on:
       - mongo
     networks:
       - eduelderly-net
 
-  # client:
-  #   build:
-  #     context: ./packages/client
-  #     dockerfile: Dockerfile.dev
-  #   container_name: eduelderly-client
+  # sample-site:
+  #   image: nginx:alpine
+  #   container_name: eduelderly-sample-site
   #   ports:
-  #     - "5173:5173"
+  #     - "5173:80"
   #   volumes:
-  #     - ./packages/client:/app
-  #     - /app/node_modules
-  #   env_file:
-  #     - ./packages/client/.env
+  #     - ./sample-site:/usr/share/nginx/html:ro
   #   depends_on:
   #     - gateway
   #   networks:
   #     - eduelderly-net
+
+  sample-site:
+    image: nginx:alpine
+    container_name: eduelderly-sample-site
+    ports:
+      - "5173:80"
+    volumes:
+      - ./sample-site:/usr/share/nginx/html:ro
+    depends_on:
+      - gateway
+    networks:
+      - eduelderly-net
 
 networks:
   eduelderly-net:
