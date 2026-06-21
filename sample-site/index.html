@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduElderly — Sample Learning Site</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>EduElderly</h1>
+        <div class="toolbar">
+          <span id="nav-user" class="muted">Guest</span>
+          <button type="button" class="btn btn-secondary" id="btn-contrast">High contrast</button>
+          <button type="button" class="btn btn-secondary hidden" id="btn-admin">Pending payments</button>
+          <button type="button" class="btn btn-secondary hidden" id="btn-logout">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div id="status-bar" class="alert alert-info hidden" role="status"></div>
+
+      <section id="view-auth">
+        <div class="card" style="max-width: 520px; margin: 0 auto">
+          <h2 id="auth-title">Sign in</h2>
+          <p class="muted">
+            Demo accounts (from <code>npm run reseed</code>):
+            <br />Learner: <strong>learner@demo.eduelderly</strong> / <strong>Demo1234!</strong>
+            <br />Admin: <strong>admin@demo.eduelderly</strong> / <strong>Demo1234!</strong>
+          </p>
+          <div id="auth-error" class="alert alert-error hidden"></div>
+          <form id="auth-form">
+            <div class="field hidden" id="name-group">
+              <label for="name">Full name</label>
+              <input type="text" id="name" autocomplete="name" />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" required autocomplete="email" />
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input type="password" id="password" required autocomplete="current-password" />
+            </div>
+            <div class="field hidden" id="otp-group">
+              <label for="otp">Verification code</label>
+              <input type="text" id="otp" inputmode="numeric" autocomplete="one-time-code" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="auth-submit">Sign in</button>
+          </form>
+          <p style="text-align: center; margin-top: 1rem">
+            <a href="#" id="auth-toggle">Need an account? Register</a>
+          </p>
+        </div>
+      </section>
+
+      <section id="view-courses" class="hidden">
+        <h2>Course catalog</h2>
+        <p class="muted">Browse sample courses, enroll, then take module quizzes.</p>
+        <div id="course-list" class="grid two"></div>
+      </section>
+
+      <section id="view-course" class="hidden">
+        <div id="course-detail"></div>
+      </section>
+
+      <section id="view-quiz" class="hidden">
+        <div id="quiz-container"></div>
+      </section>
+
+      <section id="view-result" class="hidden">
+        <div id="result-container"></div>
+      </section>
+
+      <section id="view-admin" class="hidden">
+        <div id="admin-payments"></div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        Sample site · API via gateway at
+        <code>http://localhost:8080</code> · Reseed with <code>npm run reseed</code>
+      </div>
+    </footer>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
