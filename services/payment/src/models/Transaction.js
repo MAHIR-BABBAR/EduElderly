@@ -29,6 +29,14 @@ const transactionSchema = new mongoose.Schema(
 
 transactionSchema.index({ status: 1, createdAt: -1 });
 transactionSchema.index({ userId: 1, courseId: 1 });
+transactionSchema.index(
+  { userId: 1, courseId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: TX_STATUS.PENDING },
+    name: 'unique_pending_checkout',
+  },
+);
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 

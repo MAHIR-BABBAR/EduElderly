@@ -105,6 +105,48 @@ describe('User Service', () => {
     });
   });
 
+  describe('GET /internal/:userId/profile', () => {
+    it('should return profile with valid service key', async () => {
+      await createProfile({ userId: 'internal-user', email: 'internal@test.com' });
+
+      const res = await request(app)
+        .get('/internal/internal-user/profile')
+        .set('X-Service-Key', SERVICE_KEY);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.userId).toBe('internal-user');
+      expect(res.body.data.email).toBe('internal@test.com');
+    });
+
+    it('should reject requests without service key', async () => {
+      const res = await request(app).get('/internal/internal-user/profile');
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('GET /internal/stats', () => {
+    it('should return user counts with valid service key', async () => {
+      await UserProfile.create([
+        { userId: 's1', name: 'Al', email: 'a@test.com', role: ROLES.LEARNER },
+        { userId: 's2', name: 'Bo', email: 'b@test.com', role: ROLES.ADMIN },
+      ]);
+
+      const res = await request(app)
+        .get('/internal/stats')
+        .set('X-Service-Key', SERVICE_KEY);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.totalUsers).toBe(2);
+      expect(res.body.data.admins).toBe(1);
+      expect(res.body.data.learners).toBe(1);
+    });
+
+    it('should reject requests without service key', async () => {
+      const res = await request(app).get('/internal/stats');
+      expect(res.status).toBe(401);
+    });
+  });
+
   describe('GET /profile', () => {
     it('should return the authenticated user profile', async () => {
       await createProfile();

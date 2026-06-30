@@ -59,6 +59,14 @@ describe('Enrollment Service', () => {
       durationMinutes: 5,
     }));
     userClient.incrementXP.mockResolvedValue({ success: true });
+    userClient.getProfile.mockResolvedValue({
+      success: true,
+      data: {
+        userId: 'learner-1',
+        name: 'Test User',
+        email: 'test@example.com',
+      },
+    });
     paymentClient.initiateCheckout.mockResolvedValue({
       orderId: 'order-1',
       checkoutUrl: 'https://pay.example/checkout',
@@ -266,6 +274,27 @@ describe('Enrollment Service', () => {
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe('E_NOT_ENROLLED');
+    });
+  });
+
+  describe('GET /internal/stats', () => {
+    it('should return enrollment counts with service key', async () => {
+      await Enrollment.create([
+        { userId: 'learner-1', courseId: 'c1', status: 'active' },
+        { userId: 'learner-2', courseId: 'c2', status: 'completed' },
+      ]);
+
+      const res = await request(app).get('/internal/stats').set(serviceHeaders);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.totalEnrollments).toBe(2);
+      expect(res.body.data.activeEnrollments).toBe(1);
+      expect(res.body.data.completedEnrollments).toBe(1);
+    });
+
+    it('should reject missing service key', async () => {
+      const res = await request(app).get('/internal/stats');
+      expect(res.status).toBe(401);
     });
   });
 

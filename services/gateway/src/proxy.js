@@ -1,7 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { logger } = require('./logger');
 const { authValidation } = require('./authValidation');
-const { ERROR_CODES } = require('@eduelderly/shared');
+const { ERROR_CODES, getInternalServiceKey } = require('@eduelderly/shared');
 const { ROUTES_CONFIG } = require('../routes.config');
 
 
@@ -63,9 +63,11 @@ const services = {
 
 const onProxyReq = (proxyReq, req, _res) => {
   proxyReq.removeHeader('Authorization');
-  proxyReq.setHeader('X-Service-Key', process.env.INTERNAL_SERVICE_KEY || 'dev-key');
+  proxyReq.setHeader('X-Service-Key', getInternalServiceKey());
   const requestId =
-    req.get('X-Request-ID') || `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    req.requestId ||
+    req.get('X-Request-ID') ||
+    `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   proxyReq.setHeader('X-Request-ID', requestId);
 
   if (req.user) {
@@ -74,9 +76,8 @@ const onProxyReq = (proxyReq, req, _res) => {
   }
 };
 
-const onProxyRes = (proxyRes, req, _res) => {
-  proxyRes.headers['Access-Control-Allow-Origin'] = req.headers.origin || '*';
-  proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
+const onProxyRes = (_proxyRes, _req, _res) => {
+  // CORS is handled by gateway cors middleware
 };
 
 const onError = (err, req, res, target) => {
@@ -103,6 +104,8 @@ const createProxy = (target, prefix, pathRewrite) => {
     target,
     pathRewrite: pathRewrite || { [`^${prefix}`]: '' },
     changeOrigin: true,
+    timeout: 30000,
+    proxyTimeout: 30000,
     on: {
       proxyReq: onProxyReq,
       proxyRes: onProxyRes,

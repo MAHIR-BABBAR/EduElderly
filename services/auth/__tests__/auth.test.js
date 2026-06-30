@@ -400,12 +400,24 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       expect(loginRes.status).toBe(200);
     });
 
-    it('POST /change-password should change password with old password', async () => {
+    it('POST /change-password requires authenticated user context', async () => {
       const res = await request(app).post('/change-password').send({
-        email: 'pass@test.com',
         currentPassword: 'Password123!',
         newPassword: 'ChangedPassword123!',
       });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('POST /change-password should change password with old password', async () => {
+      const res = await request(app)
+        .post('/change-password')
+        .set('X-User-Id', user.userId)
+        .set('X-User-Role', 'learner')
+        .send({
+          currentPassword: 'Password123!',
+          newPassword: 'ChangedPassword123!',
+        });
 
       expect(res.status).toBe(200);
       expect(res.body.message).toMatch(/Password changed successfully/i);

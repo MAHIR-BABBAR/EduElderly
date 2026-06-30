@@ -1,51 +1,69 @@
-const { sendAuthEmail } = require('../clients/notificationClient');
+const { createLogger } = require('@eduelderly/shared');
+
+const logger = createLogger('auth-mail');
 
 const getAppUrl = () => process.env.APP_URL || 'http://localhost:5173';
 
-const sendVerificationEmail = async (user, token) => {
+const sendAuthEmailSafe = async (label, sendFn) => {
   try {
-    await sendAuthEmail({
+    await sendFn();
+  } catch (error) {
+    logger.error(`Failed to send ${label} email`, { error: error.message });
+  }
+};
+
+const sendVerificationEmail = async (user, token) =>
+  sendAuthEmailSafe('verification', () =>
+    require('../clients/notificationClient').sendAuthEmail({
       email: user.email,
+      userId: user.userId,
       type: 'email_verification',
       templateData: {
         name: user.name,
         link: `${getAppUrl()}/verify-email?token=${encodeURIComponent(token)}`,
       },
-    });
-  } catch (error) {
-    console.error('[auth-mail] Failed to send verification email:', error.message);
-  }
-};
+    }),
+  );
 
-const sendOtpEmail = async (user, otp) => {
-  try {
-    await sendAuthEmail({
+const sendOtpEmail = async (user, otp) =>
+  sendAuthEmailSafe('otp', () =>
+    require('../clients/notificationClient').sendAuthEmail({
       email: user.email,
+      userId: user.userId,
       type: 'otp',
       templateData: { name: user.name, otp },
-    });
-  } catch (error) {
-    console.error('[auth-mail] Failed to send otp email:', error.message);
-  }
-};
+    }),
+  );
 
-const sendPasswordResetEmail = async (user, token) => {
-  try {
-    await sendAuthEmail({
+const sendPasswordResetEmail = async (user, token) =>
+  sendAuthEmailSafe('password reset', () =>
+    require('../clients/notificationClient').sendAuthEmail({
       email: user.email,
+      userId: user.userId,
       type: 'password_reset',
       templateData: {
         name: user.name,
         link: `${getAppUrl()}/reset-password?token=${encodeURIComponent(token)}`,
       },
-    });
-  } catch (error) {
-    console.error('[auth-mail] Failed to send password reset email:', error.message);
-  }
-};
+    }),
+  );
+
+const sendWelcomeEmail = async (user) =>
+  sendAuthEmailSafe('welcome', () =>
+    require('../clients/notificationClient').sendAuthEmail({
+      email: user.email,
+      userId: user.userId,
+      type: 'welcome',
+      templateData: {
+        name: user.name,
+        appUrl: getAppUrl(),
+      },
+    }),
+  );
 
 module.exports = {
   sendVerificationEmail,
   sendOtpEmail,
   sendPasswordResetEmail,
+  sendWelcomeEmail,
 };

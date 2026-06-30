@@ -14,6 +14,8 @@ const submitAttempt = async (quizId, userId, answers) => {
     throw new AppError('Maximum attempts reached', 403, ERROR_CODES.E_MAX_ATTEMPTS);
   }
 
+  const attemptNumber = attemptCount + 1;
+
   const questions = await quizService.getQuestionsForQuiz(quizId);
   if (questions.length === 0) {
     throw new AppError('Quiz has no questions', 400, ERROR_CODES.E_VALIDATION);
@@ -63,14 +65,23 @@ const submitAttempt = async (quizId, userId, answers) => {
   const score = Math.round((correctCount / questions.length) * 100);
   const passed = score >= quiz.passThreshold;
 
-  const attempt = await Attempt.create({
-    quizId,
-    userId,
-    answers,
-    score,
-    passed,
-    submittedAt: new Date(),
-  });
+  let attempt;
+  try {
+    attempt = await Attempt.create({
+      quizId,
+      userId,
+      attemptNumber,
+      answers,
+      score,
+      passed,
+      submittedAt: new Date(),
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      throw new AppError('Maximum attempts reached', 403, ERROR_CODES.E_MAX_ATTEMPTS);
+    }
+    throw error;
+  }
 
   return { attempt, questionFeedback };
 };

@@ -1,2 +1,0 @@
-# Use the monorepo Dockerfile: docker/Dockerfile.dev (SERVICE_DIR=enrollment)
-# Built via: docker compose build enrollment

@@ -75,6 +75,10 @@ const EnrollmentSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  courseCompletionXpAwarded: {
+    type: Boolean,
+    default: false,
+  },
   paymentRef: {
     type: String,
     default: null,

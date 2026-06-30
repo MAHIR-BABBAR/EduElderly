@@ -61,6 +61,19 @@ const incrementUserXP = catchAsync(async (req, res) => {
   });
 });
 
+const getInternalProfile = catchAsync(async (req, res) => {
+  const profile = await profileService.getProfileByUserId(req.params.userId);
+  res.status(200).json({
+    success: true,
+    data: toPublicProfileDTO(profile),
+  });
+});
+
+const getInternalStats = catchAsync(async (_req, res) => {
+  const stats = await profileService.getStats();
+  res.status(200).json({ success: true, data: stats });
+});
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
@@ -69,4 +82,6 @@ module.exports = {
   getUserById,
   syncUserProfile,
   incrementUserXP,
+  getInternalProfile,
+  getInternalStats,
 };

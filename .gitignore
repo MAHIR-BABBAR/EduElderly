@@ -1,5 +1,10 @@
-# Environment variables
+# Environment variables (keep examples tracked)
 **/.env
+**/.env.local
+**/.env.*.local
+.env.prod
+!.env.prod.example
+!**/.env.example
 
 # Dependencies
 node_modules/
@@ -9,12 +14,15 @@ logs/
 *.log
 npm-debug.log*
 
-# Coverage
+# Test / coverage
 coverage/
 
 # Build output
 dist/
 build/
+
+# Generated certificate PDFs (local dev)
+services/certificate/storage/
 
 # OS files
 .DS_Store
@@ -31,5 +39,6 @@ Thumbs.db
 .cursor/
 skills-lock.json
 
-# Local manual test harness (not committed)
+# Manual test harnesses (not part of the app)
 sample-test-site/
+sample-site/
