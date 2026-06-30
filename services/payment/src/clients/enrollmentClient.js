@@ -1,4 +1,6 @@
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, getInternalServiceKey, createLogger } = require('@eduelderly/shared');
+
+const log = createLogger('payment-service');
 
 const getBaseUrl = () => process.env.ENROLLMENT_SERVICE_URL || 'http://localhost:3004';
 
@@ -11,7 +13,7 @@ const enrollAfterPayment = async ({ userId, courseId, paymentRef }) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Service-Key': process.env.INTERNAL_SERVICE_KEY || '',
+        'X-Service-Key': getInternalServiceKey(),
       },
       body: JSON.stringify({ userId, courseId, paymentRef }),
       signal: controller.signal,
@@ -30,7 +32,7 @@ const enrollAfterPayment = async ({ userId, courseId, paymentRef }) => {
     return result.data;
   } catch (error) {
     if (error instanceof AppError) throw error;
-    console.error('[payment-enrollment] POST /internal/enroll failed:', error.message);
+    log.error('POST /internal/enroll failed', { error: error.message });
     throw new AppError('Enrollment service unavailable', 503, ERROR_CODES.E_SERVICE_UNAVAILABLE);
   } finally {
     clearTimeout(timeout);

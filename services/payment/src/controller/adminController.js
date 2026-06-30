@@ -2,11 +2,12 @@ const { catchAsync, toAdminTransactionDTO } = require('@eduelderly/shared');
 const transactionService = require('../services/transaction.service');
 
 const listOrders = catchAsync(async (req, res) => {
-  const orders = await transactionService.listOrdersAdmin({ status: req.query.status });
+  const { orders, pagination } = await transactionService.listOrdersAdmin(req.query);
   res.status(200).json({
     success: true,
     data: {
       orders: orders.map(toAdminTransactionDTO),
+      pagination,
     },
   });
 });

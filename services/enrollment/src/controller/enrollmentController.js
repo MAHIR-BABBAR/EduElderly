@@ -116,6 +116,11 @@ const internalLookup = catchAsync(async (req, res) => {
   });
 });
 
+const getInternalStats = catchAsync(async (_req, res) => {
+  const stats = await enrollmentService.getEnrollmentStats();
+  res.status(200).json({ success: true, data: stats });
+});
+
 module.exports = {
   enroll,
   listEnrollments,
@@ -126,4 +131,5 @@ module.exports = {
   dropEnrollment,
   internalEnroll,
   internalLookup,
+  getInternalStats,
 };

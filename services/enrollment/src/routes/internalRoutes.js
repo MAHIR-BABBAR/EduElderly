@@ -3,6 +3,7 @@ const { serviceAuth } = require('@eduelderly/shared');
 const {
   internalEnroll,
   internalLookup,
+  getInternalStats,
 } = require('../controller/enrollmentController');
 const {
   internalEnrollRules,
@@ -11,6 +12,7 @@ const {
 
 const router = express.Router();
 
+router.get('/stats', serviceAuth, getInternalStats);
 router.post('/enroll', serviceAuth, internalEnrollRules, internalEnroll);
 router.get(
   '/users/:userId/courses/:courseId',

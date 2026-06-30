@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId } = require('@eduelderly/shared');
 const categoryRoutes = require('./routes/categoryRoutes');
 const internalRoutes = require('./routes/internalRoutes');
 const moduleRoutes = require('./routes/moduleRoutes');
@@ -28,6 +28,9 @@ const createApp = () => {
       uptime: process.uptime(),
     });
   });
+
+  app.use(requireGateway);
+  app.use(requestId);
 
   app.use((req, _res, next) => {
     if (mongoose.connection.readyState !== 1) {
@@ -58,13 +61,7 @@ const createApp = () => {
 };
 
 const bootstrap = async () => {
-  const requiredEnvVars = ['MONGO_URI'];
-  requiredEnvVars.forEach((key) => {
-    if (!process.env[key]) {
-      console.error(`[${SERVICE_NAME}] Missing required env var: ${key}`);
-      process.exit(1);
-    }
-  });
+  assertRequiredEnv(['MONGO_URI', 'INTERNAL_SERVICE_KEY'], SERVICE_NAME);
 
   try {
     await mongoose.connect(process.env.MONGO_URI, {

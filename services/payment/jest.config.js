@@ -1,8 +1,20 @@
 module.exports = {
-  testEnvironment: 'node',
-  testMatch: ['<rootDir>/__tests__/**/*.test.js'],
   verbose: true,
   forceExit: true,
-  detectOpenHandles: true,
-  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
+  projects: [
+    {
+      displayName: 'integration',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/__tests__/**/*.test.js'],
+      testPathIgnorePatterns: ['<rootDir>/__tests__/security.test.js'],
+      setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
+      detectOpenHandles: true,
+    },
+    {
+      displayName: 'security',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/__tests__/security.test.js'],
+      setupFilesAfterEnv: ['<rootDir>/__tests__/security.setup.js'],
+    },
+  ],
 };

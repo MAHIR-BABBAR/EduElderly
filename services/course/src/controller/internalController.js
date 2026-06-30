@@ -20,8 +20,14 @@ const getInternalTopic = catchAsync(async (req, res) => {
   });
 });
 
+const getInternalCatalogStats = catchAsync(async (_req, res) => {
+  const stats = await courseService.getCatalogStats();
+  res.status(200).json({ success: true, data: stats });
+});
+
 module.exports = {
   getInternalCourse,
   getInternalCourseStats,
   getInternalTopic,
+  getInternalCatalogStats,
 };

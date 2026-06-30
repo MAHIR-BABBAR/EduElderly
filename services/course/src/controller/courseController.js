@@ -4,7 +4,9 @@ const {
   toPublicModuleDTO,
   toInstructorCourseDTO,
 } = require('@eduelderly/shared');
+const { AUDIT_ACTION } = require('@eduelderly/shared/constants/auditActions');
 const courseService = require('../services/course.service');
+const adminClient = require('../clients/adminClient');
 
 const mapPublicCourseDetail = ({ course, modules, totalTopics }) => {
   const publicModules = modules.map((mod) => toPublicModuleDTO(mod, mod.topics || []));
@@ -80,6 +82,13 @@ const updateCourse = catchAsync(async (req, res) => {
 
 const publishCourse = catchAsync(async (req, res) => {
   const course = await courseService.togglePublish(req.params.courseId, req.body.isPublished);
+  adminClient.logAuditSafe({
+    actorId: req.user.userId,
+    action: req.body.isPublished ? AUDIT_ACTION.PUBLISH_COURSE : AUDIT_ACTION.UNPUBLISH_COURSE,
+    targetType: 'course',
+    targetId: req.params.courseId,
+    metadata: { isPublished: req.body.isPublished },
+  });
   res.status(200).json({
     success: true,
     data: toPublicCourseDTO({ ...course.toObject(), moduleCount: course.moduleIds.length }),
@@ -88,6 +97,12 @@ const publishCourse = catchAsync(async (req, res) => {
 
 const deleteCourse = catchAsync(async (req, res) => {
   await courseService.softDeleteCourse(req.params.courseId);
+  adminClient.logAuditSafe({
+    actorId: req.user.userId,
+    action: AUDIT_ACTION.DELETE_COURSE,
+    targetType: 'course',
+    targetId: req.params.courseId,
+  });
   res.status(200).json({ success: true, message: 'Course deleted' });
 });
 

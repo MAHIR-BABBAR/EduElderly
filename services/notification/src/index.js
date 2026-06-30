@@ -1,8 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId } = require('@eduelderly/shared');
 const internalRoutes = require('./routes/internalRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 dotenv.config();
 
@@ -24,7 +25,24 @@ const createApp = () => {
     });
   });
 
+  app.use(requireGateway);
+  app.use(requestId);
+
+  app.use((req, _res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+      return next(
+        new AppError(
+          'Backend down, please wait',
+          503,
+          ERROR_CODES.E_SERVICE_UNAVAILABLE,
+        ),
+      );
+    }
+    next();
+  });
+
   app.use('/internal', internalRoutes);
+  app.use('/', notificationRoutes);
 
   app.use((_req, _res, next) => {
     next(new AppError('Route Not Found', 404, ERROR_CODES.E_NOT_FOUND));
@@ -36,13 +54,7 @@ const createApp = () => {
 };
 
 const bootstrap = async () => {
-  const requiredEnvVars = ['MONGO_URI'];
-  requiredEnvVars.forEach((key) => {
-    if (!process.env[key]) {
-      console.error(`[${SERVICE_NAME}] Missing required env var: ${key}`);
-      process.exit(1);
-    }
-  });
+  assertRequiredEnv(['MONGO_URI', 'INTERNAL_SERVICE_KEY'], SERVICE_NAME);
 
   try {
     await mongoose.connect(process.env.MONGO_URI, {
@@ -53,9 +65,27 @@ const bootstrap = async () => {
     const app = createApp();
     const PORT = process.env.PORT || 3007;
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`[${SERVICE_NAME}] Running on port ${PORT}`);
     });
+
+    const shutdown = async () => {
+      console.log(`[${SERVICE_NAME}] Shutting down gracefully...`);
+      server.close(async () => {
+        console.log(`[${SERVICE_NAME}] Closed out remaining connections`);
+        await mongoose.disconnect();
+        console.log(`[${SERVICE_NAME}] MongoDB disconnected`);
+        process.exit(0);
+      });
+
+      setTimeout(() => {
+        console.error(`[${SERVICE_NAME}] Could not close connections in time, forcefully shutting down`);
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
   } catch (error) {
     console.error(`[${SERVICE_NAME}] Failed to start:`, error.message);
     process.exit(1);

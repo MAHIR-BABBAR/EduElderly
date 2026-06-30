@@ -18,7 +18,6 @@ const ROUTES_CONFIG = {
       { method: 'POST', match: 'exact', path: '/logout' },
       { method: 'POST', match: 'exact', path: '/verify-otp' },
       { method: 'POST', match: 'exact', path: '/resend-otp' },
-      { method: 'POST', match: 'exact', path: '/change-password' },
     ],
   },
 
@@ -61,6 +60,26 @@ const ROUTES_CONFIG = {
   payments: {
     prefix: '/api/v1/payments',
     target: process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006',
+    public: [],
+  },
+
+  notifications: {
+    prefix: '/api/v1/notifications',
+    target: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3007',
+    public: [],
+  },
+
+  certificates: {
+    prefix: '/api/v1/certificates',
+    target: process.env.CERTIFICATE_SERVICE_URL || 'http://localhost:3009',
+    public: [
+      { method: 'GET', match: 'regex', pattern: /^\/[\w-]+\/verify$/ },
+    ],
+  },
+
+  admin: {
+    prefix: '/api/v1/admin',
+    target: process.env.ADMIN_SERVICE_URL || 'http://localhost:3008',
     public: [],
   },
 };

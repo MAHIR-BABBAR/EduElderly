@@ -1,4 +1,4 @@
-const { ERROR_CODES } = require('../errors/ErrorCodes');
+const { ERROR_CODES } = require('../errors/errorCodes');
 
 const globalErrorHandler = (err, req, res, next) => {
   // 1. Ensure defaults exist (programmer error may not have statusCode)

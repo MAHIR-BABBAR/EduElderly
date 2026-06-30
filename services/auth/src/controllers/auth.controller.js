@@ -1,4 +1,4 @@
-const { catchAsync } = require('@eduelderly/shared');
+const { catchAsync, extractUser, createLogger } = require('@eduelderly/shared');
 const {
   registerUser,
   verifyEmailWithToken,
@@ -24,6 +24,8 @@ const {
   clearRefreshCookie,
   toPublicUser,
 } = require('../services/token.service');
+
+const log = createLogger('auth-service');
 
 const GENERIC_RESET_MESSAGE =
   'If an account with that email exists, a password reset link has been sent.';
@@ -74,6 +76,7 @@ const login = catchAsync(async (req, res) => {
   }
 
   await issueAuthSession(req, res, user, { message: 'Login successful' });
+  log.info('User login successful', { userId: user.userId, requestId: req.requestId });
 });
 
 const verifyOtpHandler = catchAsync(async (req, res) => {
@@ -124,8 +127,8 @@ const resetPassword = catchAsync(async (req, res) => {
 });
 
 const changePasswordHandler = catchAsync(async (req, res) => {
-  const { email, currentPassword, newPassword } = req.body;
-  const user = await changePassword(email, currentPassword, newPassword);
+  const { currentPassword, newPassword } = req.body;
+  const user = await changePassword(req.user.userId, currentPassword, newPassword);
 
   res.status(200).json({
     success: true,

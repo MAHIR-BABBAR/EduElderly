@@ -1,8 +1,11 @@
 const { Enrollment } = require('../models/Enrollment');
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, createLogger } = require('@eduelderly/shared');
 const { ENROLLMENT_STATUS } = require('@eduelderly/shared/constants/enrollmentStatus');
 const courseClient = require('../clients/courseClient');
 const paymentClient = require('../clients/paymentClient');
+const { notifyEnrollmentCreated } = require('./completion.service');
+
+const log = createLogger('enrollment-service');
 
 const ACTIVE_STATUSES = [ENROLLMENT_STATUS.ACTIVE, ENROLLMENT_STATUS.COMPLETED];
 
@@ -89,6 +92,7 @@ const enroll = async (userId, courseId) => {
   }
 
   const enrollment = await createEnrollmentRecord({ userId, courseId });
+  notifyEnrollmentCreated(userId, course.title);
   return { enrollment };
 };
 
@@ -103,7 +107,10 @@ const enrollAfterPayment = async ({ userId, courseId, paymentRef }) => {
     return existing;
   }
 
-  return createEnrollmentRecord({ userId, courseId, paymentRef });
+  const enrollment = await createEnrollmentRecord({ userId, courseId, paymentRef });
+  notifyEnrollmentCreated(userId, course.title);
+  log.info('Enrollment created after payment', { userId, courseId, paymentRef });
+  return enrollment;
 };
 
 const listEnrollments = async (userId, { page = 1, limit = 20 } = {}) => {
@@ -196,6 +203,16 @@ const getResume = async (enrollmentId, userId) => {
   };
 };
 
+const getEnrollmentStats = async () => {
+  const [totalEnrollments, activeEnrollments, completedEnrollments] = await Promise.all([
+    Enrollment.countDocuments({ status: { $ne: ENROLLMENT_STATUS.DROPPED } }),
+    Enrollment.countDocuments({ status: ENROLLMENT_STATUS.ACTIVE }),
+    Enrollment.countDocuments({ status: ENROLLMENT_STATUS.COMPLETED }),
+  ]);
+
+  return { totalEnrollments, activeEnrollments, completedEnrollments };
+};
+
 module.exports = {
   enroll,
   enrollAfterPayment,
@@ -208,4 +225,5 @@ module.exports = {
   getResume,
   getEnrollmentForUser,
   findActiveEnrollment,
+  getEnrollmentStats,
 };

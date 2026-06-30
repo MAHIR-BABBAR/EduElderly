@@ -80,22 +80,27 @@ const resetPasswordWithToken = async (token, newPassword) => {
   return user;
 };
 
-const changePassword = async (email, currentPassword, newPassword) => {
-  if (!email || !currentPassword || !newPassword) {
-    throw new AppError('Email, current password, and new password are required', 400, ERROR_CODES.E_VALIDATION);
+const changePassword = async (userId, currentPassword, newPassword) => {
+  if (!userId || !currentPassword || !newPassword) {
+    throw new AppError('Current password and new password are required', 400, ERROR_CODES.E_VALIDATION);
   }
 
-  const user = await User.findOne({ email }).select('+passHash');
+  const user = await User.findOne({ userId }).select('+passHash');
   if (!user) {
-    throw new AppError('User not found', 404, ERROR_CODES.E_USER_NOT_FOUND);
-  }
-
-  const isMatch = await passwordsMatch(currentPassword, user.passHash);
-  if (!isMatch) {
     throw new AppError('Current password is incorrect', 401, ERROR_CODES.E_AUTH_INVALID);
   }
 
+  assertAccountNotLocked(user);
+
+  const isMatch = await passwordsMatch(currentPassword, user.passHash);
+  if (!isMatch) {
+    await recordFailedLogin(user);
+    throw new AppError('Current password is incorrect', 401, ERROR_CODES.E_AUTH_INVALID);
+  }
+
+  await clearLoginFailures(user);
   user.passHash = await hashPassword(newPassword);
+  await revokeAllUserSessions(user.userId);
   await user.save();
 
   return user;

@@ -1,16 +1,20 @@
 const { AppError, ERROR_CODES, catchAsync } = require('@eduelderly/shared');
-const { sendTransactionalEmail } = require('../clients/brevoClient');
-const { VALID_TYPES, renderAuthEmail } = require('../templates/authTemplates');
+const { VALID_TYPES } = require('../templates');
+const notificationService = require('../services/notification.service');
 
 const sendInternalEmail = catchAsync(async (req, res) => {
-  const { email, type, templateData } = req.body;
+  const { userId, email, type, templateData } = req.body;
 
-  if (!email || !type) {
-    throw new AppError('email and type are required', 400, ERROR_CODES.E_VALIDATION);
+  if (!type) {
+    throw new AppError('type is required', 400, ERROR_CODES.E_VALIDATION);
   }
 
   if (!VALID_TYPES.includes(type)) {
     throw new AppError('Invalid email type', 400, ERROR_CODES.E_VALIDATION);
+  }
+
+  if (!email && !userId) {
+    throw new AppError('email or userId is required', 400, ERROR_CODES.E_VALIDATION);
   }
 
   if (type === 'otp' && !templateData?.otp) {
@@ -21,18 +25,21 @@ const sendInternalEmail = catchAsync(async (req, res) => {
     throw new AppError('templateData.link is required for link emails', 400, ERROR_CODES.E_VALIDATION);
   }
 
-  const { subject, htmlContent, textContent } = renderAuthEmail(type, templateData);
+  if (type === 'enroll' && !templateData?.courseTitle) {
+    throw new AppError('templateData.courseTitle is required for enroll emails', 400, ERROR_CODES.E_VALIDATION);
+  }
 
-  await sendTransactionalEmail({
-    to: email,
-    subject,
-    htmlContent,
-    textContent,
+  const notification = await notificationService.sendNotification({
+    userId,
+    email,
+    type,
+    templateData,
   });
 
   res.status(200).json({
     success: true,
-    message: 'Email sent',
+    message: 'Notification sent',
+    data: { notificationId: notification.notificationId },
   });
 });
 

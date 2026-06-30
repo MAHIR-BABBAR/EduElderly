@@ -1,5 +1,6 @@
 const { UserProfile } = require('../models/UserProfile');
 const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { ROLES } = require('@eduelderly/shared/constants/roles');
 
 const ALLOWED_UPDATE_FIELDS = ['avatarUrl', 'fontSizePref', 'highContrast', 'lang', 'bio'];
 
@@ -114,6 +115,17 @@ const incrementXP = async (userId, amount) => {
   return profile;
 };
 
+const getStats = async () => {
+  const [totalUsers, activeUsers, learners, admins] = await Promise.all([
+    UserProfile.countDocuments(),
+    UserProfile.countDocuments({ isActive: true }),
+    UserProfile.countDocuments({ role: ROLES.LEARNER }),
+    UserProfile.countDocuments({ role: ROLES.ADMIN }),
+  ]);
+
+  return { totalUsers, activeUsers, learners, admins };
+};
+
 module.exports = {
   getProfileByUserId,
   updateProfile,
@@ -121,4 +133,5 @@ module.exports = {
   listProfiles,
   syncProfile,
   incrementXP,
+  getStats,
 };

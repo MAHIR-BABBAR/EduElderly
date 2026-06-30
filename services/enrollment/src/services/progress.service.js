@@ -1,8 +1,10 @@
 const { AppError, ERROR_CODES, XP_REWARDS } = require('@eduelderly/shared');
 const { ENROLLMENT_STATUS } = require('@eduelderly/shared/constants/enrollmentStatus');
+const { Enrollment } = require('../models/Enrollment');
 const enrollmentService = require('./enrollment.service');
 const courseClient = require('../clients/courseClient');
 const userClient = require('../clients/userClient');
+const { handleCourseCompletion } = require('./completion.service');
 
 const syncCompletedModules = (enrollment, modules) => {
   const completedTopics = new Set(enrollment.completedTopics);
@@ -18,7 +20,7 @@ const syncCompletedModules = (enrollment, modules) => {
 };
 
 const markTopicComplete = async (enrollmentId, userId, { topicId, timeSpentMinutes = 0 }) => {
-  const enrollment = await enrollmentService.getEnrollmentForUser(enrollmentId, userId);
+  let enrollment = await enrollmentService.getEnrollmentForUser(enrollmentId, userId);
 
   if (enrollment.status !== ENROLLMENT_STATUS.ACTIVE) {
     throw new AppError('Enrollment is not active', 403, ERROR_CODES.E_NOT_ENROLLED);
@@ -30,24 +32,47 @@ const markTopicComplete = async (enrollmentId, userId, { topicId, timeSpentMinut
   }
 
   const stats = await courseClient.getCourseStats(enrollment.courseId);
-  const alreadyCompleted = enrollment.completedTopics.includes(topicId);
 
-  if (!alreadyCompleted) {
-    enrollment.completedTopics.push(topicId);
-    await userClient.incrementXP(userId, XP_REWARDS.TOPIC_COMPLETE);
-  }
-
-  if (timeSpentMinutes > 0) {
-    enrollment.totalTimeSpentMinutes += timeSpentMinutes;
-  }
+  const topicUpdatePayload = {
+    $addToSet: { completedTopics: topicId },
+    $inc: { totalTimeSpentMinutes: timeSpentMinutes > 0 ? timeSpentMinutes : 0 },
+    $set: {
+      currentModuleId: topic.moduleId,
+      currentLessonId: topicId,
+      lastAccessedAt: new Date(),
+    },
+  };
 
   if (!enrollment.startedAt) {
-    enrollment.startedAt = new Date();
+    topicUpdatePayload.$set.startedAt = new Date();
   }
 
-  enrollment.currentModuleId = topic.moduleId;
-  enrollment.currentLessonId = topicId;
-  enrollment.lastAccessedAt = new Date();
+  const topicUpdate = await Enrollment.findOneAndUpdate(
+    {
+      enrollmentId,
+      userId,
+      status: ENROLLMENT_STATUS.ACTIVE,
+      completedTopics: { $ne: topicId },
+    },
+    topicUpdatePayload,
+    { new: true },
+  );
+
+  if (topicUpdate) {
+    await userClient.incrementXP(userId, XP_REWARDS.TOPIC_COMPLETE);
+    enrollment = topicUpdate;
+  } else {
+    enrollment = await enrollmentService.getEnrollmentForUser(enrollmentId, userId);
+    if (timeSpentMinutes > 0) {
+      enrollment.totalTimeSpentMinutes += timeSpentMinutes;
+    }
+    enrollment.currentModuleId = topic.moduleId;
+    enrollment.currentLessonId = topicId;
+    enrollment.lastAccessedAt = new Date();
+    if (!enrollment.startedAt) {
+      enrollment.startedAt = new Date();
+    }
+  }
 
   syncCompletedModules(enrollment, stats.modules || []);
 
@@ -63,12 +88,26 @@ const markTopicComplete = async (enrollmentId, userId, { topicId, timeSpentMinut
     enrollment.status = ENROLLMENT_STATUS.COMPLETED;
     enrollment.completedAt = new Date();
     enrollment.progressPercent = 100;
-    if (!alreadyCompleted) {
-      await userClient.incrementXP(userId, XP_REWARDS.COURSE_COMPLETE);
-    }
   }
 
   await enrollment.save();
+
+  if (enrollment.status === ENROLLMENT_STATUS.COMPLETED && !enrollment.courseCompletionXpAwarded) {
+    const xpMarked = await Enrollment.findOneAndUpdate(
+      { enrollmentId, courseCompletionXpAwarded: false },
+      { $set: { courseCompletionXpAwarded: true } },
+      { new: true },
+    );
+    if (xpMarked) {
+      await userClient.incrementXP(userId, XP_REWARDS.COURSE_COMPLETE);
+      enrollment.courseCompletionXpAwarded = true;
+    }
+  }
+
+  if (enrollment.status === ENROLLMENT_STATUS.COMPLETED && enrollment.progressPercent >= 100) {
+    handleCourseCompletion(enrollment, stats);
+  }
+
   return enrollment;
 };
 

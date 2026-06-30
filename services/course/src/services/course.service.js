@@ -206,11 +206,26 @@ const softDeleteCourse = async (courseId) => {
   return course;
 };
 
+const getCatalogStats = async () => {
+  const baseFilter = { isDeleted: false };
+  const [totalCourses, publishedCourses] = await Promise.all([
+    Course.countDocuments(baseFilter),
+    Course.countDocuments({ ...baseFilter, isPublished: true }),
+  ]);
+
+  return {
+    totalCourses,
+    publishedCourses,
+    draftCourses: totalCourses - publishedCourses,
+  };
+};
+
 module.exports = {
   listPublishedCourses,
   listAdminCourses,
   getCourseDetail,
   getCourseStats,
+  getCatalogStats,
   createCourse,
   updateCourse,
   togglePublish,

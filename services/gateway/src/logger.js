@@ -5,6 +5,7 @@
 
 const winston = require('winston');
 const path = require('path');
+const fs = require('fs');
 
 // Define log format
 const logFormat = winston.format.combine(
@@ -30,6 +31,28 @@ const consoleFormat = winston.format.combine(
 // Create logs directory path
 const logsDir = path.join(__dirname, '../logs');
 
+const fileTransports = [];
+if (process.env.NODE_ENV === 'production') {
+  try {
+    fs.mkdirSync(logsDir, { recursive: true });
+    fileTransports.push(
+      new winston.transports.File({
+        filename: path.join(logsDir, 'error.log'),
+        level: 'error',
+        maxsize: 5242880,
+        maxFiles: 5,
+      }),
+      new winston.transports.File({
+        filename: path.join(logsDir, 'combined.log'),
+        maxsize: 5242880,
+        maxFiles: 5,
+      }),
+    );
+  } catch {
+    // Fall back to console-only when the container user cannot write /app/logs
+  }
+}
+
 // Create the logger
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'warn' : 'debug'),
@@ -38,25 +61,10 @@ const logger = winston.createLogger({
   
   format: logFormat,
   transports: [
-    // Console transport (always enabled)
     new winston.transports.Console({
-      format: consoleFormat
+      format: consoleFormat,
     }),
-    
-    // File transports (production)
-    ...(process.env.NODE_ENV === 'production' ? [
-      new winston.transports.File({ 
-        filename: path.join(logsDir, 'error.log'), 
-        level: 'error',
-        maxsize: 5242880, // 5MB
-        maxFiles: 5
-      }),
-      new winston.transports.File({ 
-        filename: path.join(logsDir, 'combined.log'),
-        maxsize: 5242880, // 5MB
-        maxFiles: 5
-      })
-    ] : [])
+    ...fileTransports,
   ],
   exceptionHandlers: [
     new winston.transports.Console({ format: consoleFormat })
@@ -81,7 +89,7 @@ const requestLogger = (req, res, next) => {
       duration: `${duration}ms`,
       userAgent: req.get('user-agent'),
       ip: req.ip || req.connection.remoteAddress,
-      requestId: req.get('X-Request-ID') || 'none'
+      requestId: req.requestId || req.get('X-Request-ID') || 'none'
     });
   });
   

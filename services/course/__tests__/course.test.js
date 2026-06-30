@@ -194,6 +194,34 @@ describe('Course Service', () => {
     });
   });
 
+  describe('GET /internal/stats', () => {
+    it('should return catalog counts with service key', async () => {
+      const category = await createCategory();
+      await Course.create({
+        ...createCoursePayload(category.categoryId),
+        slug: 'published-course',
+        isPublished: true,
+      });
+      await Course.create({
+        ...createCoursePayload(category.categoryId),
+        slug: 'draft-course',
+        isPublished: false,
+      });
+
+      const res = await request(app).get('/internal/stats').set(serviceHeaders);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.totalCourses).toBe(2);
+      expect(res.body.data.publishedCourses).toBe(1);
+      expect(res.body.data.draftCourses).toBe(1);
+    });
+
+    it('should reject missing service key', async () => {
+      const res = await request(app).get('/internal/stats');
+      expect(res.status).toBe(401);
+    });
+  });
+
   describe('GET /internal/courses/:courseId/stats', () => {
     it('should return topic stats with service key', async () => {
       const category = await createCategory();
