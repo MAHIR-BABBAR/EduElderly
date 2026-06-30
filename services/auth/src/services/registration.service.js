@@ -3,7 +3,7 @@ const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 const { ROLES } = require('@eduelderly/shared/constants/roles');
 const { signEmailVerificationToken, verifyEmailVerificationToken } = require('../utils/jwtHelper');
 const { hashPassword } = require('./password.service');
-const { sendVerificationEmail } = require('./mailService');
+const { sendVerificationEmail, sendWelcomeEmail } = require('./mailService');
 const { createUserProfile } = require('../clients/userClient');
 
 const registerUser = async ({ name, email, password }) => {
@@ -64,6 +64,8 @@ const verifyEmailWithToken = async (token) => {
 
   user.isVerified = true;
   await user.save();
+
+  sendWelcomeEmail(user);
 
   return { user, alreadyVerified: false };
 };

@@ -32,6 +32,12 @@ const statusQueryRules = [
   handleValidationErrors,
 ];
 
+const paginationRules = [
+  query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100'),
+  handleValidationErrors,
+];
+
 const updateStatusRules = [
   param('orderId').notEmpty().withMessage('orderId is required'),
   body('status')
@@ -50,6 +56,7 @@ module.exports = {
   checkoutRules,
   orderIdRules,
   statusQueryRules,
+  paginationRules,
   updateStatusRules,
   internalStatusRules,
 };

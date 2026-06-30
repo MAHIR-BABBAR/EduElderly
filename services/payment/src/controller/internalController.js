@@ -20,7 +20,13 @@ const getStatus = catchAsync(async (req, res) => {
   });
 });
 
+const getInternalStats = catchAsync(async (_req, res) => {
+  const stats = await transactionService.getPaymentStats();
+  res.status(200).json({ success: true, data: stats });
+});
+
 module.exports = {
   checkout,
   getStatus,
+  getInternalStats,
 };

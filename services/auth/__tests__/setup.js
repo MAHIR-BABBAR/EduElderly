@@ -51,6 +51,7 @@ process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 process.env.BCRYPT_SALT_ROUNDS = '1';
 process.env.INTERNAL_SERVICE_KEY = 'test_internal_key';
+process.env.GATEWAY_TRUST_DISABLED = 'true';
 process.env.REDIS_URL = 'redis://127.0.0.1:6379';
 process.env.NOTIFICATION_SERVICE_URL = 'http://localhost:3007';
 process.env.USER_SERVICE_URL = 'http://localhost:3002';
@@ -60,6 +61,7 @@ jest.mock('../src/services/mailService', () => ({
   sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
   sendOtpEmail: jest.fn().mockResolvedValue(undefined),
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+  sendWelcomeEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../src/clients/userClient', () => ({

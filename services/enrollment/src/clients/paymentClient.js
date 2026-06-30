@@ -1,4 +1,4 @@
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, getInternalServiceKey } = require('@eduelderly/shared');
 
 const getBaseUrl = () => process.env.PAYMENT_SERVICE_URL || 'http://payment:3006';
 
@@ -11,7 +11,7 @@ const initiateCheckout = async ({ userId, courseId, amount, currency = 'INR' }) 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Service-Key': process.env.INTERNAL_SERVICE_KEY || '',
+        'X-Service-Key': getInternalServiceKey(),
       },
       body: JSON.stringify({ userId, courseId, amount, currency }),
       signal: controller.signal,

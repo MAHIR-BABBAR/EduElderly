@@ -4,12 +4,13 @@ const { listOrders, getOrder, updateOrderStatus } = require('../controller/admin
 const {
   orderIdRules,
   statusQueryRules,
+  paginationRules,
   updateStatusRules,
 } = require('../validators/paymentValidators');
 
 const router = express.Router();
 
-router.get('/orders', extractUser, requireAdmin, statusQueryRules, listOrders);
+router.get('/orders', extractUser, requireAdmin, statusQueryRules, paginationRules, listOrders);
 router.get('/orders/:orderId', extractUser, requireAdmin, orderIdRules, getOrder);
 router.patch(
   '/orders/:orderId/status',

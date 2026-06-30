@@ -1,3 +1,5 @@
+const { getInternalServiceKey } = require('@eduelderly/shared');
+
 const getBaseUrl = () => process.env.USER_SERVICE_URL || 'http://user:3002';
 
 const internalRequest = async (path, { method = 'GET', body } = {}) => {
@@ -9,7 +11,7 @@ const internalRequest = async (path, { method = 'GET', body } = {}) => {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'X-Service-Key': process.env.INTERNAL_SERVICE_KEY || '',
+        'X-Service-Key': getInternalServiceKey(),
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,

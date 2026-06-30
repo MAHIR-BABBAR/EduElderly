@@ -1,0 +1,277 @@
+# Production Docker Compose — EduElderly Backend
+# Usage:
+#   1. Copy .env.prod.example to .env.prod and fill in secrets
+#   2. docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# Only the gateway is exposed on the host. MongoDB and Redis are internal only.
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: eduelderly-mongo-prod
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo-data-prod:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "-u", "${MONGO_ROOT_USER}", "-p", "${MONGO_ROOT_PASSWORD}", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - eduelderly-net-prod
+
+  redis:
+    image: redis:7-alpine
+    container_name: eduelderly-redis-prod
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - eduelderly-net-prod
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: gateway
+    container_name: eduelderly-gateway-prod
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    env_file:
+      - ./services/gateway/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      AUTH_SERVICE_URL: http://auth:3001
+      USER_SERVICE_URL: http://user:3002
+      COURSE_SERVICE_URL: http://course:3003
+      ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      QUIZ_SERVICE_URL: http://quiz:3005
+      PAYMENT_SERVICE_URL: http://payment:3006
+      NOTIFICATION_SERVICE_URL: http://notification:3007
+      ADMIN_SERVICE_URL: http://admin:3008
+      CERTIFICATE_SERVICE_URL: http://certificate:3009
+    depends_on:
+      - auth
+      - user
+      - course
+    networks:
+      - eduelderly-net-prod
+
+  auth:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: auth
+    container_name: eduelderly-auth-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/auth/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-auth?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      NOTIFICATION_SERVICE_URL: http://notification:3007
+      USER_SERVICE_URL: http://user:3002
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  user:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: user
+    container_name: eduelderly-user-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/user/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-user?authSource=admin
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  course:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: course
+    container_name: eduelderly-course-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/course/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-course?authSource=admin
+      ADMIN_SERVICE_URL: http://admin:3008
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  enrollment:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: enrollment
+    container_name: eduelderly-enrollment-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/enrollment/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-enrollment?authSource=admin
+      COURSE_SERVICE_URL: http://course:3003
+      USER_SERVICE_URL: http://user:3002
+      PAYMENT_SERVICE_URL: http://payment:3006
+      NOTIFICATION_SERVICE_URL: http://notification:3007
+      CERTIFICATE_SERVICE_URL: http://certificate:3009
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  quiz:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: quiz
+    container_name: eduelderly-quiz-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/quiz/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-quiz?authSource=admin
+      ENROLLMENT_SERVICE_URL: http://enrollment:3004
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  payment:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: payment
+    container_name: eduelderly-payment-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/payment/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-payment?authSource=admin
+      ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      COURSE_SERVICE_URL: http://course:3003
+      ADMIN_SERVICE_URL: http://admin:3008
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  notification:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: notification
+    container_name: eduelderly-notification-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/notification/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-notification?authSource=admin
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  admin:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: admin
+    container_name: eduelderly-admin-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/admin/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-admin?authSource=admin
+      USER_SERVICE_URL: http://user:3002
+      COURSE_SERVICE_URL: http://course:3003
+      ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      PAYMENT_SERVICE_URL: http://payment:3006
+      CERTIFICATE_SERVICE_URL: http://certificate:3009
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+  certificate:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        SERVICE_DIR: certificate
+    container_name: eduelderly-certificate-prod
+    restart: unless-stopped
+    env_file:
+      - ./services/certificate/.env
+    environment:
+      NODE_ENV: production
+      GATEWAY_TRUST_ENFORCED: "true"
+      MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-certificate?authSource=admin
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - eduelderly-net-prod
+
+networks:
+  eduelderly-net-prod:
+    driver: bridge
+
+volumes:
+  mongo-data-prod:

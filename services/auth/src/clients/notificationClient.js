@@ -1,6 +1,8 @@
+const { getInternalServiceKey } = require('@eduelderly/shared');
+
 const getBaseUrl = () => process.env.NOTIFICATION_SERVICE_URL || 'http://notification:3007';
 
-const sendAuthEmail = async ({ email, type, templateData }) => {
+const sendAuthEmail = async ({ email, userId, type, templateData }) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -9,9 +11,9 @@ const sendAuthEmail = async ({ email, type, templateData }) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Service-Key': process.env.INTERNAL_SERVICE_KEY || '',
+        'X-Service-Key': getInternalServiceKey(),
       },
-      body: JSON.stringify({ email, type, templateData }),
+      body: JSON.stringify({ email, userId, type, templateData }),
       signal: controller.signal,
     });
 

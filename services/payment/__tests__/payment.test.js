@@ -75,6 +75,20 @@ describe('Payment Service', () => {
 
       expect(res.status).toBe(401);
     });
+
+    it('rejects incorrect payment amount', async () => {
+      const courseClient = require('../src/clients/courseClient');
+      courseClient.getCourse.mockResolvedValueOnce({
+        courseId: 'course-paid-1',
+        isPublished: true,
+        isDeleted: false,
+        isPaid: true,
+        price: 9.99,
+      });
+
+      const res = await createCheckout({ amount: 0 });
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('PATCH /admin/orders/:orderId/status', () => {
@@ -128,6 +142,29 @@ describe('Payment Service', () => {
       expect(enrollmentClient.enrollAfterPayment).toHaveBeenCalledTimes(1);
     });
 
+    it('keeps order pending when enrollment fails on confirm', async () => {
+      const checkoutRes = await createCheckout();
+      const orderId = checkoutRes.body.data.orderId;
+
+      enrollmentClient.enrollAfterPayment.mockRejectedValueOnce(
+        new Error('Enrollment service unavailable'),
+      );
+
+      const res = await request(app)
+        .patch(`/admin/orders/${orderId}/status`)
+        .set(adminHeaders)
+        .send({ status: TX_STATUS.SUCCESS });
+
+      expect(res.status).toBeGreaterThanOrEqual(500);
+
+      const orderRes = await request(app)
+        .get(`/orders/${orderId}`)
+        .set(learnerHeaders);
+
+      expect(orderRes.status).toBe(200);
+      expect(orderRes.body.data.status).toBe(TX_STATUS.PENDING);
+    });
+
     it('rejects learner attempting status update', async () => {
       const checkoutRes = await createCheckout();
       const orderId = checkoutRes.body.data.orderId;
@@ -139,6 +176,30 @@ describe('Payment Service', () => {
 
       expect(res.status).toBe(403);
       expect(enrollmentClient.enrollAfterPayment).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /internal/stats', () => {
+    it('returns payment counts and revenue with service key', async () => {
+      await createCheckout();
+      const checkout2 = await createCheckout({ userId: 'learner-2', courseId: 'course-paid-2' });
+      await request(app)
+        .patch(`/admin/orders/${checkout2.body.data.orderId}/status`)
+        .set(adminHeaders)
+        .send({ status: TX_STATUS.SUCCESS });
+
+      const res = await request(app).get('/internal/stats').set(serviceHeaders);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.totalOrders).toBe(2);
+      expect(res.body.data.successfulOrders).toBe(1);
+      expect(res.body.data.pendingOrders).toBe(1);
+      expect(res.body.data.revenueTotal).toBe(9.99);
+    });
+
+    it('rejects missing service key', async () => {
+      const res = await request(app).get('/internal/stats');
+      expect(res.status).toBe(401);
     });
   });
 
@@ -201,6 +262,26 @@ describe('Payment Service', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.orders.length).toBeGreaterThanOrEqual(1);
       expect(res.body.data.orders[0].status).toBe(TX_STATUS.PENDING);
+      expect(res.body.data.pagination).toMatchObject({
+        page: 1,
+        limit: 20,
+        total: expect.any(Number),
+        totalPages: expect.any(Number),
+      });
+    });
+
+    it('paginates admin orders', async () => {
+      await createCheckout({ userId: 'learner-1' });
+      await createCheckout({ userId: 'learner-2', courseId: 'course-paid-2' });
+
+      const res = await request(app)
+        .get('/admin/orders')
+        .set(adminHeaders)
+        .query({ page: 1, limit: 1 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.orders).toHaveLength(1);
+      expect(res.body.data.pagination.total).toBeGreaterThanOrEqual(2);
     });
 
     it('rejects non-admin', async () => {

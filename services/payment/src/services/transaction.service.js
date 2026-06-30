@@ -1,8 +1,13 @@
 const { v7: uuidv7 } = require('uuid');
 const { Transaction } = require('../models/Transaction');
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, createLogger } = require('@eduelderly/shared');
 const { TX_STATUS } = require('@eduelderly/shared/constants/transactionTypes');
 const enrollmentClient = require('../clients/enrollmentClient');
+const adminClient = require('../clients/adminClient');
+const courseClient = require('../clients/courseClient');
+const { AUDIT_ACTION } = require('@eduelderly/shared/constants/auditActions');
+
+const log = createLogger('payment-service');
 
 const getCheckoutBaseUrl = () =>
   process.env.MOCK_CHECKOUT_BASE_URL || 'http://localhost:5173/#order-pending';
@@ -24,29 +29,42 @@ const assertValidTransition = (currentStatus, nextStatus) => {
 };
 
 const createCheckout = async ({ userId, courseId, amount, currency = 'USD' }) => {
-  const existingPending = await Transaction.findOne({
-    userId,
-    courseId,
-    status: TX_STATUS.PENDING,
-  });
+  const course = await courseClient.getCourse(courseId);
 
-  if (existingPending) {
-    throw new AppError(
-      'A pending payment already exists for this course',
-      409,
-      ERROR_CODES.E_PAY_FAILED,
-    );
+  if (!course.isPublished || course.isDeleted) {
+    throw new AppError('Course not found', 404, ERROR_CODES.E_COURSE_NOT_FOUND);
   }
 
-  const orderId = uuidv7();
-  await Transaction.create({
-    orderId,
-    userId,
-    courseId,
-    amount,
-    currency: currency.toUpperCase(),
-    status: TX_STATUS.PENDING,
-  });
+  if (!course.isPaid) {
+    throw new AppError('Course does not require payment', 400, ERROR_CODES.E_VALIDATION);
+  }
+
+  if (typeof amount !== 'number' || amount !== course.price) {
+    throw new AppError('Invalid payment amount', 400, ERROR_CODES.E_VALIDATION);
+  }
+
+  let orderId;
+  try {
+    const orderIdCandidate = uuidv7();
+    await Transaction.create({
+      orderId: orderIdCandidate,
+      userId,
+      courseId,
+      amount,
+      currency: currency.toUpperCase(),
+      status: TX_STATUS.PENDING,
+    });
+    orderId = orderIdCandidate;
+  } catch (error) {
+    if (error.code === 11000) {
+      throw new AppError(
+        'A pending payment already exists for this course',
+        409,
+        ERROR_CODES.E_PAY_FAILED,
+      );
+    }
+    throw error;
+  }
 
   const checkoutUrl = `${getCheckoutBaseUrl()}/${orderId}`;
 
@@ -75,12 +93,30 @@ const getOrderById = async (orderId) => {
 const listMyTransactions = async (userId) =>
   Transaction.find({ userId }).sort({ createdAt: -1 });
 
-const listOrdersAdmin = async ({ status } = {}) => {
+const listOrdersAdmin = async ({ status, page = 1, limit = 20 } = {}) => {
+  const safePage = Math.max(1, parseInt(page, 10) || 1);
+  const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  const skip = (safePage - 1) * safeLimit;
+
   const filter = {};
   if (status) {
     filter.status = status;
   }
-  return Transaction.find(filter).sort({ createdAt: -1 });
+
+  const [orders, total] = await Promise.all([
+    Transaction.find(filter).sort({ createdAt: -1 }).skip(skip).limit(safeLimit),
+    Transaction.countDocuments(filter),
+  ]);
+
+  return {
+    orders,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit) || 1,
+    },
+  };
 };
 
 const getPaymentStatus = async (userId, courseId) => {
@@ -113,25 +149,74 @@ const updateOrderStatus = async ({ orderId, status, adminUserId }) => {
     return tx;
   }
 
+  const previousStatus = tx.status;
   assertValidTransition(tx.status, status);
 
-  tx.status = status;
   tx.statusUpdatedBy = adminUserId;
   tx.statusUpdatedAt = new Date();
 
   if (status === TX_STATUS.SUCCESS) {
-    tx.confirmedAt = new Date();
-    await tx.save();
     await enrollmentClient.enrollAfterPayment({
       userId: tx.userId,
       courseId: tx.courseId,
       paymentRef: tx.orderId,
     });
-  } else {
+
+    tx.status = status;
+    tx.confirmedAt = new Date();
     await tx.save();
+
+    log.info('Payment confirmed and enrollment completed', {
+      orderId,
+      userId: tx.userId,
+      courseId: tx.courseId,
+      adminUserId,
+    });
+
+    adminClient.logAuditSafe({
+      actorId: adminUserId,
+      action: AUDIT_ACTION.CONFIRM_PAYMENT,
+      targetType: 'order',
+      targetId: orderId,
+      metadata: { previousStatus, courseId: tx.courseId, userId: tx.userId },
+    });
+  } else {
+    tx.status = status;
+    await tx.save();
+    if (status === TX_STATUS.REFUNDED) {
+      adminClient.logAuditSafe({
+        actorId: adminUserId,
+        action: AUDIT_ACTION.REFUND_PAYMENT,
+        targetType: 'order',
+        targetId: orderId,
+        metadata: { previousStatus, courseId: tx.courseId, userId: tx.userId },
+      });
+    }
   }
 
   return tx;
+};
+
+const getPaymentStats = async () => {
+  const [totalOrders, successfulOrders, pendingOrders, revenueAgg] = await Promise.all([
+    Transaction.countDocuments(),
+    Transaction.countDocuments({ status: TX_STATUS.SUCCESS }),
+    Transaction.countDocuments({ status: TX_STATUS.PENDING }),
+    Transaction.aggregate([
+      { $match: { status: TX_STATUS.SUCCESS } },
+      { $group: { _id: null, total: { $sum: '$amount' }, currency: { $first: '$currency' } } },
+    ]),
+  ]);
+
+  const revenue = revenueAgg[0] || { total: 0, currency: 'USD' };
+
+  return {
+    totalOrders,
+    successfulOrders,
+    pendingOrders,
+    revenueTotal: revenue.total,
+    currency: revenue.currency || 'USD',
+  };
 };
 
 module.exports = {
@@ -142,4 +227,5 @@ module.exports = {
   listOrdersAdmin,
   getPaymentStatus,
   updateOrderStatus,
+  getPaymentStats,
 };

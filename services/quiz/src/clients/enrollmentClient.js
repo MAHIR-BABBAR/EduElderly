@@ -1,4 +1,4 @@
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, getInternalServiceKey } = require('@eduelderly/shared');
 
 const getBaseUrl = () => process.env.ENROLLMENT_SERVICE_URL || 'http://localhost:3004';
 
@@ -11,7 +11,7 @@ const internalRequest = async (path, { method = 'GET', body } = {}) => {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'X-Service-Key': process.env.INTERNAL_SERVICE_KEY || '',
+        'X-Service-Key': getInternalServiceKey(),
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
