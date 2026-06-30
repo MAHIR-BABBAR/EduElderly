@@ -1,60 +1,99 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId } = require('@eduelderly/shared');
+const internalRoutes = require('./routes/internalRoutes');
+const certificateRoutes = require('./routes/certificateRoutes');
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3009;
 const SERVICE_NAME = 'certificate-service';
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+const createApp = () => {
+  const app = express();
 
-// Health check
-app.get('/health', (_req, res) => {
-  res.status(200).json({
-    service: SERVICE_NAME,
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+  app.use(express.json({ limit: '1mb' }));
+
+  app.get('/health', (_req, res) => {
+    const dbReady = mongoose.connection.readyState === 1;
+    res.status(dbReady ? 200 : 503).json({
+      service: SERVICE_NAME,
+      status: dbReady ? 'healthy' : 'unhealthy',
+      database: dbReady ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    });
   });
-});
 
-// TODO Phase 6: Mount certificate routes here
-// app.use('/', certificateRoutes);
+  app.use(requireGateway);
+  app.use(requestId);
 
-// 404 handler
-app.use((_req, res, next) => {
-  // We didn't find a route, so we CREATE a 404 error and pass it down
-  next(new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
-});
+  app.use((req, _res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+      return next(
+        new AppError(
+          'Backend down, please wait',
+          503,
+          ERROR_CODES.E_SERVICE_UNAVAILABLE,
+        ),
+      );
+    }
+    next();
+  });
 
+  app.use('/internal', internalRoutes);
+  app.use('/', certificateRoutes);
 
-// Global error handler (from shared package)
-app.use(globalErrorHandler);
+  app.use((_req, _res, next) => {
+    next(new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
+  });
 
+  app.use(globalErrorHandler);
 
-// Database connection & server start
-const startServer = async () => {
+  return app;
+};
+
+const bootstrap = async () => {
+  assertRequiredEnv(['MONGO_URI', 'INTERNAL_SERVICE_KEY'], SERVICE_NAME);
+
   try {
     await mongoose.connect(process.env.MONGO_URI, {
       dbName: 'eduelderly-certificate',
     });
     console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
 
-    app.listen(PORT, () => {
+    const app = createApp();
+    const PORT = process.env.PORT || 3009;
+
+    const server = app.listen(PORT, () => {
       console.log(`[${SERVICE_NAME}] Running on port ${PORT}`);
     });
+
+    const shutdown = async () => {
+      console.log(`[${SERVICE_NAME}] Shutting down gracefully...`);
+      server.close(async () => {
+        console.log(`[${SERVICE_NAME}] Closed out remaining connections`);
+        await mongoose.disconnect();
+        console.log(`[${SERVICE_NAME}] MongoDB disconnected`);
+        process.exit(0);
+      });
+
+      setTimeout(() => {
+        console.error(`[${SERVICE_NAME}] Could not close connections in time, forcefully shutting down`);
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
   } catch (error) {
     console.error(`[${SERVICE_NAME}] Failed to start:`, error.message);
     process.exit(1);
   }
 };
 
-startServer();
+if (require.main === module) {
+  bootstrap();
+}
 
-module.exports = app;
+module.exports = { createApp, bootstrap };

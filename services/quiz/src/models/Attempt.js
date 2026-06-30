@@ -27,6 +27,11 @@ const AttemptSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    attemptNumber: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
     answers: {
       type: [AnswerSchema],
       required: true,
@@ -59,6 +64,7 @@ const AttemptSchema = new mongoose.Schema(
 );
 
 AttemptSchema.index({ quizId: 1, userId: 1 });
+AttemptSchema.index({ quizId: 1, userId: 1, attemptNumber: 1 }, { unique: true });
 
 const Attempt = mongoose.model('Attempt', AttemptSchema);
 module.exports = { Attempt };

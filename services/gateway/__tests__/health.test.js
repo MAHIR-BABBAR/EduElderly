@@ -8,6 +8,7 @@ const request = require('supertest');
 // Set env vars before importing app
 process.env.PORT = '0'; // Let OS assign a random port
 process.env.NODE_ENV = 'test';
+process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.INTERNAL_SERVICE_KEY = 'test-internal-key';
 process.env.AUTH_SERVICE_URL = 'http://localhost:3001';
 process.env.USER_SERVICE_URL = 'http://localhost:3002';

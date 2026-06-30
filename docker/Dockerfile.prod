@@ -1,0 +1,37 @@
+# Production image — build with: docker compose -f docker-compose.prod.yml build <service>
+FROM node:20-alpine AS deps
+
+ARG SERVICE_DIR
+
+WORKDIR /deps
+
+COPY packages/shared ./shared
+COPY services/${SERVICE_DIR}/package*.json ./app/
+
+WORKDIR /deps/app
+RUN npm pkg set "dependencies.@eduelderly/shared=file:/deps/shared" \
+    && npm install --omit=dev
+
+FROM node:20-alpine AS runner
+
+ARG SERVICE_DIR
+
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+WORKDIR /app
+
+COPY --from=deps /deps/shared /deps/shared
+COPY --from=deps /deps/app/node_modules ./node_modules
+COPY services/${SERVICE_DIR}/ .
+
+# npm file: symlinks from the deps stage may not resolve after COPY — relink shared package
+RUN rm -rf node_modules/@eduelderly/shared \
+    && ln -s /deps/shared node_modules/@eduelderly/shared
+
+ENV NODE_ENV=production
+
+USER nodejs
+
+EXPOSE 8080
+
+CMD ["node", "src/index.js"]

@@ -51,8 +51,9 @@ On successful email verification, auth also creates a user profile via `POST /us
 Routing and public-route rules are defined in `services/gateway/routes.config.js`:
 
 - **JWT validation** at the gateway for protected routes (`issuer: eduelderly`, `audience: eduelderly-client`).
-- **Public auth routes** (no Bearer token): register, login, verify-email, forgot/reset password, resend verification, refresh, logout, verify/resend OTP, change-password.
-- **Service auth**: gateway injects `X-Service-Key`; user context is forwarded as `X-User-Id` and `X-User-Role` when present.
+- **Public auth routes** (no Bearer token): register, login, verify-email, forgot/reset password, resend verification, refresh, logout, verify/resend OTP.
+- **Protected auth routes** (Bearer JWT required): change-password.
+- **Gateway trust**: all downstream services require `X-Service-Key` in production (`GATEWAY_TRUST_ENFORCED=true`). Identity headers (`X-User-Id`, `X-User-Role`) are only trusted when the service key is valid.
 
 ## Service map
 
@@ -149,11 +150,15 @@ npm install
 docker compose up --build
 ```
 
-Starts MongoDB, Redis, backend services on the internal network, gateway on **8080**, and the client on **5173**.
+Starts MongoDB, Redis, backend services on the internal network, and the gateway on **8080**. All microservices run with `GATEWAY_TRUST_ENFORCED=true` (gateway injects `X-Service-Key` on every proxied request), matching production trust behavior.
 
 ### 5. Run services locally (without Docker)
 
 Ensure MongoDB and Redis are running. Copy `.env` files and use **localhost** URLs in `services/gateway/.env` (see `services/gateway/.env.example`). `JWT_ACCESS_SECRET` must match auth.
+
+**Gateway trust (local dev):** Downstream services only accept identity headers (`X-User-Id`, `X-User-Role`) when the request includes a valid `X-Service-Key` from the gateway. In production this is always enforced; locally it is enforced when `GATEWAY_TRUST_ENFORCED=true` or `NODE_ENV=production`. If you run microservices directly on host ports (3001–3009) without the gateway in front, set `GATEWAY_TRUST_ENFORCED=true` in each service `.env` so spoofed headers cannot bypass auth. Alternatively, bind services to localhost only and route all traffic through the gateway on port 8080.
+
+**Dev compose note:** `docker-compose.yml` exposes MongoDB (`27017`) and Redis (`6379`) on the host for local tooling. These ports are **not** exposed in `docker-compose.prod.yml`. Do not use the dev compose Mongo/Redis exposure on any network-accessible machine.
 
 Start core services (separate terminals):
 
@@ -200,7 +205,7 @@ Expected response shape:
 | `COURSE_SERVICE_URL` | `http://course:3003` | Course service URL |
 | `ENROLLMENT_SERVICE_URL` | `http://enrollment:3004` | Enrollment service URL |
 | `NOTIFICATION_SERVICE_URL` | `http://notification:3007` | Notification service URL |
-| `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS origins |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated CORS origins |
 | `RATE_LIMIT_WINDOW_MS` | `60000` | Rate limit window |
 | `RATE_LIMIT_MAX_REQUESTS` | `200` | Max requests per window |
 
@@ -297,24 +302,39 @@ const { AppError, ERROR_CODES, globalErrorHandler, catchAsync } = require('@edue
 
 ## Testing
 
-Implemented services have Jest + Supertest suites. Run per service (MongoDB required for auth, user, course, enrollment):
+All backend services have Jest + Supertest suites. Each microservice runs two Jest projects: **integration** (MongoDB-backed API tests) and **security** (gateway-trust header spoofing, no DB required). Gateway tests run without Mongo.
 
-```bash
-cd services/auth && npm test          # 22 tests
-cd services/user && npm test          # 22 tests
-cd services/course && npm test        # 12 tests
-cd services/enrollment && npm test    # 12 tests
-cd services/gateway && npm test       # 4 tests
-cd services/notification && npm test  # 2 tests
-```
-
-Enrollment and course tests default to `mongodb://127.0.0.1:27017/eduelderly-*-test`. Start Mongo first:
+Start Mongo before integration tests:
 
 ```bash
 docker compose up -d mongo
 ```
 
-Root `npm test` runs all workspaces; stub services (admin, quiz, payment, certificate, shared) have no tests yet and exit non-zero — use the per-service commands above for CI-style checks on implemented code.
+Run per service (`npm test` runs both projects):
+
+| Service | Tests |
+|---------|-------|
+| auth | 25 |
+| user | 28 |
+| payment | 19 |
+| course | 16 |
+| enrollment | 18 |
+| quiz | 13 |
+| admin | 9 |
+| notification | 8 |
+| certificate | 13 |
+| gateway | 19 |
+| **Total** | **168** |
+
+```bash
+cd services/auth && npm test
+cd services/gateway && npm test
+# … repeat for user, course, enrollment, quiz, payment, notification, admin, certificate
+```
+
+Integration tests default to `mongodb://127.0.0.1:27017/eduelderly-*-test`. Security tests use a lightweight setup and do not require Mongo.
+
+Root `npm test` runs all workspaces (`npm run test --workspaces --if-present`).
 
 **Windows note:** auth/user tests use a real MongoDB URI (`TEST_MONGO_URI`) because MongoMemoryServer can fail with `spawn EFTYPE`. Example:
 
@@ -332,6 +352,24 @@ cd services/auth; npm test
 | `docker compose down` | Stop stack |
 | `docker compose logs -f gateway` | Follow gateway logs |
 
+## Production deployment
+
+1. Copy `.env.prod.example` to `.env.prod` and set strong `MONGO_ROOT_PASSWORD`, `REDIS_PASSWORD`.
+2. Copy each service `.env.example` to `.env` and set production secrets (`INTERNAL_SERVICE_KEY`, JWT secrets, `CORS_ALLOWED_ORIGINS`).
+3. Build and start:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+Production posture:
+
+- Only the gateway is exposed on the host (`GATEWAY_PORT`, default 8080).
+- MongoDB and Redis have no host ports; Redis and Mongo require authentication.
+- `GATEWAY_TRUST_ENFORCED=true` on all services — direct calls without `X-Service-Key` are rejected.
+- Payment amounts are validated server-side against course prices.
+- Payment confirmation enrolls the learner before marking the order paid.
+
 ## Build phases
 
 | Phase | Focus | Status |
@@ -340,12 +378,12 @@ cd services/auth; npm test
 | **1** | Auth — register, OTP, login, JWT, password reset, email via Brevo | Done |
 | **2** | User + course services | Done |
 | **3** | Enrollment + XP, content gate, paid-checkout delegate | Done |
-| **4** | Quiz service | Planned |
-| **5** | Payment service | Planned |
-| **6** | Notification (auth emails) + certificate | In progress |
-| **7** | Admin service | Planned |
+| **4** | Quiz service | Done |
+| **5** | Payment service | Done |
+| **6** | Notification + certificate | Done |
+| **7** | Admin service | Done |
 | **8** | Frontend (React) | Planned |
-| **9** | Testing + deploy | Planned |
+| **9** | Production hardening + deploy | Done |
 
 ## Tech stack
 

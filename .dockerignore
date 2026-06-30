@@ -4,7 +4,8 @@ node_modules
 .gitignore
 **/.env
 **/.env.*
-sample-test-site
+.sample-test-site
+sample-site
 **/coverage
 **/__tests__
 **/*.test.js

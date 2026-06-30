@@ -1,4 +1,4 @@
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, getInternalServiceKey } = require('@eduelderly/shared');
 
 const getBaseUrl = () => process.env.USER_SERVICE_URL || 'http://user:3002';
 
@@ -11,7 +11,7 @@ const internalRequest = async (path, { method = 'GET', body } = {}) => {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'X-Service-Key': process.env.INTERNAL_SERVICE_KEY || '',
+        'X-Service-Key': getInternalServiceKey(),
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
@@ -39,4 +39,7 @@ const internalRequest = async (path, { method = 'GET', body } = {}) => {
 const incrementXP = (userId, amount) =>
   internalRequest(`/internal/${userId}/xp`, { method: 'PATCH', body: { amount } });
 
-module.exports = { incrementXP };
+const getProfile = (userId) =>
+  internalRequest(`/internal/${userId}/profile`);
+
+module.exports = { incrementXP, getProfile };
