@@ -46,6 +46,7 @@ const { toDashboardDTO } = require('./dtos/DashboardDTO');
 
 const { assertRequiredEnv, getInternalServiceKey } = require('./utils/assertRequiredEnv');
 const { createLogger, requestId } = require('./utils/logger');
+const { buildSpec, mountDocs, S: OpenApi } = require('./docs/openapi');
 
 module.exports = {
   // Constants
@@ -108,4 +109,9 @@ module.exports = {
   getInternalServiceKey,
   createLogger,
   requestId,
+
+  // OpenAPI
+  buildSpec,
+  mountDocs,
+  OpenApi,
 };

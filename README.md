@@ -269,6 +269,15 @@ See `services/gateway/.env.example` for all downstream service URLs.
 | `/api/v1/admin/*` | admin | JWT required (admin role) |
 | `/api/v1/certificates/*` | certificate | JWT required |
 
+## API documentation
+
+Every service publishes an OpenAPI 3 document at `/docs.json` and a Swagger UI at `/docs` on its own port. The gateway aggregates all of them at **http://localhost:8080/docs** with a service picker, so one page covers the whole platform.
+
+- Specs live in `services/<name>/src/docs/openapi.js` and are built with the helpers in `packages/shared/docs/openapi.js`, so error responses, pagination, and security schemes are declared once.
+- Internal service-to-service routes are documented under the `Internal` tag with their Docker-network address; they are not reachable through the gateway.
+- `npm run docs:validate` checks every operation has a summary, tags, security, and responses, and that every `$ref` resolves. CI runs it. `npm run docs:export` writes the JSON documents to `docs/openapi/`.
+- In production the gateway docs require an admin JWT unless `DOCS_PUBLIC=true`.
+
 ## Enrollment flow (Phase 3)
 
 Learners enroll through the enrollment service; topic `contentUrl` is **not** exposed on public course APIs.
