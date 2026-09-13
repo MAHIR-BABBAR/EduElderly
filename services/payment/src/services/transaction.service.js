@@ -12,6 +12,18 @@ const log = createLogger('payment-service');
 const getCheckoutBaseUrl = () =>
   process.env.MOCK_CHECKOUT_BASE_URL || 'http://localhost:5173/#order-pending';
 
+/**
+ * Which payment provider is active. `mock` lets a learner confirm their own order
+ * from the checkout page (no money moves). Outside development the default is
+ * `none`, so the self-confirm route disappears unless explicitly enabled.
+ */
+const getPaymentProvider = () => {
+  if (process.env.PAYMENT_PROVIDER) return process.env.PAYMENT_PROVIDER.toLowerCase();
+  return process.env.NODE_ENV === 'production' ? 'none' : 'mock';
+};
+
+const MOCK_PROVIDER_ACTOR = 'mock-provider';
+
 const ALLOWED_TRANSITIONS = {
   [TX_STATUS.PENDING]: [TX_STATUS.SUCCESS, TX_STATUS.FAILED],
   [TX_STATUS.SUCCESS]: [TX_STATUS.REFUNDED],
@@ -219,6 +231,17 @@ const getPaymentStats = async () => {
   };
 };
 
+const confirmOrderForLearner = async (orderId, userId) => {
+  if (getPaymentProvider() !== 'mock') {
+    throw new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND);
+  }
+  const tx = await getOrderForUser(orderId, userId);
+  if (tx.status !== TX_STATUS.PENDING) {
+    throw new AppError('Order is not pending confirmation', 400, ERROR_CODES.E_VALIDATION);
+  }
+  return updateOrderStatus({ orderId, status: TX_STATUS.SUCCESS, adminUserId: MOCK_PROVIDER_ACTOR });
+};
+
 module.exports = {
   createCheckout,
   getOrderForUser,
@@ -227,5 +250,7 @@ module.exports = {
   listOrdersAdmin,
   getPaymentStatus,
   updateOrderStatus,
+  confirmOrderForLearner,
   getPaymentStats,
+  getPaymentProvider,
 };
