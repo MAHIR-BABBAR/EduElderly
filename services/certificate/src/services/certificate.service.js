@@ -5,9 +5,10 @@ const { NullStorage } = require('../storage/NullStorage');
 
 const storage = new NullStorage();
 
-const getAppUrl = () => process.env.APP_URL || 'http://localhost:8080';
+const getAppUrl = () => process.env.APP_URL || 'http://localhost:5173';
 
-const buildVerifyUrl = (certId) => `${getAppUrl()}/api/v1/certificates/${certId}/verify`;
+const buildVerifyUrl = (certId) =>
+  `${getAppUrl()}/verify-certificate?certId=${encodeURIComponent(certId)}`;
 
 const issueCertificate = async ({ userId, courseId, userName, courseTitle }) => {
   if (!userId || !courseId || !userName || !courseTitle) {

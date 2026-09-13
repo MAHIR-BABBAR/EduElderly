@@ -65,6 +65,7 @@ const createPublishedQuizWithQuestions = async () => {
 describe('Quiz Service', () => {
   beforeEach(() => {
     enrollmentClient.getEnrollment.mockResolvedValue(activeEnrollment);
+    enrollmentClient.triggerCertificateEligibility.mockResolvedValue({ issued: false });
   });
 
   describe('POST / — create quiz', () => {
@@ -158,6 +159,11 @@ describe('Quiz Service', () => {
         expect(f).toHaveProperty('correct');
         expect(f).not.toHaveProperty('correctIndex');
       });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(enrollmentClient.triggerCertificateEligibility).toHaveBeenCalledWith(
+        'learner-1',
+        'course-1',
+      );
     });
 
     it('fails when below pass threshold', async () => {

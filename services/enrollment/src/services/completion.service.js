@@ -1,43 +1,10 @@
 const userClient = require('../clients/userClient');
-const certificateClient = require('../clients/certificateClient');
 const notificationClient = require('../clients/notificationClient');
 
-const handleCourseCompletion = async (enrollment, stats) => {
-  try {
-    const profileResponse = await userClient.getProfile(enrollment.userId);
-    const profile = profileResponse.data;
-    const userName = profile?.name || 'Learner';
-    const email = profile?.email;
-    const courseTitle = stats.title || 'Course';
-
-    const cert = await certificateClient.issueCertificateSafe({
-      userId: enrollment.userId,
-      courseId: enrollment.courseId,
-      userName,
-      courseTitle,
-    });
-
-    if (cert?.certId) {
-      enrollment.certificateIssued = true;
-      enrollment.certificateId = cert.certId;
-      await enrollment.save();
-    }
-
-    if (email) {
-      notificationClient.notifyCompletion({
-        userId: enrollment.userId,
-        email,
-        name: userName,
-        courseTitle,
-        certId: cert?.certId,
-        verifyUrl: cert?.verifyUrl,
-      });
-    }
-  } catch (error) {
-    console.error('[enrollment] course completion hook failed:', error.message);
-  }
-};
-
+/**
+ * Fire-and-forget welcome-to-course email. Course completion messaging lives in
+ * certificateEligibility.service.js so there is a single owner for that decision.
+ */
 const notifyEnrollmentCreated = async (userId, courseTitle) => {
   try {
     const profileResponse = await userClient.getProfile(userId);
@@ -55,4 +22,4 @@ const notifyEnrollmentCreated = async (userId, courseTitle) => {
   }
 };
 
-module.exports = { handleCourseCompletion, notifyEnrollmentCreated };
+module.exports = { notifyEnrollmentCreated };

@@ -41,4 +41,12 @@ const getEnrollment = async (userId, courseId) => {
   return result.data;
 };
 
-module.exports = { getEnrollment };
+const triggerCertificateEligibility = async (userId, courseId) => {
+  const result = await internalRequest('/internal/certificate-eligibility', {
+    method: 'POST',
+    body: { userId, courseId },
+  });
+  return result.data;
+};
+
+module.exports = { getEnrollment, triggerCertificateEligibility };

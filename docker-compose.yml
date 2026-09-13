@@ -148,6 +148,7 @@ services:
       PAYMENT_SERVICE_URL: http://payment:3006
       NOTIFICATION_SERVICE_URL: http://notification:3007
       CERTIFICATE_SERVICE_URL: http://certificate:3009
+      QUIZ_SERVICE_URL: http://quiz:3005
       GATEWAY_TRUST_ENFORCED: "true"
     depends_on:
       - mongo
@@ -192,7 +193,9 @@ services:
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-payment
       ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      COURSE_SERVICE_URL: http://course:3003
       MOCK_CHECKOUT_BASE_URL: http://localhost:5173/#order-pending
+      PAYMENT_PROVIDER: mock
       GATEWAY_TRUST_ENFORCED: "true"
     depends_on:
       - mongo
@@ -261,6 +264,7 @@ services:
       - ./services/certificate/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-certificate
+      APP_URL: http://localhost:5173
       GATEWAY_TRUST_ENFORCED: "true"
     depends_on:
       - mongo

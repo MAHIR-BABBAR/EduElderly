@@ -190,7 +190,10 @@ const dropEnrollment = async (enrollmentId, userId) => {
 
 const getResume = async (enrollmentId, userId) => {
   const enrollment = await getEnrollmentForUser(enrollmentId, userId);
-  if (enrollment.status !== ENROLLMENT_STATUS.ACTIVE) {
+  if (
+    enrollment.status !== ENROLLMENT_STATUS.ACTIVE
+    && enrollment.status !== ENROLLMENT_STATUS.COMPLETED
+  ) {
     throw new AppError('Enrollment is not active', 403, ERROR_CODES.E_NOT_ENROLLED);
   }
 

@@ -4,7 +4,7 @@ const { Enrollment } = require('../models/Enrollment');
 const enrollmentService = require('./enrollment.service');
 const courseClient = require('../clients/courseClient');
 const userClient = require('../clients/userClient');
-const { handleCourseCompletion } = require('./completion.service');
+const { checkAndIssueCertificate } = require('./certificateEligibility.service');
 
 const syncCompletedModules = (enrollment, modules) => {
   const completedTopics = new Set(enrollment.completedTopics);
@@ -105,7 +105,9 @@ const markTopicComplete = async (enrollmentId, userId, { topicId, timeSpentMinut
   }
 
   if (enrollment.status === ENROLLMENT_STATUS.COMPLETED && enrollment.progressPercent >= 100) {
-    handleCourseCompletion(enrollment, stats);
+    checkAndIssueCertificate(userId, enrollment.courseId, { notifyOnIncomplete: true }).catch((error) => {
+      console.error('[enrollment] certificate eligibility check failed:', error.message);
+    });
   }
 
   return enrollment;
