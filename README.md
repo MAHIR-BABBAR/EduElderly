@@ -316,15 +316,15 @@ Run per service (`npm test` runs both projects):
 |---------|-------|
 | auth | 25 |
 | user | 28 |
-| payment | 19 |
+| payment | 23 |
 | course | 16 |
-| enrollment | 18 |
+| enrollment | 21 |
 | quiz | 13 |
 | admin | 9 |
-| notification | 8 |
+| notification | 12 |
 | certificate | 13 |
 | gateway | 19 |
-| **Total** | **168** |
+| **Total** | **179** |
 
 ```bash
 cd services/auth && npm test
@@ -348,6 +348,7 @@ cd services/auth; npm test
 | Command | Description |
 |---------|-------------|
 | `npm test` | Run tests in all workspaces |
+| `npm run dev:client` | Start React frontend (Vite, port 5173) |
 | `docker compose up --build` | Build and start stack |
 | `docker compose down` | Stop stack |
 | `docker compose logs -f gateway` | Follow gateway logs |
@@ -382,7 +383,7 @@ Production posture:
 | **5** | Payment service | Done |
 | **6** | Notification + certificate | Done |
 | **7** | Admin service | Done |
-| **8** | Frontend (React) | Planned |
+| **8** | Frontend (React) | Done |
 | **9** | Production hardening + deploy | Done |
 
 ## Tech stack

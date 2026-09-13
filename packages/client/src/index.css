@@ -1,0 +1,49 @@
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: var(--font-size-base);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-brand-surface text-brand-text font-sans antialiased;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-body);
+  }
+
+  :focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-brand-primary-dark;
+  }
+}
+
+@layer components {
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]
+      focus:rounded-lg focus:bg-brand-primary focus:px-4 focus:py-3 focus:text-white;
+  }
+
+  .page-container {
+    @apply mx-auto w-full max-w-[var(--content-max)] px-4 py-8 sm:px-6 lg:px-8;
+  }
+
+  .card-surface {
+    @apply rounded-[var(--radius-lg)] border border-brand-border bg-white p-6 shadow-sm;
+  }
+
+  .btn-touch {
+    min-height: var(--touch-min);
+    min-width: var(--touch-min);
+  }
+}
