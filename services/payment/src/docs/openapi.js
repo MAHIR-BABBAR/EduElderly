@@ -10,6 +10,7 @@ const Transaction = {
     currency: { type: 'string', example: 'INR' },
     status: { type: 'string', enum: ['pending', 'success', 'failed', 'refunded'] },
     type: { type: 'string', enum: ['purchase', 'refund'] },
+    provider: { type: 'string', enum: ['mock', 'razorpay'], nullable: true },
     confirmedAt: { ...S.dateTime, nullable: true },
     createdAt: S.dateTime,
     updatedAt: S.dateTime,
@@ -41,6 +42,7 @@ module.exports = buildSpec({
   internalUrl: 'http://payment:3006',
   tags: [
     { name: 'Orders', description: 'My orders' },
+    { name: 'Webhooks', description: 'Provider callbacks, authenticated by HMAC signature' },
     { name: 'Payment admin', description: 'Order management (admin role)' },
   ],
   schemas: { Transaction, AdminTransaction },
@@ -78,6 +80,37 @@ module.exports = buildSpec({
           200: S.envelope(S.ref('Transaction'), 'Order paid and learner enrolled'),
           400: S.err('ValidationError'),
           403: S.err('Forbidden'),
+          404: S.err('NotFound'),
+          503: S.err('ServiceUnavailable'),
+        },
+      },
+    },
+    '/webhook': {
+      post: {
+        tags: ['Webhooks'],
+        summary: 'Provider webhook (payment.captured / payment.failed)',
+        description:
+          'Public route. The active provider verifies an HMAC-SHA256 signature over the raw body ' +
+          '(`X-Webhook-Signature` for the mock provider, `X-Razorpay-Signature` for Razorpay). ' +
+          'Idempotent: replays and already-paid orders are acknowledged with `duplicate: true`. ' +
+          'A capture enrolls the learner before the order is marked paid; if enrollment fails the order stays pending and a 5xx asks the provider to retry.',
+        security: S.publicRoute,
+        requestBody: S.body(
+          { type: 'object', additionalProperties: true, description: 'Provider-specific payload' },
+          true,
+          { event: 'payment.captured', orderId: '0192b1d2-0000-7a1b-9f2e-000000000071', paymentId: 'pay_123', eventId: 'evt_1' },
+        ),
+        responses: {
+          200: S.envelope({
+            type: 'object',
+            properties: {
+              orderId: { type: 'string' },
+              status: { type: 'string' },
+              duplicate: { type: 'boolean' },
+              ignored: { type: 'boolean' },
+            },
+          }, 'Acknowledged'),
+          401: S.err('Unauthorized'),
           404: S.err('NotFound'),
           503: S.err('ServiceUnavailable'),
         },

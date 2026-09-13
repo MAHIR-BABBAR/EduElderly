@@ -60,7 +60,8 @@ const ROUTES_CONFIG = {
   payments: {
     prefix: '/api/v1/payments',
     target: process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006',
-    public: [],
+    // Provider webhooks carry no user JWT; the payment service verifies the HMAC signature.
+    public: [{ method: 'POST', match: 'exact', path: '/webhook' }],
   },
 
   notifications: {

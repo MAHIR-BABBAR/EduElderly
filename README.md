@@ -278,6 +278,23 @@ Every service publishes an OpenAPI 3 document at `/docs.json` and a Swagger UI a
 - `npm run docs:validate` checks every operation has a summary, tags, security, and responses, and that every `$ref` resolves. CI runs it. `npm run docs:export` writes the JSON documents to `docs/openapi/`.
 - In production the gateway docs require an admin JWT unless `DOCS_PUBLIC=true`.
 
+## Payments
+
+Payments go through a provider adapter (`services/payment/src/providers/`) so the order state machine never depends on a specific vendor:
+
+| `PAYMENT_PROVIDER` | Checkout | Confirmation |
+|--------------------|----------|--------------|
+| `mock` (default in dev) | Fake checkout URL | Learner self-confirm button, or an HMAC-signed fake webhook |
+| `razorpay` | Razorpay Orders API (amount in paise, our order id in `notes`) | Razorpay webhook signed with the webhook secret |
+| `none` (default in prod) | Refused with 503 until a provider is configured | — |
+
+Rules that hold for every provider:
+
+- Orders move `pending → success | failed` and `success → refunded` only; invalid transitions are rejected.
+- `POST /api/v1/payments/webhook` is public but verifies an HMAC-SHA256 signature over the raw request body before doing anything.
+- A capture **enrolls the learner first, then marks the order paid**. If enrollment fails the order stays pending and the webhook returns 5xx so the provider retries.
+- Webhooks are idempotent: a replay or a capture for an already-paid order returns `duplicate: true` and never enrolls twice.
+
 ## Async jobs (BullMQ)
 
 Two side effects are slow and failure-prone, so they run off the request path on Redis-backed BullMQ queues:
@@ -344,15 +361,15 @@ Run per service (`npm test` runs both projects):
 |---------|-------|
 | auth | 25 |
 | user | 28 |
-| payment | 23 |
+| payment | 38 |
 | course | 16 |
 | enrollment | 21 |
 | quiz | 13 |
 | admin | 9 |
 | notification | 19 |
 | certificate | 17 |
-| gateway | 24 |
-| **Total** | **195** |
+| gateway | 25 |
+| **Total** | **211** |
 
 ```bash
 cd services/auth && npm test

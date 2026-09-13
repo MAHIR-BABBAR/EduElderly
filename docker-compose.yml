@@ -196,6 +196,8 @@ services:
       COURSE_SERVICE_URL: http://course:3003
       MOCK_CHECKOUT_BASE_URL: http://localhost:5173/#order-pending
       PAYMENT_PROVIDER: mock
+      MOCK_WEBHOOK_SECRET: mock-webhook-secret
+      APP_URL: http://localhost:5173
       GATEWAY_TRUST_ENFORCED: "true"
     depends_on:
       - mongo

@@ -13,7 +13,15 @@ const SERVICE_NAME = 'payment-service';
 const createApp = () => {
   const app = express();
 
-  app.use(express.json({ limit: '1mb' }));
+  // Keep the raw body so provider webhooks can be HMAC-verified byte for byte.
+  app.use(
+    express.json({
+      limit: '1mb',
+      verify: (req, _res, buf) => {
+        req.rawBody = buf.toString('utf8');
+      },
+    }),
+  );
 
   app.get('/health', (_req, res) => {
     const dbReady = mongoose.connection.readyState === 1;

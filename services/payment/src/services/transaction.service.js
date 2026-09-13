@@ -6,21 +6,9 @@ const enrollmentClient = require('../clients/enrollmentClient');
 const adminClient = require('../clients/adminClient');
 const courseClient = require('../clients/courseClient');
 const { AUDIT_ACTION } = require('@eduelderly/shared/constants/auditActions');
+const { getProvider, requireProvider } = require('../providers');
 
 const log = createLogger('payment-service');
-
-const getCheckoutBaseUrl = () =>
-  process.env.MOCK_CHECKOUT_BASE_URL || 'http://localhost:5173/#order-pending';
-
-/**
- * Which payment provider is active. `mock` lets a learner confirm their own order
- * from the checkout page (no money moves). Outside development the default is
- * `none`, so the self-confirm route disappears unless explicitly enabled.
- */
-const getPaymentProvider = () => {
-  if (process.env.PAYMENT_PROVIDER) return process.env.PAYMENT_PROVIDER.toLowerCase();
-  return process.env.NODE_ENV === 'production' ? 'none' : 'mock';
-};
 
 const MOCK_PROVIDER_ACTOR = 'mock-provider';
 
@@ -41,6 +29,7 @@ const assertValidTransition = (currentStatus, nextStatus) => {
 };
 
 const createCheckout = async ({ userId, courseId, amount, currency = 'USD' }) => {
+  const provider = requireProvider();
   const course = await courseClient.getCourse(courseId);
 
   if (!course.isPublished || course.isDeleted) {
@@ -55,18 +44,17 @@ const createCheckout = async ({ userId, courseId, amount, currency = 'USD' }) =>
     throw new AppError('Invalid payment amount', 400, ERROR_CODES.E_VALIDATION);
   }
 
-  let orderId;
+  let tx;
   try {
-    const orderIdCandidate = uuidv7();
-    await Transaction.create({
-      orderId: orderIdCandidate,
+    tx = await Transaction.create({
+      orderId: uuidv7(),
       userId,
       courseId,
       amount,
       currency: currency.toUpperCase(),
       status: TX_STATUS.PENDING,
+      provider: provider.name,
     });
-    orderId = orderIdCandidate;
   } catch (error) {
     if (error.code === 11000) {
       throw new AppError(
@@ -78,9 +66,30 @@ const createCheckout = async ({ userId, courseId, amount, currency = 'USD' }) =>
     throw error;
   }
 
-  const checkoutUrl = `${getCheckoutBaseUrl()}/${orderId}`;
+  // Register the order with the provider. If that fails the local order is
+  // marked failed so the learner can retry (a pending order would block them).
+  try {
+    const { checkoutUrl, providerOrderId } = await provider.createOrder({
+      orderId: tx.orderId,
+      amount,
+      currency: tx.currency,
+      userId,
+      courseId,
+    });
+    tx.checkoutUrl = checkoutUrl;
+    tx.providerOrderId = providerOrderId ?? null;
+    await tx.save();
+  } catch (error) {
+    tx.status = TX_STATUS.FAILED;
+    tx.statusUpdatedBy = `provider:${provider.name}`;
+    tx.statusUpdatedAt = new Date();
+    tx.metadata = { ...(tx.metadata || {}), providerError: error.message };
+    await tx.save();
+    log.error('Provider order creation failed', { orderId: tx.orderId, provider: provider.name, message: error.message });
+    throw error;
+  }
 
-  return { orderId, checkoutUrl };
+  return { orderId: tx.orderId, checkoutUrl: tx.checkoutUrl };
 };
 
 const getOrderForUser = async (orderId, userId) => {
@@ -232,7 +241,8 @@ const getPaymentStats = async () => {
 };
 
 const confirmOrderForLearner = async (orderId, userId) => {
-  if (getPaymentProvider() !== 'mock') {
+  const provider = getProvider();
+  if (!provider || !provider.supportsLearnerConfirm) {
     throw new AppError('Route Not Found', 404, ERROR_CODES.E_ROUTE_NOT_FOUND);
   }
   const tx = await getOrderForUser(orderId, userId);
@@ -240,6 +250,61 @@ const confirmOrderForLearner = async (orderId, userId) => {
     throw new AppError('Order is not pending confirmation', 400, ERROR_CODES.E_VALIDATION);
   }
   return updateOrderStatus({ orderId, status: TX_STATUS.SUCCESS, adminUserId: MOCK_PROVIDER_ACTOR });
+};
+
+/**
+ * Provider webhook entry point. Verifies the signature through the active
+ * provider, then applies the event to the order state machine.
+ *
+ * Idempotency: a capture for an order that is already `success` is
+ * acknowledged as a duplicate without touching enrollment; the same event id
+ * seen twice is likewise a no-op. Enrollment still happens before the order is
+ * marked paid, so a failed enrollment leaves the order pending and the
+ * provider's retry will pick it up.
+ */
+const handleProviderWebhook = async ({ rawBody, headers, body }) => {
+  const provider = requireProvider();
+  const event = provider.verifyWebhook({ rawBody, headers, body });
+
+  if (event.type === 'ignored') {
+    return { ignored: true, type: body?.event ?? null };
+  }
+
+  const tx = event.orderId
+    ? await Transaction.findOne({ orderId: event.orderId })
+    : await Transaction.findOne({ providerOrderId: event.providerOrderId });
+  if (!tx) {
+    throw new AppError('Order not found', 404, ERROR_CODES.E_NOT_FOUND);
+  }
+
+  if (event.eventId && tx.lastWebhookEventId === event.eventId) {
+    return { orderId: tx.orderId, status: tx.status, duplicate: true };
+  }
+
+  const actor = `webhook:${provider.name}`;
+
+  if (event.type === 'payment.captured') {
+    if (tx.status === TX_STATUS.SUCCESS) {
+      return { orderId: tx.orderId, status: tx.status, duplicate: true };
+    }
+    if (tx.status !== TX_STATUS.PENDING) {
+      return { orderId: tx.orderId, status: tx.status, ignored: true, reason: `order is ${tx.status}` };
+    }
+    tx.providerPaymentId = event.providerPaymentId ?? tx.providerPaymentId;
+    tx.lastWebhookEventId = event.eventId ?? null;
+    await tx.save();
+    const updated = await updateOrderStatus({ orderId: tx.orderId, status: TX_STATUS.SUCCESS, adminUserId: actor });
+    return { orderId: updated.orderId, status: updated.status, duplicate: false };
+  }
+
+  // payment.failed
+  if (tx.status !== TX_STATUS.PENDING) {
+    return { orderId: tx.orderId, status: tx.status, ignored: true, reason: `order is ${tx.status}` };
+  }
+  tx.lastWebhookEventId = event.eventId ?? null;
+  await tx.save();
+  const updated = await updateOrderStatus({ orderId: tx.orderId, status: TX_STATUS.FAILED, adminUserId: actor });
+  return { orderId: updated.orderId, status: updated.status, duplicate: false };
 };
 
 module.exports = {
@@ -251,6 +316,6 @@ module.exports = {
   getPaymentStatus,
   updateOrderStatus,
   confirmOrderForLearner,
+  handleProviderWebhook,
   getPaymentStats,
-  getPaymentProvider,
 };
