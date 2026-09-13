@@ -14,7 +14,9 @@
     "reseed": "node scripts/reseed-databases.js",
     "lint": "eslint .",
     "format": "prettier --write '**/*.{js,jsx,json}'",
-    "dev:client": "npm run dev --workspace=@eduelderly/client"
+    "dev:client": "npm run dev --workspace=@eduelderly/client",
+    "docs:validate": "node scripts/validate-openapi.js",
+    "docs:export": "node scripts/validate-openapi.js --export"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

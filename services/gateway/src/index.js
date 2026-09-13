@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { logger, requestLogger } = require('./logger');
 const { setupProxy } = require('./proxy');
+const { createDocsRouter } = require('./docs');
 const { corsOptions } = require('./cors');
 const { globalLimiter, authLimiter } = require('./rateLimiter');
 const {
@@ -95,6 +96,8 @@ const createApp = () => {
       clearTimeout(timeout);
     }
   });
+
+  app.use('/docs', createDocsRouter());
 
   setupProxy(app);
 

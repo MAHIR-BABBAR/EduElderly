@@ -29,6 +29,10 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: OpenAPI documents are valid and committed exports are current
+        run: |
+          npm run docs:export
+          git diff --exit-code -- docs/openapi
 
   backend-tests:
     name: Test ${{ matrix.service }}
