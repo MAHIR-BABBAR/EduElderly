@@ -12,6 +12,7 @@ jest.mock('../src/clients/userClient');
 jest.mock('../src/clients/paymentClient');
 jest.mock('../src/clients/notificationClient');
 jest.mock('../src/clients/certificateClient');
+jest.mock('../src/clients/quizClient');
 
 jest.mock('uuid', () => ({
   v7: jest.fn(() => `mocked-uuid-${Math.random().toString(36).substring(7)}`),

@@ -37,7 +37,8 @@ const getQuestionsForQuiz = async (quizId) =>
 
 const assertEnrollment = async (userId, courseId) => {
   const enrollment = await enrollmentClient.getEnrollment(userId, courseId);
-  if (!enrollment || enrollment.status !== ENROLLMENT_STATUS.ACTIVE) {
+  const allowed = [ENROLLMENT_STATUS.ACTIVE, ENROLLMENT_STATUS.COMPLETED];
+  if (!enrollment || !allowed.includes(enrollment.status)) {
     throw new AppError('Not enrolled in this course', 403, ERROR_CODES.E_NOT_ENROLLED);
   }
 };

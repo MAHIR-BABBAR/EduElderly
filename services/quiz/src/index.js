@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId } = require('@eduelderly/shared');
 const quizRoutes = require('./routes/quizRoutes');
+const internalRoutes = require('./routes/internalRoutes');
 
 const SERVICE_NAME = 'quiz-service';
 
@@ -39,6 +40,7 @@ const createApp = () => {
     next();
   });
 
+  app.use('/internal', internalRoutes);
   app.use('/', quizRoutes);
 
   app.use((_req, _res, next) => {

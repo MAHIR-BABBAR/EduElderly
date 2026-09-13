@@ -51,6 +51,12 @@ const internalLookupRules = [
   handleValidationErrors,
 ];
 
+const certificateEligibilityRules = [
+  body('userId').notEmpty().withMessage('userId is required'),
+  body('courseId').notEmpty().withMessage('courseId is required'),
+  handleValidationErrors,
+];
+
 module.exports = {
   enrollRules,
   enrollmentIdRules,
@@ -59,4 +65,5 @@ module.exports = {
   paginationRules,
   internalEnrollRules,
   internalLookupRules,
+  certificateEligibilityRules,
 };
