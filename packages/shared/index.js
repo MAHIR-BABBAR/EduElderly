@@ -55,6 +55,7 @@ const {
   closeQueues,
   DEFAULT_JOB_OPTIONS,
 } = require('./queue');
+const cache = require('./cache');
 
 module.exports = {
   // Constants
@@ -130,4 +131,7 @@ module.exports = {
   getQueueStats,
   closeQueues,
   DEFAULT_JOB_OPTIONS,
+
+  // Redis read-through cache
+  cache,
 };

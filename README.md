@@ -153,7 +153,11 @@ npm install
 
 ```bash
 docker compose up --build
+npm run demo:seed      # sample courses, quizzes, demo accounts, demo progress
+npm run dev:client     # React client on http://localhost:5173
 ```
+
+Demo accounts (created by `demo:seed`): learner `learner@demo.eduelderly` and admin `admin@demo.eduelderly`, both with password `Demo1234!`.
 
 Starts MongoDB, Redis, backend services on the internal network, and the gateway on **8080**. All microservices run with `GATEWAY_TRUST_ENFORCED=true` (gateway injects `X-Service-Key` on every proxied request), matching production trust behavior.
 
@@ -278,6 +282,12 @@ Every service publishes an OpenAPI 3 document at `/docs.json` and a Swagger UI a
 - `npm run docs:validate` checks every operation has a summary, tags, security, and responses, and that every `$ref` resolves. CI runs it. `npm run docs:export` writes the JSON documents to `docs/openapi/`.
 - In production the gateway docs require an admin JWT unless `DOCS_PUBLIC=true`.
 
+## Caching and observability
+
+- **Catalog cache.** The course service caches public catalog reads (`GET /courses`, `GET /courses/:id`, internal stats) in Redis for 60 s and answers with `X-Cache: HIT|MISS`. Every write to courses, modules, topics, or categories invalidates the `course:` prefix, so admins never see stale data. Without Redis the service simply reads from Mongo.
+- **Metrics.** The gateway exposes Prometheus metrics at `/metrics`: process defaults plus `http_requests_total` and `http_request_duration_seconds` labelled by service prefix, method, and status (never full paths, so cardinality stays bounded).
+- **Request ids.** Every request gets an `X-Request-ID` that the gateway forwards to services and services echo back; logs from every service are JSON lines carrying it.
+
 ## Payments
 
 Payments go through a provider adapter (`services/payment/src/providers/`) so the order state machine never depends on a specific vendor:
@@ -362,14 +372,14 @@ Run per service (`npm test` runs both projects):
 | auth | 25 |
 | user | 28 |
 | payment | 38 |
-| course | 16 |
+| course | 18 |
 | enrollment | 21 |
 | quiz | 13 |
 | admin | 9 |
 | notification | 19 |
 | certificate | 17 |
-| gateway | 25 |
-| **Total** | **211** |
+| gateway | 28 |
+| **Total** | **216** |
 
 ```bash
 cd services/auth && npm test

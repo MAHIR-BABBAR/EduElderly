@@ -11,10 +11,10 @@
  */
 
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const swaggerUi = require('swagger-ui-express');
-const { AppError, ERROR_CODES, ROLES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 const { logger } = require('./logger');
+const { createAdminGate } = require('./adminGate');
 
 const SERVICES = [
   { key: 'auth', name: 'Auth', envVar: 'AUTH_SERVICE_URL' },
@@ -32,29 +32,7 @@ const SPEC_CACHE_TTL_MS = 60_000;
 const UPSTREAM_TIMEOUT_MS = 3000;
 const specCache = new Map();
 
-const docsArePublic = () =>
-  process.env.NODE_ENV !== 'production' || process.env.DOCS_PUBLIC === 'true';
-
-const requireAdminJwt = (req, _res, next) => {
-  if (docsArePublic()) return next();
-
-  const header = req.headers.authorization || '';
-  if (!header.startsWith('Bearer ')) {
-    return next(new AppError('Admin token required to view API docs', 401, ERROR_CODES.E_AUTH_INVALID));
-  }
-  try {
-    const payload = jwt.verify(header.slice(7), process.env.JWT_ACCESS_SECRET, {
-      issuer: 'eduelderly',
-      audience: 'eduelderly-client',
-    });
-    if (payload.role !== ROLES.ADMIN) {
-      return next(new AppError('Admin access required', 403, ERROR_CODES.E_FORBIDDEN));
-    }
-    return next();
-  } catch {
-    return next(new AppError('Invalid token', 401, ERROR_CODES.E_AUTH_INVALID));
-  }
-};
+const requireAdminJwt = createAdminGate('DOCS_PUBLIC');
 
 const fetchSpec = async (service) => {
   const cached = specCache.get(service.key);

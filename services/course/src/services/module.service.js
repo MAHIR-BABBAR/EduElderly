@@ -22,6 +22,7 @@ const createModule = async (courseId, { title, order }) => {
   const mod = await Module.create({ courseId, title, order, topicIds: [] });
   course.moduleIds.push(mod.moduleId);
   await course.save();
+  await courseService.invalidateCatalogCache();
   return mod;
 };
 
@@ -42,6 +43,7 @@ const updateModule = async (moduleId, { title, order }) => {
   if (!mod) {
     throw new AppError('Module not found', 404, ERROR_CODES.E_NOT_FOUND);
   }
+  await courseService.invalidateCatalogCache();
   return mod;
 };
 
@@ -54,6 +56,7 @@ const deleteModule = async (moduleId) => {
     { courseId: mod.courseId },
     { $pull: { moduleIds: moduleId } },
   );
+  await courseService.invalidateCatalogCache();
 
   return mod;
 };
