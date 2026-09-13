@@ -10,6 +10,11 @@ const Certificate = {
     userName: { type: 'string', example: 'Margaret Rose' },
     issuedAt: S.dateTime,
     verifyUrl: { type: 'string', format: 'uri', example: 'http://localhost:5173/verify-certificate?certId=0192b1d2-…' },
+    pdfStatus: {
+      type: 'string',
+      enum: ['pending', 'ready', 'failed'],
+      description: 'PDFs are pre-rendered by a worker; downloads regenerate on demand if not ready',
+    },
   },
 };
 
@@ -35,7 +40,22 @@ module.exports = buildSpec({
     { name: 'Certificates', description: 'My certificates' },
     { name: 'Verify', description: 'Public verification' },
   ],
-  schemas: { Certificate, Verification },
+  schemas: {
+    Certificate,
+    Verification,
+    QueueStats: {
+      type: 'object',
+      properties: {
+        enabled: { type: 'boolean' },
+        name: { type: 'string', example: 'certificate-pdf' },
+        waiting: { type: 'integer' },
+        active: { type: 'integer' },
+        completed: { type: 'integer' },
+        failed: { type: 'integer' },
+        delayed: { type: 'integer' },
+      },
+    },
+  },
   paths: {
     '/me': {
       get: {
@@ -87,10 +107,22 @@ module.exports = buildSpec({
         responses: {
           200: S.envelope({
             type: 'object',
-            properties: { certId: { type: 'string' }, verifyUrl: { type: 'string', format: 'uri' }, issuedAt: S.dateTime },
+            properties: {
+              certId: { type: 'string' },
+              verifyUrl: { type: 'string', format: 'uri' },
+              issuedAt: S.dateTime,
+              pdfStatus: { type: 'string', enum: ['pending', 'ready', 'failed'] },
+            },
           }),
           400: S.err('ValidationError'),
         },
+      },
+    },
+    '/internal/queue/stats': {
+      get: {
+        tags: ['Internal'],
+        summary: 'PDF render queue counts (BullMQ)',
+        responses: { 200: S.envelope(S.ref('QueueStats')) },
       },
     },
     '/internal/stats': {

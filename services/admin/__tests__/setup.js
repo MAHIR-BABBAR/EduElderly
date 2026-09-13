@@ -17,6 +17,8 @@ jest.mock('../src/clients/statsClients', () => ({
   enrollmentClient: { getStats: jest.fn() },
   paymentClient: { getStats: jest.fn() },
   certificateClient: { getStats: jest.fn() },
+  emailQueueClient: { getStats: jest.fn().mockResolvedValue({ enabled: false }) },
+  pdfQueueClient: { getStats: jest.fn().mockRejectedValue(new Error('down')) },
 }));
 
 beforeAll(async () => {

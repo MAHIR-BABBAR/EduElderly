@@ -12,6 +12,7 @@ const toPublicCertificateDTO = (certDoc) => {
     userName: c.userName,
     issuedAt: c.issuedAt,
     verifyUrl: c.verifyUrl,
+    pdfStatus: c.pdfStatus || 'pending',
   };
 };
 

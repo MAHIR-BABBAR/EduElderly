@@ -53,6 +53,7 @@ describe('Certificate Service', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.certId).toBeDefined();
+      expect(res.body.data.pdfStatus).toBe('ready');
       expect(res.body.data.verifyUrl).toContain('/verify-certificate');
       expect(res.body.data.verifyUrl).toContain('certId=');
     });

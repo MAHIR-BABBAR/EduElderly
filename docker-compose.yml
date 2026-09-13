@@ -217,9 +217,11 @@ services:
       - ./services/notification/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-notification
+      REDIS_URL: redis://redis:6379
       GATEWAY_TRUST_ENFORCED: "true"
     depends_on:
       - mongo
+      - redis
     networks:
       - eduelderly-net
 
@@ -264,10 +266,13 @@ services:
       - ./services/certificate/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-certificate
+      REDIS_URL: redis://redis:6379
+      CERT_STORAGE_DIR: /app/storage
       APP_URL: http://localhost:5173
       GATEWAY_TRUST_ENFORCED: "true"
     depends_on:
       - mongo
+      - redis
     networks:
       - eduelderly-net
 

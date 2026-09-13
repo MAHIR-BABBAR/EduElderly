@@ -27,7 +27,28 @@ module.exports = buildSpec({
   gatewayPrefix: '/api/v1/notifications',
   internalUrl: 'http://notification:3007',
   tags: [{ name: 'Inbox', description: 'In-app notifications for the signed-in learner' }],
-  schemas: { Notification },
+  schemas: {
+    Notification,
+    SendResult: {
+      type: 'object',
+      properties: {
+        notificationId: { type: 'string' },
+        status: { type: 'string', enum: ['pending', 'sent', 'failed'] },
+      },
+    },
+    QueueStats: {
+      type: 'object',
+      properties: {
+        enabled: { type: 'boolean', description: 'False when the service runs without Redis' },
+        name: { type: 'string', example: 'email' },
+        waiting: { type: 'integer' },
+        active: { type: 'integer' },
+        completed: { type: 'integer' },
+        failed: { type: 'integer' },
+        delayed: { type: 'integer' },
+      },
+    },
+  },
   paths: {
     '/me': {
       get: {
@@ -74,10 +95,18 @@ module.exports = buildSpec({
           },
         ),
         responses: {
-          200: S.envelope({ type: 'object', properties: { notificationId: { type: 'string' } } }, 'Sent'),
+          200: S.envelope(S.ref('SendResult'), 'Sent inline (no queue configured)'),
+          202: S.envelope(S.ref('SendResult'), 'Queued; a worker delivers it with up to 5 retries'),
           400: S.err('ValidationError'),
           401: S.err('Unauthorized'),
         },
+      },
+    },
+    '/internal/queue/stats': {
+      get: {
+        tags: ['Internal'],
+        summary: 'Email queue counts (BullMQ)',
+        responses: { 200: S.envelope(S.ref('QueueStats')) },
       },
     },
   },
