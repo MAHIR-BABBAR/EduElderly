@@ -26,7 +26,12 @@ const createApp = () => {
   app.use(requestId);
   app.use(requestLogger);
   app.use(globalLimiter);
-  app.use('/api/v1/auth', authLimiter);
+  app.use('/api/v1/auth', (req, res, next) => {
+    if (req.path === '/refresh' || req.path === '/logout') {
+      return next();
+    }
+    return authLimiter(req, res, next);
+  });
 
   app.get('/health', (_req, res) => {
     res.status(200).json({
@@ -55,9 +60,13 @@ const createApp = () => {
       return next(new AppError(`Service '${service}' not found`, 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
     try {
       const response = await fetch(`${serviceUrl}/health`, {
         method: 'GET',
+        signal: controller.signal,
       });
 
       if (response.ok) {
@@ -75,12 +84,15 @@ const createApp = () => {
         });
       }
     } catch (error) {
-      logger.error(`Health check failed for ${service}:`, error.message);
+      const message = error.name === 'AbortError' ? 'Upstream health check timed out' : error.message;
+      logger.error(`Health check failed for ${service}:`, message);
       res.status(503).json({
         service,
         status: 'unhealthy',
-        error: error.message,
+        error: message,
       });
+    } finally {
+      clearTimeout(timeout);
     }
   });
 
