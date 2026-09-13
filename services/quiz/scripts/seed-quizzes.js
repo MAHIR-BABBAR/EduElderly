@@ -36,7 +36,6 @@ const ModuleLookupSchema = new mongoose.Schema({
 });
 
 const loadData = () => {
-  // eslint-disable-next-line import/no-dynamic-require, global-require
   return require(DATA_PATH);
 };
 

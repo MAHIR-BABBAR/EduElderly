@@ -1,10 +1,9 @@
 const request = require('supertest');
 const { createApp } = require('../src/index');
 const { User } = require('../src/models/User');
-const { RefreshToken } = require('../src/models/RefreshToken');
 
 const app = createApp();
-const { verifyEmailVerificationToken, signPasswordResetToken, signRefreshToken } = require('../src/utils/jwtHelper');
+const { signPasswordResetToken } = require('../src/utils/jwtHelper');
 const bcrypt = require('bcrypt');
 
 const VALID_USER_DATA = {
@@ -228,7 +227,6 @@ describe('Auth Service - Comprehensive Test Suite', () => {
   });
 
   describe('POST /verify-otp', () => {
-    let user;
     let capturedOtp;
 
     beforeEach(async () => {
@@ -240,7 +238,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
 
       const salt = await bcrypt.genSalt(1);
       const passHash = await bcrypt.hash('Password123!', salt);
-      user = await User.create({
+      await User.create({
         name: '2FA User',
         email: '2fa@test.com',
         passHash,
@@ -328,7 +326,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       // Must have logged in first
       const salt = await bcrypt.genSalt(1);
       const passHash = await bcrypt.hash('Password123!', salt);
-      const user = await User.create({
+      await User.create({
         name: 'Refresh User',
         email: 'refresh@test.com',
         passHash,

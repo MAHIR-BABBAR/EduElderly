@@ -22,7 +22,6 @@ const DATA_PATH = path.join(__dirname, 'data', 'sample-courses.json');
 const isReset = process.argv.includes('--reset');
 
 const loadData = () => {
-  // eslint-disable-next-line import/no-dynamic-require, global-require
   return require(DATA_PATH);
 };
 

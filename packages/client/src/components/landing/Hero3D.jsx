@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { canUseWebGL } from '@/lib/utils';
 import { HeroFallback } from './HeroFallback';
 import { WebGLErrorBoundary } from './WebGLErrorBoundary';
@@ -8,11 +8,8 @@ const Hero3DCanvas = lazy(() =>
 );
 
 export function Hero3D() {
-  const [use3d, setUse3d] = useState(false);
-
-  useEffect(() => {
-    setUse3d(canUseWebGL());
-  }, []);
+  // Decided once at mount; WebGL support does not change during a session.
+  const [use3d] = useState(() => canUseWebGL());
 
   if (!use3d) {
     return <HeroFallback />;

@@ -16,11 +16,6 @@ const learnerHeaders = {
   'x-user-role': ROLES.LEARNER,
 };
 
-const otherLearnerHeaders = {
-  'x-user-id': 'learner-2',
-  'x-user-role': ROLES.LEARNER,
-};
-
 const serviceHeaders = {
   'x-service-key': 'test_internal_key',
 };

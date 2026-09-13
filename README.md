@@ -1,5 +1,10 @@
 # EduElderly — Accessible Learning Platform
 
+[![CI](https://github.com/MAHIR-BABBAR/EduElderly/actions/workflows/ci.yml/badge.svg)](https://github.com/MAHIR-BABBAR/EduElderly/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/MAHIR-BABBAR/EduElderly/branch/main/graph/badge.svg)](https://codecov.io/gh/MAHIR-BABBAR/EduElderly)
+![Node 20](https://img.shields.io/badge/node-20-339933?logo=node.js&logoColor=white)
+![License ISC](https://img.shields.io/badge/license-ISC-blue)
+
 An accessible e-learning platform designed with an **elderly-first** approach, built as a microservices monorepo using Node.js, Express, MongoDB, and React.
 
 ## Architecture Overview

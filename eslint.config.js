@@ -57,6 +57,21 @@ module.exports = [
       ...jsxA11y.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      // react-three-fiber elements take Three.js props that are not DOM attributes.
+      'react/no-unknown-property': [
+        'error',
+        {
+          ignore: [
+            'args', 'attach', 'position', 'rotation', 'scale', 'intensity', 'color',
+            'emissive', 'emissiveIntensity', 'metalness', 'roughness', 'transparent',
+            'opacity', 'castShadow', 'receiveShadow', 'dispose', 'object', 'geometry',
+            'material', 'wireframe', 'toneMapped', 'side', 'frustumCulled',
+          ],
+        },
+      ],
+      // React Compiler is not enabled in this project; this rule only reports
+      // when the compiler would skip a component and adds no value here.
+      'react-hooks/preserve-manual-memoization': 'off',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },

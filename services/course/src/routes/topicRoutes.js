@@ -8,7 +8,6 @@ const {
 const {
   createTopicRules,
   updateTopicRules,
-  moduleIdRules,
   topicIdRules,
 } = require('../validators/courseValidators');
 
