@@ -236,6 +236,14 @@
                           "type": "string",
                           "format": "date-time",
                           "example": "2026-09-13T10:00:00.000Z"
+                        },
+                        "pdfStatus": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "ready",
+                            "failed"
+                          ]
                         }
                       }
                     }
@@ -246,6 +254,52 @@
           },
           "400": {
             "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://certificate:3009",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    },
+    "/internal/queue/stats": {
+      "get": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "PDF render queue counts (BullMQ)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QueueStats"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "servers": [
@@ -411,6 +465,15 @@
             "type": "string",
             "format": "uri",
             "example": "http://localhost:5173/verify-certificate?certId=0192b1d2-…"
+          },
+          "pdfStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "description": "PDFs are pre-rendered by a worker; downloads regenerate on demand if not ready"
           }
         }
       },
@@ -433,6 +496,33 @@
             "type": "string",
             "format": "date-time",
             "example": "2026-09-13T10:00:00.000Z"
+          }
+        }
+      },
+      "QueueStats": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string",
+            "example": "certificate-pdf"
+          },
+          "waiting": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "delayed": {
+            "type": "integer"
           }
         }
       }

@@ -9,6 +9,8 @@
   "keywords": [],
   "license": "ISC",
   "dependencies": {
+    "bullmq": "^5.81.5",
+    "ioredis": "^5.11.1",
     "swagger-ui-express": "^5.0.1"
   }
 }

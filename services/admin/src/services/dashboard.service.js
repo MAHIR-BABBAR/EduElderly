@@ -5,6 +5,8 @@ const {
   enrollmentClient,
   paymentClient,
   certificateClient,
+  emailQueueClient,
+  pdfQueueClient,
 } = require('../clients/statsClients');
 
 const SERVICE_FETCHERS = [
@@ -15,10 +17,29 @@ const SERVICE_FETCHERS = [
   { service: 'certificate', client: certificateClient },
 ];
 
+const QUEUE_FETCHERS = [
+  { key: 'email', client: emailQueueClient },
+  { key: 'certificatePdf', client: pdfQueueClient },
+];
+
+/**
+ * Queue counts are best-effort: a missing worker service shows as null
+ * rather than counting against the "all services down" threshold.
+ */
+const getQueueHealth = async () => {
+  const results = await Promise.allSettled(QUEUE_FETCHERS.map(({ client }) => client.getStats()));
+  const queues = {};
+  results.forEach((result, index) => {
+    queues[QUEUE_FETCHERS[index].key] = result.status === 'fulfilled' ? result.value : null;
+  });
+  return queues;
+};
+
 const getDashboard = async () => {
-  const results = await Promise.allSettled(
-    SERVICE_FETCHERS.map(({ client }) => client.getStats()),
-  );
+  const [results, queues] = await Promise.all([
+    Promise.allSettled(SERVICE_FETCHERS.map(({ client }) => client.getStats())),
+    getQueueHealth(),
+  ]);
 
   const partialErrors = [];
   const data = {};
@@ -85,6 +106,7 @@ const getDashboard = async () => {
     revenue,
     completions: data.enrollment?.completedEnrollments ?? 0,
     certificates: data.certificate?.totalCertificates ?? 0,
+    queues,
     partialErrors,
   };
 };

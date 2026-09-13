@@ -278,6 +278,20 @@ Every service publishes an OpenAPI 3 document at `/docs.json` and a Swagger UI a
 - `npm run docs:validate` checks every operation has a summary, tags, security, and responses, and that every `$ref` resolves. CI runs it. `npm run docs:export` writes the JSON documents to `docs/openapi/`.
 - In production the gateway docs require an admin JWT unless `DOCS_PUBLIC=true`.
 
+## Async jobs (BullMQ)
+
+Two side effects are slow and failure-prone, so they run off the request path on Redis-backed BullMQ queues:
+
+| Queue | Service | Job | Fallback without Redis |
+|-------|---------|-----|------------------------|
+| `email` | notification | Deliver a persisted notification via Brevo | Sent inline |
+| `certificate-pdf` | certificate | Pre-render and store the certificate PDF | Rendered inline at issue; downloads regenerate on demand |
+
+- Every job retries 5 times with exponential backoff (2 s to 32 s); failed jobs are kept for 7 days.
+- Processors are idempotent (job id = record id; already-sent or already-rendered records are skipped) so a retry after a partial success is safe.
+- Queue counts appear on the admin dashboard and at each service's `/internal/queue/stats`.
+- `QUEUE_ENABLED=false` forces inline mode; tests run inline by default and the queue integration test runs when `REDIS_URL` is set.
+
 ## Enrollment flow (Phase 3)
 
 Learners enroll through the enrollment service; topic `contentUrl` is **not** exposed on public course APIs.
@@ -335,10 +349,10 @@ Run per service (`npm test` runs both projects):
 | enrollment | 21 |
 | quiz | 13 |
 | admin | 9 |
-| notification | 12 |
-| certificate | 13 |
-| gateway | 19 |
-| **Total** | **179** |
+| notification | 19 |
+| certificate | 17 |
+| gateway | 24 |
+| **Total** | **195** |
 
 ```bash
 cd services/auth && npm test

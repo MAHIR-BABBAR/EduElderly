@@ -218,6 +218,7 @@ services:
       NODE_ENV: production
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-notification?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       mongo:
         condition: service_healthy
@@ -257,12 +258,16 @@ services:
         SERVICE_DIR: certificate
     container_name: eduelderly-certificate-prod
     restart: unless-stopped
+    volumes:
+      - cert-storage-prod:/app/storage
     env_file:
       - ./services/certificate/.env
     environment:
       NODE_ENV: production
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-certificate?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      CERT_STORAGE_DIR: /app/storage
     depends_on:
       mongo:
         condition: service_healthy
@@ -274,4 +279,5 @@ networks:
     driver: bridge
 
 volumes:
+  cert-storage-prod:
   mongo-data-prod:

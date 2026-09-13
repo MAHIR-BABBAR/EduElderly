@@ -47,6 +47,14 @@ const { toDashboardDTO } = require('./dtos/DashboardDTO');
 const { assertRequiredEnv, getInternalServiceKey } = require('./utils/assertRequiredEnv');
 const { createLogger, requestId } = require('./utils/logger');
 const { buildSpec, mountDocs, S: OpenApi } = require('./docs/openapi');
+const {
+  isQueueEnabled,
+  createQueue,
+  createWorker,
+  getQueueStats,
+  closeQueues,
+  DEFAULT_JOB_OPTIONS,
+} = require('./queue');
 
 module.exports = {
   // Constants
@@ -114,4 +122,12 @@ module.exports = {
   buildSpec,
   mountDocs,
   OpenApi,
+
+  // Queues (BullMQ)
+  isQueueEnabled,
+  createQueue,
+  createWorker,
+  getQueueStats,
+  closeQueues,
+  DEFAULT_JOB_OPTIONS,
 };

@@ -224,7 +224,7 @@
         },
         "responses": {
           "200": {
-            "description": "Sent",
+            "description": "Sent inline (no queue configured)",
             "content": {
               "application/json": {
                 "schema": {
@@ -241,12 +241,32 @@
                       ]
                     },
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "notificationId": {
-                          "type": "string"
-                        }
-                      }
+                      "$ref": "#/components/schemas/SendResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Queued; a worker delivers it with up to 5 retries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SendResult"
                     }
                   }
                 }
@@ -258,6 +278,52 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://notification:3007",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    },
+    "/internal/queue/stats": {
+      "get": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Email queue counts (BullMQ)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QueueStats"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "servers": [
@@ -401,6 +467,50 @@
             "type": "string",
             "format": "date-time",
             "example": "2026-09-13T10:00:00.000Z"
+          }
+        }
+      },
+      "SendResult": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "sent",
+              "failed"
+            ]
+          }
+        }
+      },
+      "QueueStats": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "False when the service runs without Redis"
+          },
+          "name": {
+            "type": "string",
+            "example": "email"
+          },
+          "waiting": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "delayed": {
+            "type": "integer"
           }
         }
       }

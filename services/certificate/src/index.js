@@ -1,10 +1,21 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
+const {
+  AppError,
+  ERROR_CODES,
+  globalErrorHandler,
+  requireGateway,
+  assertRequiredEnv,
+  requestId,
+  mountDocs,
+  isQueueEnabled,
+  closeQueues,
+} = require('@eduelderly/shared');
 const openApiSpec = require('./docs/openapi');
 const internalRoutes = require('./routes/internalRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
+const { startPdfWorker } = require('./queue/pdfQueue');
 
 dotenv.config();
 
@@ -67,6 +78,13 @@ const bootstrap = async () => {
     });
     console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
 
+    if (isQueueEnabled()) {
+      startPdfWorker();
+      console.log(`[${SERVICE_NAME}] PDF worker started (BullMQ on ${process.env.REDIS_URL})`);
+    } else {
+      console.log(`[${SERVICE_NAME}] No REDIS_URL — PDFs are rendered inline`);
+    }
+
     const app = createApp();
     const PORT = process.env.PORT || 3009;
 
@@ -78,6 +96,7 @@ const bootstrap = async () => {
       console.log(`[${SERVICE_NAME}] Shutting down gracefully...`);
       server.close(async () => {
         console.log(`[${SERVICE_NAME}] Closed out remaining connections`);
+        await closeQueues();
         await mongoose.disconnect();
         console.log(`[${SERVICE_NAME}] MongoDB disconnected`);
         process.exit(0);

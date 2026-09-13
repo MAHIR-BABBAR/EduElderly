@@ -24,6 +24,15 @@ const Dashboard = {
     },
     completions: { type: 'integer' },
     certificates: { type: 'integer' },
+    queues: {
+      type: 'object',
+      nullable: true,
+      description: 'BullMQ queue counts from the notification (email) and certificate (PDF) workers; null per queue when unreachable',
+      properties: {
+        email: { type: 'object', nullable: true, additionalProperties: true },
+        certificatePdf: { type: 'object', nullable: true, additionalProperties: true },
+      },
+    },
     partialErrors: { type: 'array', items: { type: 'string' }, description: 'Services that did not respond' },
   },
 };
