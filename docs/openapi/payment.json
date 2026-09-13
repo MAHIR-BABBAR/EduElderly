@@ -20,6 +20,10 @@
       "description": "My orders"
     },
     {
+      "name": "Webhooks",
+      "description": "Provider callbacks, authenticated by HMAC signature"
+    },
+    {
       "name": "Payment admin",
       "description": "Order management (admin role)"
     },
@@ -191,6 +195,84 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/webhook": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Provider webhook (payment.captured / payment.failed)",
+        "description": "Public route. The active provider verifies an HMAC-SHA256 signature over the raw body (`X-Webhook-Signature` for the mock provider, `X-Razorpay-Signature` for Razorpay). Idempotent: replays and already-paid orders are acknowledged with `duplicate: true`. A capture enrolls the learner before the order is marked paid; if enrollment fails the order stays pending and a 5xx asks the provider to retry.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Provider-specific payload"
+              },
+              "example": {
+                "event": "payment.captured",
+                "orderId": "0192b1d2-0000-7a1b-9f2e-000000000071",
+                "paymentId": "pay_123",
+                "eventId": "evt_1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Acknowledged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "orderId": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "duplicate": {
+                          "type": "boolean"
+                        },
+                        "ignored": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -787,6 +869,14 @@
               "purchase",
               "refund"
             ]
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "razorpay"
+            ],
+            "nullable": true
           },
           "confirmedAt": {
             "type": "string",

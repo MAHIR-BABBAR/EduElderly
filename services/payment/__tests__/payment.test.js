@@ -234,9 +234,10 @@ describe('Payment Service', () => {
     });
 
     it('is unavailable when the provider is not mock', async () => {
-      process.env.PAYMENT_PROVIDER = 'none';
+      process.env.PAYMENT_PROVIDER = 'mock';
       const checkoutRes = await createCheckout();
       const orderId = checkoutRes.body.data.orderId;
+      process.env.PAYMENT_PROVIDER = 'none';
 
       const res = await request(app)
         .post(`/orders/${orderId}/confirm`)
