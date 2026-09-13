@@ -6,6 +6,8 @@ const helmet = require('helmet');
 const { logger, requestLogger } = require('./logger');
 const { setupProxy } = require('./proxy');
 const { createDocsRouter } = require('./docs');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
+const { createAdminGate } = require('./adminGate');
 const { corsOptions } = require('./cors');
 const { globalLimiter, authLimiter } = require('./rateLimiter');
 const {
@@ -26,6 +28,7 @@ const createApp = () => {
   app.use(cors(corsOptions));
   app.use(requestId);
   app.use(requestLogger);
+  app.use(metricsMiddleware);
   app.use(globalLimiter);
   app.use('/api/v1/auth', (req, res, next) => {
     if (req.path === '/refresh' || req.path === '/logout') {
@@ -97,6 +100,7 @@ const createApp = () => {
     }
   });
 
+  app.get('/metrics', createAdminGate('METRICS_PUBLIC'), metricsHandler);
   app.use('/docs', createDocsRouter());
 
   setupProxy(app);

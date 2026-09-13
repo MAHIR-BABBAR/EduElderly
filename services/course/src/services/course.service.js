@@ -2,8 +2,17 @@ const { Course } = require('../models/Course');
 const { Module } = require('../models/Module');
 const { Topic } = require('../models/Topic');
 const { Category } = require('../models/Category');
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, cache } = require('@eduelderly/shared');
 const { slugify } = require('../utils/slug');
+
+/**
+ * Public catalog reads are cached in Redis under the `course:` prefix for
+ * CATALOG_CACHE_TTL_SECONDS (default 60). Any write in this service, or in
+ * the module, topic, or category services, calls invalidateCatalogCache().
+ */
+const CATALOG_PREFIX = 'course:';
+const catalogTtl = () => parseInt(process.env.CATALOG_CACHE_TTL_SECONDS, 10) || 60;
+const invalidateCatalogCache = () => cache.invalidatePrefix(CATALOG_PREFIX);
 
 const assertCategoryExists = async (categoryId) => {
   const category = await Category.findOne({ categoryId });
@@ -24,7 +33,7 @@ const getActiveCourse = async (courseId, { publishedOnly = false } = {}) => {
   return course;
 };
 
-const listPublishedCourses = async ({ page = 1, limit = 20 }) => {
+const loadPublishedCourses = async ({ page = 1, limit = 20 }) => {
   const safePage = Math.max(1, parseInt(page, 10) || 1);
   const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const skip = (safePage - 1) * safeLimit;
@@ -94,7 +103,7 @@ const listAdminCourses = async ({ page = 1, limit = 20, isPublished, categoryId 
   };
 };
 
-const getCourseDetail = async (courseId, { publishedOnly = false }) => {
+const loadCourseDetail = async (courseId, { publishedOnly = false }) => {
   const course = await getActiveCourse(courseId, { publishedOnly });
   const modules = await Module.find({ courseId }).sort({ order: 1 });
   const moduleIds = modules.map((m) => m.moduleId);
@@ -114,7 +123,7 @@ const getCourseDetail = async (courseId, { publishedOnly = false }) => {
   return { course, modules: modulesWithTopics, totalTopics: topics.length };
 };
 
-const getCourseStats = async (courseId, { publishedOnly = false } = {}) => {
+const loadCourseStats = async (courseId, { publishedOnly = false } = {}) => {
   const course = await getActiveCourse(courseId, { publishedOnly });
   const modules = await Module.find({ courseId });
   const moduleIds = modules.map((m) => m.moduleId);
@@ -145,6 +154,32 @@ const getCourseStats = async (courseId, { publishedOnly = false } = {}) => {
   };
 };
 
+
+const listPublishedCourses = async ({ page = 1, limit = 20 } = {}) => {
+  const key = `${CATALOG_PREFIX}list:${page}:${limit}`;
+  const { value, hit } = await cache.remember(key, catalogTtl(), async () => {
+    const result = await loadPublishedCourses({ page, limit });
+    return { ...result, courses: result.courses.map((c) => JSON.parse(JSON.stringify(c))) };
+  });
+  return { ...value, cacheHit: hit };
+};
+
+const getCourseDetail = async (courseId, { publishedOnly = false } = {}) => {
+  if (!publishedOnly) return { ...(await loadCourseDetail(courseId, { publishedOnly })), cacheHit: false };
+  const key = `${CATALOG_PREFIX}detail:${courseId}`;
+  const { value, hit } = await cache.remember(key, catalogTtl(), async () => {
+    const { course, modules, totalTopics } = await loadCourseDetail(courseId, { publishedOnly });
+    return { course: JSON.parse(JSON.stringify(course)), modules: JSON.parse(JSON.stringify(modules)), totalTopics };
+  });
+  return { ...value, cacheHit: hit };
+};
+
+const getCourseStats = async (courseId, options = {}) => {
+  const key = `${CATALOG_PREFIX}stats:${courseId}:${options.publishedOnly ? 'pub' : 'any'}`;
+  const { value } = await cache.remember(key, catalogTtl(), () => loadCourseStats(courseId, options));
+  return value;
+};
+
 const createCourse = async (payload) => {
   await assertCategoryExists(payload.categoryId);
   const slug = payload.slug || slugify(payload.title);
@@ -153,11 +188,13 @@ const createCourse = async (payload) => {
     throw new AppError('Course slug already exists', 400, ERROR_CODES.E_VALIDATION);
   }
 
-  return Course.create({
+  const course = await Course.create({
     ...payload,
     slug,
     moduleIds: [],
   });
+  await invalidateCatalogCache();
+  return course;
 };
 
 const updateCourse = async (courseId, payload) => {
@@ -188,6 +225,7 @@ const updateCourse = async (courseId, payload) => {
 
   Object.assign(course, updates);
   await course.save();
+  await invalidateCatalogCache();
   return course;
 };
 
@@ -195,6 +233,7 @@ const togglePublish = async (courseId, isPublished) => {
   const course = await getActiveCourse(courseId);
   course.isPublished = Boolean(isPublished);
   await course.save();
+  await invalidateCatalogCache();
   return course;
 };
 
@@ -203,6 +242,7 @@ const softDeleteCourse = async (courseId) => {
   course.isDeleted = true;
   course.isPublished = false;
   await course.save();
+  await invalidateCatalogCache();
   return course;
 };
 
@@ -231,4 +271,5 @@ module.exports = {
   togglePublish,
   softDeleteCourse,
   getActiveCourse,
+  invalidateCatalogCache,
 };

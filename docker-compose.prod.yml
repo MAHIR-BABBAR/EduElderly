@@ -128,6 +128,7 @@ services:
       NODE_ENV: production
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-course?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       ADMIN_SERVICE_URL: http://admin:3008
     depends_on:
       mongo:

@@ -122,6 +122,7 @@ services:
       - ./services/course/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-course
+      REDIS_URL: redis://redis:6379
       GATEWAY_TRUST_ENFORCED: "true"
     depends_on:
       - mongo

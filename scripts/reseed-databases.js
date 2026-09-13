@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Wipe and reseed course + quiz sample data (run with MongoDB up).
+ * Wipe and reseed everything a demo needs (run with MongoDB up):
+ * course catalog, quizzes, demo learner + admin accounts, demo progress.
  *
- *   npm run reseed
+ *   npm run demo:seed
  */
 
 const path = require('path');
@@ -17,10 +18,9 @@ if (!process.env.MONGO_URI) {
 }
 
 const run = (cwd, script, args = []) => {
-  const result = spawnSync('node', [script, ...args], {
+  const result = spawnSync(process.execPath, [script, ...args], {
     cwd,
     stdio: 'inherit',
-    shell: process.platform === 'win32',
     env: process.env,
   });
   if (result.status !== 0) {
@@ -37,4 +37,10 @@ run(path.join(root, 'services', 'quiz'), 'scripts/seed-quizzes.js', ['--reset'])
 console.log('[reseed] Creating demo learner and admin accounts...');
 run(path.join(root, 'scripts'), 'seed-demo-user.js');
 
-console.log('[reseed] All sample data loaded.');
+console.log('[reseed] Seeding demo learner progress...');
+run(path.join(root, 'scripts'), 'seed-demo-progress.js');
+
+console.log('');
+console.log('[reseed] All sample data loaded. Sign in at http://localhost:5173/login');
+console.log('  learner  learner@demo.eduelderly / Demo1234!');
+console.log('  admin    admin@demo.eduelderly   / Demo1234!');

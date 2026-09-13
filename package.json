@@ -12,6 +12,7 @@
     "dev:gateway": "cd services/gateway && npm run dev",
     "test": "npm run test --workspaces --if-present",
     "reseed": "node scripts/reseed-databases.js",
+    "demo:seed": "node scripts/reseed-databases.js",
     "lint": "eslint .",
     "format": "prettier --write '**/*.{js,jsx,json}'",
     "dev:client": "npm run dev --workspace=@eduelderly/client",

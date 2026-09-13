@@ -2,6 +2,7 @@ const { Topic } = require('../models/Topic');
 const { Module } = require('../models/Module');
 const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 const moduleService = require('./module.service');
+const courseService = require('./course.service');
 
 const getTopicById = async (topicId) => {
   const topic = await Topic.findOne({ topicId });
@@ -21,6 +22,7 @@ const createTopic = async (moduleId, payload) => {
 
   mod.topicIds.push(topic.topicId);
   await mod.save();
+  await courseService.invalidateCatalogCache();
   return topic;
 };
 
@@ -43,6 +45,7 @@ const updateTopic = async (topicId, payload) => {
   if (!topic) {
     throw new AppError('Topic not found', 404, ERROR_CODES.E_NOT_FOUND);
   }
+  await courseService.invalidateCatalogCache();
   return topic;
 };
 
@@ -53,6 +56,7 @@ const deleteTopic = async (topicId) => {
     { moduleId: topic.moduleId },
     { $pull: { topicIds: topicId } },
   );
+  await courseService.invalidateCatalogCache();
   return topic;
 };
 
