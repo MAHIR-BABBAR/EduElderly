@@ -1,6 +1,6 @@
 const { ERROR_CODES } = require('../errors/errorCodes');
 
-const globalErrorHandler = (err, req, res, next) => {
+const globalErrorHandler = (err, req, res, _next) => {
   // 1. Ensure defaults exist (programmer error may not have statusCode)
   err.statusCode = err.statusCode || 500;
   err.message = err.message || 'Internal Server Error';

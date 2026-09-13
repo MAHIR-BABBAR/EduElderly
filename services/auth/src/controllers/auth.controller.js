@@ -1,4 +1,4 @@
-const { catchAsync, extractUser, createLogger } = require('@eduelderly/shared');
+const { catchAsync, createLogger } = require('@eduelderly/shared');
 const {
   registerUser,
   verifyEmailWithToken,

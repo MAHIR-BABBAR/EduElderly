@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { prefersReducedMotion } from '@/lib/utils';
 import { cn } from '@/lib/utils';

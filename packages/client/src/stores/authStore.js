@@ -12,7 +12,7 @@ let sessionBootstrapped = false;
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       profile: null,
       isAuthenticated: false,
