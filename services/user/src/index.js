@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, requireInternalAuth, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
 const openApiSpec = require('./docs/openapi');
 const internalRoutes = require('./routes/internalRoutes');
 const profileRoutes = require('./routes/profileRoutes');
@@ -49,7 +49,7 @@ const createApp = () => {
     next();
   });
 
-  app.use('/internal', internalRoutes);
+  app.use('/internal', requireInternalAuth, internalRoutes);
   app.use('/', profileRoutes);
 
   // 404 handler

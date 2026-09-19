@@ -19,7 +19,8 @@ const { ERROR_CODES } = require('./errors/errorCodes');
 
 const { globalErrorHandler, catchAsync } = require('./middleware/globalErrorHandler');
 const { serviceAuth } = require('./middleware/serviceAuth');
-const { requireGateway } = require('./middleware/requireGateway');
+const { gatewayAuth } = require('./middleware/gatewayAuth');
+const { requireGateway, requireInternalAuth } = require('./middleware/requireGateway');
 const { extractUser, requireAdmin } = require('./middleware/extractUser');
 
 
@@ -44,7 +45,7 @@ const { toPublicCertificateDTO, toCertificateVerifyDTO } = require('./dtos/Certi
 const { toPublicAuditLogDTO } = require('./dtos/AuditLogDTO');
 const { toDashboardDTO } = require('./dtos/DashboardDTO');
 
-const { assertRequiredEnv, getInternalServiceKey } = require('./utils/assertRequiredEnv');
+const { assertRequiredEnv, getInternalServiceKey, getGatewayKey } = require('./utils/assertRequiredEnv');
 const { createLogger, requestId } = require('./utils/logger');
 const { buildSpec, mountDocs, S: OpenApi } = require('./docs/openapi');
 const {
@@ -86,7 +87,9 @@ module.exports = {
   globalErrorHandler,
   catchAsync,
   serviceAuth,
+  gatewayAuth,
   requireGateway,
+  requireInternalAuth,
   extractUser,
   requireAdmin,
 
@@ -116,6 +119,7 @@ module.exports = {
   // Utils
   assertRequiredEnv,
   getInternalServiceKey,
+  getGatewayKey,
   createLogger,
   requestId,
 

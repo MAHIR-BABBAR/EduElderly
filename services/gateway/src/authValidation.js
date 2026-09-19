@@ -20,6 +20,45 @@ function matchesPrefix(reqPath, prefix) {
  */
 const endpointPathFor = (reqPath, prefix) => reqPath.slice(prefix.length) || '/';
 
+/**
+ * Endpoint paths that a client must never be able to reach through the gateway,
+ * whatever token they hold. `/internal/*` is service-to-service only; `/docs`
+ * and `/metrics` are operator surfaces. The gateway stamps the real service key
+ * onto every proxied request, so without this block any valid JWT would let a
+ * learner call, for example, `POST /api/v1/enrollments/internal/enroll`.
+ */
+const BLOCKED_ENDPOINT = /^\/(internal|docs|metrics)(\/|$)/i;
+
+// Decode a single layer of percent-encoding so `/%69nternal` and `/internal`
+// are treated the same; malformed encoding is rejected by the caller.
+const decodeOnce = (value) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * True when the request targets a proxied service's `/internal`, `/docs` or
+ * `/metrics` endpoint (raw or percent-encoded). Only proxied services (those
+ * with a `target`) are considered; the gateway's own `/docs` and `/metrics`
+ * are guarded separately by the admin gate.
+ */
+const isBlockedEndpoint = (reqPath) => {
+  for (const serviceKey in ROUTES_CONFIG) {
+    const service = ROUTES_CONFIG[serviceKey];
+    if (!service.target) continue;
+    if (!matchesPrefix(reqPath, service.prefix)) continue;
+
+    const endpointPath = endpointPathFor(reqPath, service.prefix);
+    if (BLOCKED_ENDPOINT.test(endpointPath)) return true;
+    const decoded = decodeOnce(endpointPath);
+    return decoded !== null && BLOCKED_ENDPOINT.test(decoded);
+  }
+  return false;
+};
+
 const isPublicRoute = (method, reqPath) => {
   for (const serviceKey in ROUTES_CONFIG) {
     const service = ROUTES_CONFIG[serviceKey];
@@ -47,6 +86,11 @@ const authValidation = (req, res, next) => {
   if (!isKnownRoute(req.path)) {
     return next(new AppError('Route Not Found', 404, ERROR_CODES.E_NOT_FOUND));
   }
+  // Internal/operator endpoints are never client-reachable. This runs before
+  // the public-route and JWT checks so no token — valid or not — opens them.
+  if (isBlockedEndpoint(req.path)) {
+    return next(new AppError('Route Not Found', 404, ERROR_CODES.E_NOT_FOUND));
+  }
   if (isPublicRoute(req.method, req.path)) {
     return next();
   }
@@ -69,4 +113,10 @@ const authValidation = (req, res, next) => {
   }
 };
 
-module.exports = { authValidation, isPublicRoute, matchesPrefix, endpointPathFor };
+module.exports = {
+  authValidation,
+  isPublicRoute,
+  matchesPrefix,
+  endpointPathFor,
+  isBlockedEndpoint,
+};

@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
-const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, requireInternalAuth, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
 const openApiSpec = require('./docs/openapi');
 const internalRoutes = require('./routes/internalRoutes');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');
@@ -45,7 +45,7 @@ const createApp = () => {
     next();
   });
 
-  app.use('/internal', internalRoutes);
+  app.use('/internal', requireInternalAuth, internalRoutes);
   app.use('/', enrollmentRoutes);
 
   app.use((_req, _res, next) => {

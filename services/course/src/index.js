@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, requireInternalAuth, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
 const openApiSpec = require('./docs/openapi');
 const categoryRoutes = require('./routes/categoryRoutes');
 const internalRoutes = require('./routes/internalRoutes');
@@ -50,7 +50,7 @@ const createApp = () => {
     next();
   });
 
-  app.use('/internal', internalRoutes);
+  app.use('/internal', requireInternalAuth, internalRoutes);
   app.use('/categories', categoryRoutes);
   app.use('/', moduleRoutes);
   app.use('/', topicRoutes);
