@@ -10,25 +10,40 @@ const handleValidationErrors = (req, _res, next) => {
   next();
 };
 
+// courseId and topicId are interpolated into internal service-client URLs, so
+// they must be strict UUIDs (SEC-2). A non-UUID value such as
+// "a/../../courses/<id>/stats" would otherwise traverse to another endpoint.
+// enrollmentId is only ever used in this service's own scoped DB queries and
+// carries a "demo-enr-" prefix in seed data, so it stays a safe-charset check.
+const isUuid = (field, location = body) =>
+  location(field).isString().bail().isUUID().withMessage(`${field} must be a valid id`);
+
+const isSafeId = (field, location = param) =>
+  location(field)
+    .isString()
+    .bail()
+    .matches(/^[\w-]{1,64}$/)
+    .withMessage(`${field} is invalid`);
+
 const enrollRules = [
-  body('courseId').notEmpty().withMessage('courseId is required'),
+  isUuid('courseId'),
   handleValidationErrors,
 ];
 
 const enrollmentIdRules = [
-  param('enrollmentId').notEmpty().withMessage('enrollmentId is required'),
+  isSafeId('enrollmentId'),
   handleValidationErrors,
 ];
 
 const topicIdRules = [
-  param('topicId').notEmpty().withMessage('topicId is required'),
+  isUuid('topicId', param),
   handleValidationErrors,
 ];
 
 const progressRules = [
-  param('enrollmentId').notEmpty().withMessage('enrollmentId is required'),
-  body('topicId').notEmpty().withMessage('topicId is required'),
-  body('timeSpentMinutes').optional().isInt({ min: 0 }),
+  isSafeId('enrollmentId'),
+  isUuid('topicId'),
+  body('timeSpentMinutes').optional().isInt({ min: 0, max: 600 }).toInt(),
   handleValidationErrors,
 ];
 
@@ -39,21 +54,21 @@ const paginationRules = [
 ];
 
 const internalEnrollRules = [
-  body('userId').notEmpty().withMessage('userId is required'),
-  body('courseId').notEmpty().withMessage('courseId is required'),
+  body('userId').isString().bail().notEmpty().withMessage('userId is required'),
+  isUuid('courseId'),
   body('paymentRef').optional().isString(),
   handleValidationErrors,
 ];
 
 const internalLookupRules = [
-  param('userId').notEmpty().withMessage('userId is required'),
-  param('courseId').notEmpty().withMessage('courseId is required'),
+  isSafeId('userId'),
+  isUuid('courseId', param),
   handleValidationErrors,
 ];
 
 const certificateEligibilityRules = [
-  body('userId').notEmpty().withMessage('userId is required'),
-  body('courseId').notEmpty().withMessage('courseId is required'),
+  body('userId').isString().bail().notEmpty().withMessage('userId is required'),
+  isUuid('courseId'),
   handleValidationErrors,
 ];
 

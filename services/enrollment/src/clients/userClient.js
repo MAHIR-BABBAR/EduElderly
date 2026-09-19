@@ -37,9 +37,9 @@ const internalRequest = async (path, { method = 'GET', body } = {}) => {
 };
 
 const incrementXP = (userId, amount) =>
-  internalRequest(`/internal/${userId}/xp`, { method: 'PATCH', body: { amount } });
+  internalRequest(`/internal/${encodeURIComponent(userId)}/xp`, { method: 'PATCH', body: { amount } });
 
 const getProfile = (userId) =>
-  internalRequest(`/internal/${userId}/profile`);
+  internalRequest(`/internal/${encodeURIComponent(userId)}/profile`);
 
 module.exports = { incrementXP, getProfile };

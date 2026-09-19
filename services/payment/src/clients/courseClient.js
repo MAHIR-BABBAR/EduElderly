@@ -7,7 +7,7 @@ const getCourse = async (courseId) => {
   const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const response = await fetch(`${getBaseUrl()}/internal/courses/${courseId}`, {
+    const response = await fetch(`${getBaseUrl()}/internal/courses/${encodeURIComponent(courseId)}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

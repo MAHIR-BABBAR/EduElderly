@@ -37,6 +37,6 @@ const internalRequest = async (path) => {
 };
 
 const getCourseQuizEligibility = (userId, courseId) =>
-  internalRequest(`/internal/users/${userId}/courses/${courseId}/eligibility`);
+  internalRequest(`/internal/users/${encodeURIComponent(userId)}/courses/${encodeURIComponent(courseId)}/eligibility`);
 
 module.exports = { getCourseQuizEligibility };
