@@ -5,7 +5,7 @@ const {
   AppError,
   ERROR_CODES,
   globalErrorHandler,
-  requireGateway,
+  requireGateway, requireInternalAuth,
   assertRequiredEnv,
   requestId,
   mountDocs,
@@ -57,7 +57,7 @@ const createApp = () => {
     next();
   });
 
-  app.use('/internal', internalRoutes);
+  app.use('/internal', requireInternalAuth, internalRoutes);
   app.use('/', notificationRoutes);
 
   app.use((_req, _res, next) => {

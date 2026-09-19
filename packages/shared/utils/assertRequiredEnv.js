@@ -18,4 +18,18 @@ const getInternalServiceKey = () => {
   return key;
 };
 
-module.exports = { assertRequiredEnv, getInternalServiceKey };
+/**
+ * The gateway key proves a request came through the gateway. It is distinct
+ * from the internal service key so the gateway cannot reach `/internal` routes.
+ * Falls back to the internal key when unset, so existing single-key
+ * deployments keep working until they set a dedicated `GATEWAY_KEY`.
+ */
+const getGatewayKey = () => {
+  const key = process.env.GATEWAY_KEY || process.env.INTERNAL_SERVICE_KEY;
+  if (!key) {
+    throw new Error('GATEWAY_KEY (or INTERNAL_SERVICE_KEY) is not configured');
+  }
+  return key;
+};
+
+module.exports = { assertRequiredEnv, getInternalServiceKey, getGatewayKey };

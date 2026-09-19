@@ -1,7 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { logger } = require('./logger');
 const { authValidation } = require('./authValidation');
-const { ERROR_CODES, getInternalServiceKey } = require('@eduelderly/shared');
+const { ERROR_CODES, getGatewayKey } = require('@eduelderly/shared');
 const { ROUTES_CONFIG } = require('../routes.config');
 
 
@@ -63,13 +63,21 @@ const services = {
 
 const onProxyReq = (proxyReq, req, _res) => {
   proxyReq.removeHeader('Authorization');
-  proxyReq.setHeader('X-Service-Key', getInternalServiceKey());
+  // Prove the request came through the gateway with the gateway key — never the
+  // internal service key, which alone opens `/internal` service-to-service routes.
+  proxyReq.setHeader('X-Gateway-Key', getGatewayKey());
+  proxyReq.removeHeader('X-Service-Key');
+
   const requestId =
     req.requestId ||
     req.get('X-Request-ID') ||
     `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   proxyReq.setHeader('X-Request-ID', requestId);
 
+  // Always clear any client-supplied identity headers before (re)setting them,
+  // so a forged X-User-* on a public route can never reach a service.
+  proxyReq.removeHeader('X-User-Id');
+  proxyReq.removeHeader('X-User-Role');
   if (req.user) {
     proxyReq.setHeader('X-User-Id', req.user.userId);
     proxyReq.setHeader('X-User-Role', req.user.role);
