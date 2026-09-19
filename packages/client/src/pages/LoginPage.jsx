@@ -4,7 +4,7 @@ import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import { AuthCard } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
 import { Alert } from '@/components/ui/alert';
@@ -43,12 +43,11 @@ export function LoginPage() {
   };
 
   return (
-    <AuthCard>
+    <AuthCard
+      title="Welcome back"
+      description="Sign in to continue your learning journey."
+    >
       <Card>
-        <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Sign in to continue your learning journey.</CardDescription>
-        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {flashMessage && <Alert variant="success">{flashMessage}</Alert>}

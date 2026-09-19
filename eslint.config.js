@@ -66,6 +66,8 @@ module.exports = [
             'emissive', 'emissiveIntensity', 'metalness', 'roughness', 'transparent',
             'opacity', 'castShadow', 'receiveShadow', 'dispose', 'object', 'geometry',
             'material', 'wireframe', 'toneMapped', 'side', 'frustumCulled',
+            'distance', 'decay', 'radius', 'smoothness', 'floatIntensity',
+            'rotationIntensity', 'floatingRange',
           ],
         },
       ],

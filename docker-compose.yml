@@ -43,7 +43,7 @@ services:
     volumes:
       - ./services/gateway:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/gateway/.env
     environment:
@@ -71,7 +71,7 @@ services:
     volumes:
       - ./services/auth:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/auth/.env
     environment:
@@ -96,7 +96,7 @@ services:
     volumes:
       - ./services/user:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/user/.env
     environment:
@@ -117,7 +117,7 @@ services:
     volumes:
       - ./services/course:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/course/.env
     environment:
@@ -139,7 +139,7 @@ services:
     volumes:
       - ./services/enrollment:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/enrollment/.env
     environment:
@@ -166,7 +166,7 @@ services:
     volumes:
       - ./services/quiz:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/quiz/.env
     environment:
@@ -188,7 +188,7 @@ services:
     volumes:
       - ./services/payment:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/payment/.env
     environment:
@@ -215,7 +215,7 @@ services:
     volumes:
       - ./services/notification:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/notification/.env
     environment:
@@ -238,7 +238,7 @@ services:
     volumes:
       - ./services/admin:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/admin/.env
     environment:
@@ -264,7 +264,7 @@ services:
     volumes:
       - ./services/certificate:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/certificate/.env
     environment:

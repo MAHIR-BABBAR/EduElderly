@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '@/lib/api';
 import { AuthCard } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
 import { Alert } from '@/components/ui/alert';
@@ -36,12 +36,11 @@ export function RegisterPage() {
   };
 
   return (
-    <AuthCard>
+    <AuthCard
+      title="Create your account"
+      description="Join EduElderly and start learning at your own pace."
+    >
       <Card>
-        <CardHeader>
-          <CardTitle>Create your account</CardTitle>
-          <CardDescription>Join EduElderly and start learning at your own pace.</CardDescription>
-        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {error && <Alert variant="error">{error}</Alert>}

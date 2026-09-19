@@ -99,10 +99,24 @@ const onError = (err, req, res, target) => {
   }
 };
 
-const createProxy = (target, prefix, pathRewrite) => {
+/**
+ * Express strips the mount path before a proxy mounted with `app.use(prefix, …)`
+ * ever sees the request, so by the time we get here `req.url` is already
+ * relative: `/api/v1/courses/abc` arrives as `/abc`, and `/api/v1/courses` as
+ * `/`. Rewrites therefore have to be expressed against that relative path, not
+ * the original URL.
+ *
+ * Most services are mounted at their target's root and need no rewrite at all.
+ * The ones that live under a sub-path (categories on the course service, public
+ * stats on the admin service) declare `targetBasePath`, which is prepended here.
+ */
+const createProxy = (target, basePath = '') => {
   return createProxyMiddleware({
     target,
-    pathRewrite: pathRewrite || { [`^${prefix}`]: '' },
+    pathRewrite: (path) => {
+      const relative = path === '/' ? '' : path;
+      return `${basePath}${relative}` || '/';
+    },
     changeOrigin: true,
     timeout: 30000,
     proxyTimeout: 30000,
@@ -122,7 +136,7 @@ const setupProxy = app => {
     const service = ROUTES_CONFIG[key];
 
     if (service.target) {
-      app.use(service.prefix, createProxy(service.target, service.prefix, service.pathRewrite));
+      app.use(service.prefix, createProxy(service.target, service.targetBasePath));
     }
   }
 

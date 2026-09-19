@@ -1,4 +1,4 @@
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, cache } = require('@eduelderly/shared');
 const {
   userClient,
   courseClient,
@@ -111,4 +111,36 @@ const getDashboard = async () => {
   };
 };
 
-module.exports = { getDashboard };
+/**
+ * The three numbers the public landing page shows. Deliberately excludes
+ * revenue and order counts — this route needs no authentication, so nothing
+ * commercially sensitive may appear in it.
+ *
+ * Cached for five minutes: the landing page is the most-hit page on the site
+ * and these counts move slowly, so it should not fan out to three services on
+ * every visit. Any service that is down contributes 0 rather than failing the
+ * whole response.
+ */
+const PUBLIC_STATS_TTL_SECONDS = 300;
+
+const getPublicStats = async () => {
+  const { value } = await cache.remember('admin:public-stats', PUBLIC_STATS_TTL_SECONDS, async () => {
+    const [users, courses, certificates] = await Promise.allSettled([
+      userClient.getStats(),
+      courseClient.getStats(),
+      certificateClient.getStats(),
+    ]);
+
+    const valueOr = (result, key) => (result.status === 'fulfilled' ? result.value?.[key] ?? 0 : 0);
+
+    return {
+      learners: valueOr(users, 'totalUsers'),
+      courses: valueOr(courses, 'publishedCourses'),
+      certificates: valueOr(certificates, 'totalCertificates'),
+    };
+  });
+
+  return value;
+};
+
+module.exports = { getDashboard, getPublicStats };

@@ -9,4 +9,9 @@ const getDashboard = catchAsync(async (_req, res) => {
   });
 });
 
-module.exports = { getDashboard };
+const getPublicStats = catchAsync(async (_req, res) => {
+  res.status(200).json({ success: true, data: await dashboardService.getPublicStats() });
+});
+
+module.exports = {
+  getPublicStats, getDashboard };
