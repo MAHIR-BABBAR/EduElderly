@@ -4,7 +4,7 @@ import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import { AuthCard } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
 import { Alert } from '@/components/ui/alert';
@@ -53,14 +53,11 @@ export function VerifyOtpPage() {
   };
 
   return (
-    <AuthCard>
+    <AuthCard
+      title="Enter your sign-in code"
+      description={<>We sent a 6-digit code to {pendingOtpEmail || 'your email'}. Enter it when you are ready.</>}
+    >
       <Card>
-        <CardHeader>
-          <CardTitle>Enter your sign-in code</CardTitle>
-          <CardDescription>
-            We sent a 6-digit code to {pendingOtpEmail || 'your email'}. Enter it when you are ready.
-          </CardDescription>
-        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {error && <Alert variant="error">{error}</Alert>}

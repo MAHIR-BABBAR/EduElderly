@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { certificateApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { usePageTitle } from '@/components/layout/RouteChange';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
 import { Alert } from '@/components/ui/alert';
 
 export function CertificateVerifyPage() {
+  usePageTitle('Verify a certificate');
   const [searchParams] = useSearchParams();
   const [certId, setCertId] = useState(searchParams.get('certId') || '');
   const [result, setResult] = useState(null);
@@ -36,11 +38,15 @@ export function CertificateVerifyPage() {
 
   return (
     <div className="page-container flex justify-center py-12">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle>Verify a certificate</CardTitle>
-          <CardDescription>Enter the certificate ID printed on the document.</CardDescription>
-        </CardHeader>
+      <div className="w-full max-w-lg">
+        <header className="mb-6">
+          <h1 className="font-display text-2xl text-brand-primary-dark">Verify a certificate</h1>
+          <p className="mt-2 text-brand-muted">
+            Enter the certificate ID printed on the document. Anyone can check a certificate here;
+            no account is needed.
+          </p>
+        </header>
+        <Card>
         <CardContent>
           <form onSubmit={handleVerify} className="space-y-5">
             <FormField label="Certificate ID" htmlFor="certId">
@@ -66,7 +72,8 @@ export function CertificateVerifyPage() {
             </Button>
           </form>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

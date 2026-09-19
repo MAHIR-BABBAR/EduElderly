@@ -146,6 +146,11 @@ export const certificateApi = {
   listMine: () => apiFetch('/api/v1/certificates/me'),
 };
 
+export const statsApi = {
+  /** Public platform counts for the landing page. */
+  get: () => apiFetch('/api/v1/stats', { skipAuth: true }),
+};
+
 export const adminApi = {
   dashboard: () => apiFetch('/api/v1/admin/dashboard'),
   auditLogs: (params = {}) => {

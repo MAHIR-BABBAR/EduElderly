@@ -20,11 +20,72 @@
       "description": "Requires the admin role"
     },
     {
+      "name": "Public",
+      "description": "Unauthenticated"
+    },
+    {
       "name": "Internal",
       "description": "Service-to-service endpoints. Require the shared `X-Service-Key`; not routed by the gateway."
     }
   ],
   "paths": {
+    "/public-stats": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Platform counts for the landing page",
+        "description": "Gateway path: `GET /api/v1/stats`. Learners, published courses, and certificates issued — no revenue or order data. Cached for five minutes; a service that is down contributes 0 rather than failing the response.",
+        "servers": [
+          {
+            "url": "/api/v1",
+            "description": "Through the API gateway (as /stats)"
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "learners": {
+                          "type": "integer",
+                          "example": 1240
+                        },
+                        "courses": {
+                          "type": "integer",
+                          "example": 7
+                        },
+                        "certificates": {
+                          "type": "integer",
+                          "example": 316
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/dashboard": {
       "get": {
         "tags": [

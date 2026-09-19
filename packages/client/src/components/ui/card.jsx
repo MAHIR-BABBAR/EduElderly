@@ -12,7 +12,7 @@ const Card = React.forwardRef(({ className, interactive = false, ...props }, ref
     className={cn(
       'card-surface',
       interactive &&
-        'transition-[transform,box-shadow] duration-calm hover:-translate-y-0.5 hover:shadow-lift focus-within:-translate-y-0.5 focus-within:shadow-lift motion-reduce:transform-none motion-reduce:transition-none',
+        'relative transition-[transform,box-shadow] duration-calm hover:-translate-y-0.5 hover:shadow-lift focus-within:-translate-y-0.5 focus-within:shadow-lift motion-reduce:transform-none motion-reduce:transition-none',
       className,
     )}
     {...props}

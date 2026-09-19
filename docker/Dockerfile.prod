@@ -6,6 +6,14 @@ ARG SERVICE_DIR
 WORKDIR /deps
 
 COPY packages/shared ./shared
+
+# The shared package is reached through a path link, so Node resolves its
+# requires from /deps/shared upward. Installing its runtime dependencies at
+# /deps/node_modules puts them on that resolution path.
+RUN npm init -y > /dev/null \
+    && SHARED_DEPS="$(node -p "Object.entries(require('/deps/shared/package.json').dependencies||{}).map(([n,v])=>n+'@'+v).join(' ')")" \
+    && if [ -n "$SHARED_DEPS" ]; then npm install --omit=dev --no-audit --no-fund $SHARED_DEPS; fi
+
 COPY services/${SERVICE_DIR}/package*.json ./app/
 
 WORKDIR /deps/app
@@ -21,6 +29,7 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app
 
 COPY --from=deps /deps/shared /deps/shared
+COPY --from=deps /deps/node_modules /deps/node_modules
 COPY --from=deps /deps/app/node_modules ./node_modules
 COPY services/${SERVICE_DIR}/ .
 

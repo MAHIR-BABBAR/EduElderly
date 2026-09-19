@@ -30,10 +30,12 @@ const ROUTES_CONFIG = {
     ],
   },
 
+  // Categories live under /categories on the course service, so the gateway
+  // prefix maps onto a sub-path rather than the service root.
   categories: {
     prefix: '/api/v1/categories',
     target: process.env.COURSE_SERVICE_URL || 'http://localhost:3003',
-    pathRewrite: { '^/api/v1/categories': '/categories' },
+    targetBasePath: '/categories',
     public: [
       { method: 'GET', match: 'prefix', path: '/' },
     ],
@@ -76,6 +78,15 @@ const ROUTES_CONFIG = {
     public: [
       { method: 'GET', match: 'regex', pattern: /^\/[\w-]+\/verify$/ },
     ],
+  },
+
+  // Public platform counts for the landing page. Proxied to the admin
+  // service's unauthenticated /public-stats route.
+  stats: {
+    prefix: '/api/v1/stats',
+    target: process.env.ADMIN_SERVICE_URL || 'http://localhost:3008',
+    targetBasePath: '/public-stats',
+    public: [{ method: 'GET', match: 'prefix', path: '/' }],
   },
 
   admin: {

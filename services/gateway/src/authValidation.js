@@ -3,18 +3,38 @@ const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 const { ROUTES_CONFIG } = require('../routes.config');
 
 const isKnownRoute = (reqPath) =>
-  Object.values(ROUTES_CONFIG).some((service) => reqPath.startsWith(service.prefix));
+  Object.values(ROUTES_CONFIG).some((service) => matchesPrefix(reqPath, service.prefix));
+
+/**
+ * A request belongs to a service when it is the prefix exactly or continues
+ * with a `/`. Plain `startsWith` would let `/api/v1/coursesXYZ` match the
+ * course service.
+ */
+function matchesPrefix(reqPath, prefix) {
+  return reqPath === prefix || reqPath.startsWith(`${prefix}/`);
+}
+
+/**
+ * The path relative to the service, always starting with `/`.
+ * `/api/v1/categories` → `/`, `/api/v1/categories/abc` → `/abc`.
+ */
+const endpointPathFor = (reqPath, prefix) => reqPath.slice(prefix.length) || '/';
 
 const isPublicRoute = (method, reqPath) => {
   for (const serviceKey in ROUTES_CONFIG) {
     const service = ROUTES_CONFIG[serviceKey];
-    if (!reqPath.startsWith(service.prefix)) continue;
+    if (!matchesPrefix(reqPath, service.prefix)) continue;
 
-    const endpointPath = reqPath.replace(service.prefix, '') || '';
+    const endpointPath = endpointPathFor(reqPath, service.prefix);
 
     return service.public.some((rule) => {
       if (rule.method !== method) return false;
-      if (rule.match === 'exact') return endpointPath === rule.path;
+      if (rule.match === 'exact') {
+        // Rules are written without the leading slash for the service root
+        // (path: '') as well as with it, so accept both spellings.
+        const target = rule.path === '' ? '/' : rule.path;
+        return endpointPath === target;
+      }
       if (rule.match === 'prefix') return endpointPath.startsWith(rule.path);
       if (rule.match === 'regex') return rule.pattern.test(endpointPath);
       return false;
@@ -49,4 +69,4 @@ const authValidation = (req, res, next) => {
   }
 };
 
-module.exports = { authValidation };
+module.exports = { authValidation, isPublicRoute, matchesPrefix, endpointPathFor };

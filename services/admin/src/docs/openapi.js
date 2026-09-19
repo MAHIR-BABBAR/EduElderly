@@ -56,9 +56,36 @@ module.exports = buildSpec({
   description: 'Operational dashboard and an append-only audit log written by other services for privileged actions.',
   gatewayPrefix: '/api/v1/admin',
   internalUrl: 'http://admin:3008',
-  tags: [{ name: 'Admin', description: 'Requires the admin role' }],
+  tags: [
+    { name: 'Admin', description: 'Requires the admin role' },
+    { name: 'Public', description: 'Unauthenticated' },
+  ],
   schemas: { Dashboard, AuditLog },
   paths: {
+    '/public-stats': {
+      get: {
+        tags: ['Public'],
+        summary: 'Platform counts for the landing page',
+        description:
+          'Gateway path: `GET /api/v1/stats`. Learners, published courses, and certificates issued — no revenue or order data. ' +
+          'Cached for five minutes; a service that is down contributes 0 rather than failing the response.',
+        servers: [{ url: '/api/v1', description: 'Through the API gateway (as /stats)' }],
+        security: S.publicRoute,
+        responses: {
+          200: S.envelope(
+            {
+              type: 'object',
+              properties: {
+                learners: { type: 'integer', example: 1240 },
+                courses: { type: 'integer', example: 7 },
+                certificates: { type: 'integer', example: 316 },
+              },
+            },
+            'Counts',
+          ),
+        },
+      },
+    },
     '/dashboard': {
       get: {
         tags: ['Admin'],

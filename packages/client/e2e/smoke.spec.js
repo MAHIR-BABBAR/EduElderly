@@ -4,8 +4,8 @@ test.describe('EduElderly public pages', () => {
   test('landing page loads with brand and skip link', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /discover courses/i })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('link', { name: 'Browse courses' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /learning made welcoming/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('link', { name: /browse courses/i }).first()).toBeVisible();
   });
 
   test('course catalog page loads', async ({ page }) => {
