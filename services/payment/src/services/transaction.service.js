@@ -283,6 +283,13 @@ const handleProviderWebhook = async ({ rawBody, headers, body }) => {
 
   const actor = `webhook:${provider.name}`;
 
+  // The event id is recorded only AFTER the transition succeeds. Recording it
+  // first would make a provider retry (sent because we answered 5xx when
+  // enrollment was down) look like a duplicate, stranding a paid order in
+  // `pending` forever.
+  const markProcessed = (orderId) =>
+    Transaction.updateOne({ orderId }, { $set: { lastWebhookEventId: event.eventId ?? null } });
+
   if (event.type === 'payment.captured') {
     if (tx.status === TX_STATUS.SUCCESS) {
       return { orderId: tx.orderId, status: tx.status, duplicate: true };
@@ -290,10 +297,13 @@ const handleProviderWebhook = async ({ rawBody, headers, body }) => {
     if (tx.status !== TX_STATUS.PENDING) {
       return { orderId: tx.orderId, status: tx.status, ignored: true, reason: `order is ${tx.status}` };
     }
-    tx.providerPaymentId = event.providerPaymentId ?? tx.providerPaymentId;
-    tx.lastWebhookEventId = event.eventId ?? null;
-    await tx.save();
+    if (event.providerPaymentId) {
+      await Transaction.updateOne({ orderId: tx.orderId }, { $set: { providerPaymentId: event.providerPaymentId } });
+    }
+    // Throws when enrollment is unavailable; the order stays pending and the
+    // event id stays unrecorded, so the provider's retry is processed normally.
     const updated = await updateOrderStatus({ orderId: tx.orderId, status: TX_STATUS.SUCCESS, adminUserId: actor });
+    await markProcessed(tx.orderId);
     return { orderId: updated.orderId, status: updated.status, duplicate: false };
   }
 
@@ -301,9 +311,8 @@ const handleProviderWebhook = async ({ rawBody, headers, body }) => {
   if (tx.status !== TX_STATUS.PENDING) {
     return { orderId: tx.orderId, status: tx.status, ignored: true, reason: `order is ${tx.status}` };
   }
-  tx.lastWebhookEventId = event.eventId ?? null;
-  await tx.save();
   const updated = await updateOrderStatus({ orderId: tx.orderId, status: TX_STATUS.FAILED, adminUserId: actor });
+  await markProcessed(tx.orderId);
   return { orderId: updated.orderId, status: updated.status, duplicate: false };
 };
 
