@@ -118,4 +118,24 @@ describe('POST /webhook (mock provider, HMAC signed)', () => {
     const tx = await Transaction.findOne({ orderId });
     expect(tx.status).toBe(TX_STATUS.PENDING);
   });
+
+  it('processes the retry of a failed capture even though the event id repeats', async () => {
+    const orderId = await createCheckout();
+    // Real providers always send an event id and retry on 5xx.
+    const payload = { event: 'payment.captured', orderId, paymentId: 'pay_1', eventId: 'evt_retry' };
+    enrollmentClient.enrollAfterPayment.mockRejectedValueOnce(new Error('enrollment down'));
+
+    const failed = await postWebhook(payload);
+    expect(failed.status).toBeGreaterThanOrEqual(500);
+    expect((await Transaction.findOne({ orderId })).lastWebhookEventId).toBeNull();
+
+    const retry = await postWebhook(payload);
+
+    expect(retry.status).toBe(200);
+    expect(retry.body.data).toEqual(expect.objectContaining({ status: TX_STATUS.SUCCESS, duplicate: false }));
+    expect(enrollmentClient.enrollAfterPayment).toHaveBeenCalledTimes(2);
+    const tx = await Transaction.findOne({ orderId });
+    expect(tx.status).toBe(TX_STATUS.SUCCESS);
+    expect(tx.lastWebhookEventId).toBe('evt_retry');
+  });
 });
