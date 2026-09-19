@@ -21,7 +21,7 @@ const serviceHeaders = {
 };
 
 const freeCourse = {
-  courseId: 'course-free-1',
+  courseId: '01a09b65-0001-7000-8000-000000000001',
   title: 'Free Wellness',
   thumbnailUrl: 'https://cdn.example/thumb.jpg',
   instructorName: 'Dr. Smith',
@@ -30,15 +30,15 @@ const freeCourse = {
   isPaid: false,
   price: 0,
   topicCount: 2,
-  topicIds: ['topic-1', 'topic-2'],
+  topicIds: ['01a09b65-1001-7000-8000-000000000001', '01a09b65-1002-7000-8000-000000000002'],
   modules: [
-    { moduleId: 'mod-1', topicIds: ['topic-1', 'topic-2'] },
+    { moduleId: 'mod-1', topicIds: ['01a09b65-1001-7000-8000-000000000001', '01a09b65-1002-7000-8000-000000000002'] },
   ],
 };
 
 const paidCourse = {
   ...freeCourse,
-  courseId: 'course-paid-1',
+  courseId: '01a09b65-0002-7000-8000-000000000002',
   isPaid: true,
   price: 499,
 };
@@ -189,7 +189,7 @@ describe('Enrollment Service', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.course.title).toBe(freeCourse.title);
-      expect(res.body.data.nextTopicId).toBe('topic-1');
+      expect(res.body.data.nextTopicId).toBe('01a09b65-1001-7000-8000-000000000001');
       expect(res.body.data.currentModuleId).toBeNull();
       expect(res.body.data.currentLessonId).toBeNull();
     });
@@ -220,10 +220,10 @@ describe('Enrollment Service', () => {
       const res = await request(app)
         .patch(`/${enrollment.enrollmentId}/progress`)
         .set(learnerHeaders)
-        .send({ topicId: 'topic-1', timeSpentMinutes: 3 });
+        .send({ topicId: '01a09b65-1001-7000-8000-000000000001', timeSpentMinutes: 3 });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.completedTopics).toContain('topic-1');
+      expect(res.body.data.completedTopics).toContain('01a09b65-1001-7000-8000-000000000001');
       expect(res.body.data.progressPercent).toBe(50);
       expect(userClient.incrementXP).toHaveBeenCalledWith('learner-1', 10);
     });
@@ -233,14 +233,14 @@ describe('Enrollment Service', () => {
         userId: 'learner-1',
         courseId: freeCourse.courseId,
         status: 'active',
-        completedTopics: ['topic-1'],
+        completedTopics: ['01a09b65-1001-7000-8000-000000000001'],
         progressPercent: 50,
       });
 
       const res = await request(app)
         .patch(`/${enrollment.enrollmentId}/progress`)
         .set(learnerHeaders)
-        .send({ topicId: 'topic-2' });
+        .send({ topicId: '01a09b65-1002-7000-8000-000000000002' });
 
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('completed');
@@ -272,14 +272,14 @@ describe('Enrollment Service', () => {
         userId: 'learner-1',
         courseId: freeCourse.courseId,
         status: 'active',
-        completedTopics: ['topic-1'],
+        completedTopics: ['01a09b65-1001-7000-8000-000000000001'],
         progressPercent: 50,
       });
 
       await request(app)
         .patch(`/${enrollment.enrollmentId}/progress`)
         .set(learnerHeaders)
-        .send({ topicId: 'topic-2' });
+        .send({ topicId: '01a09b65-1002-7000-8000-000000000002' });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect(certificateClient.issueCertificateSafe).toHaveBeenCalled();
@@ -327,7 +327,7 @@ describe('Enrollment Service', () => {
       });
 
       const res = await request(app)
-        .get(`/${enrollment.enrollmentId}/topics/topic-1/content`)
+        .get(`/${enrollment.enrollmentId}/topics/01a09b65-1001-7000-8000-000000000001/content`)
         .set(learnerHeaders);
 
       expect(res.status).toBe(200);
@@ -342,7 +342,7 @@ describe('Enrollment Service', () => {
       });
 
       const res = await request(app)
-        .get(`/${enrollment.enrollmentId}/topics/topic-1/content`)
+        .get(`/${enrollment.enrollmentId}/topics/01a09b65-1001-7000-8000-000000000001/content`)
         .set(learnerHeaders);
 
       expect(res.status).toBe(403);

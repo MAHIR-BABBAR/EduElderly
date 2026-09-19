@@ -37,7 +37,7 @@ const internalRequest = async (path, { method = 'GET', body } = {}) => {
 };
 
 const getEnrollment = async (userId, courseId) => {
-  const result = await internalRequest(`/internal/users/${userId}/courses/${courseId}`);
+  const result = await internalRequest(`/internal/users/${encodeURIComponent(userId)}/courses/${encodeURIComponent(courseId)}`);
   return result.data;
 };
 
