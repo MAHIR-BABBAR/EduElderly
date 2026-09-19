@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AccessibilityProvider, GuestAccessibilityInit } from '@/contexts/AccessibilityContext';
+import { ToastProvider } from '@/components/ui/toast';
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 import { AppRoutes } from '@/routes/AppRoutes';
 
@@ -10,6 +12,7 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 30_000,
       retry: 1,
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -24,15 +27,19 @@ function AuthBootstrap({ children }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <GuestAccessibilityInit />
-        <AuthBootstrap>
-          <AccessibilityProvider>
-            <AppRoutes />
-          </AccessibilityProvider>
-        </AuthBootstrap>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <GuestAccessibilityInit />
+          <AuthBootstrap>
+            <AccessibilityProvider>
+              <ToastProvider>
+                <AppRoutes />
+              </ToastProvider>
+            </AccessibilityProvider>
+          </AuthBootstrap>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,10 +1,20 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-const Card = React.forwardRef(({ className, ...props }, ref) => (
+/**
+ * `interactive` adds a 2px lift and a stronger shadow on hover/focus-within,
+ * at the calm-zone speed cap. Use it on cards that are entirely a link to
+ * somewhere; leave it off for cards that just display information.
+ */
+const Card = React.forwardRef(({ className, interactive = false, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('card-surface', className)}
+    className={cn(
+      'card-surface',
+      interactive &&
+        'transition-[transform,box-shadow] duration-calm hover:-translate-y-0.5 hover:shadow-lift focus-within:-translate-y-0.5 focus-within:shadow-lift motion-reduce:transform-none motion-reduce:transition-none',
+      className,
+    )}
     {...props}
   />
 ));
@@ -15,10 +25,10 @@ const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
 ));
 CardHeader.displayName = 'CardHeader';
 
-const CardTitle = React.forwardRef(({ className, children, ...props }, ref) => (
-  <h3 ref={ref} className={cn('text-[length:var(--font-size-xl)] font-semibold', className)} {...props}>
+const CardTitle = React.forwardRef(({ className, as: Tag = 'h3', children, ...props }, ref) => (
+  <Tag ref={ref} className={cn('font-display text-xl leading-tight text-brand-primary-dark', className)} {...props}>
     {children}
-  </h3>
+  </Tag>
 ));
 CardTitle.displayName = 'CardTitle';
 
@@ -32,4 +42,9 @@ const CardContent = React.forwardRef(({ className, ...props }, ref) => (
 ));
 CardContent.displayName = 'CardContent';
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent };
+const CardFooter = React.forwardRef(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn('mt-6 flex flex-wrap items-center gap-3', className)} {...props} />
+));
+CardFooter.displayName = 'CardFooter';
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
