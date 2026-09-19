@@ -320,8 +320,8 @@ Micro-interactions (all Calm tier, all CSS where possible):
 3. Radii, shadows, texture per §4.4. Add `--font-size-hero`.
 4. Tailwind: `colors.world = { DEFAULT:'var(--world)', ink:'var(--world-ink)', soft:'var(--world-soft)' }`, `backgroundImage.world = 'var(--world-gradient)'`, `colors.brand.night`, `colors.brand['accent-ink']`, `fontSize.hero`, `boxShadow` updates, `borderRadius` updates, `transitionDuration.spatial = '400ms'`.
 5. `index.css`: `body { background: var(--color-surface) }`, grain pseudo-element, `h1,h2 { font-optical-sizing:auto }`, `.accent-word { font-style: italic; color: var(--color-accent-ink) }` (on night: `var(--color-accent)`), global `:focus-visible` ring, `.on-night` helper that swaps the ring colour and text colours.
-6. Delete `--cover-1…5`; `CourseCover` moves to worlds in F-3.
-**Accept:** `npm run build -w packages/client` passes; grep finds no `--cover-` and no hex colours in `src/**/*.jsx` (hexes are allowed only in `tokens.css` and the 3D scene files); existing 28 tests pass.
+6. **Keep** `--cover-1…5` for now, redefined as aliases of the world gradients (e.g. `--cover-1: var(--world-gradient)`), with a `/* removed in F-3 */` comment. `CourseCover` still consumes them until F-3 rewrites it, so deleting them here would break the build. F-3 removes them.
+**Accept:** `npm run build -w packages/client` passes; grep finds no *new* hex colours in `src/**/*.jsx` (hexes are allowed only in `tokens.css` and the 3D scene files); existing 28 tests pass. (The `--cover-` grep-clean check moves to F-3's acceptance.)
 
 ### F-2 Fonts
 **File:** `packages/client/index.html`. Change the Google Fonts URL to load `Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700` and keep DM Sans as is. Keep `display=swap` and the `preconnect` links. Add `<link rel="preload" as="style">` for the stylesheet.
@@ -349,7 +349,9 @@ Courses carry only `categoryId`; add `src/hooks/useCategories.js` (React Query, 
 - Fallback art (no `src` or error): gradient + the title's first letter in Fraunces at 40 % of the box height, `opacity .25`, bottom-right, clipped; plus a 1 px concentric-arc SVG pattern at 12 % opacity.
 - High contrast: no image, no gradient; white box, 2 px black border, the initial in black.
 - If `layoutId` is given and motion is allowed, the root is a `motion.div` with `layoutId` and `transition={spatialSpring}`.
+Finally, delete `--cover-1…5` from `tokens.css` now that nothing consumes them.
 **Tests (`test/ui.test.jsx`):** renders fallback when `src` missing; swaps to fallback on img `error`; sets `data-world`; no `layoutId` under reduced motion.
+**Accept:** grep finds no `--cover-` anywhere in `src/`; `npm run build` passes.
 
 ### F-4 Motion tier + DESIGN.md amendment
 Implement §4.5 exports in `lib/motion.js` with tests. In `/DESIGN.md` add a section **"Spatial tier"** stating: allowed range 320–450 ms; only user-initiated; never looping; listed call-sites (cover morph, quiz deck, sheet, bento entrance); reduced-motion behaviour; and the rationale (continuity aids comprehension for users who lose context on hard cuts). Do **not** loosen the 200 ms rule for anything else.
