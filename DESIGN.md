@@ -74,7 +74,21 @@ Primary: `bg-brand-primary text-white`, radius 10px, min-height 44px. Secondary:
 
 ### Card
 
-White background, `border-brand-border`, radius 16px, soft shadow. Use `CardHeader` + `CardTitle` + `CardDescription` + `CardContent`.
+White background, `border-brand-border`, radius 16px, soft shadow. Use `CardHeader` + `CardTitle` + `CardDescription` + `CardContent` + `CardFooter`. Add `interactive` only when the whole card leads somewhere; it lifts 2px on hover and focus.
+
+Course cards use `<CourseCover>`, which falls back to a per-course branded gradient when there is no thumbnail, so a catalog never shows grey boxes.
+
+### Feedback and state
+
+| Need | Component |
+|------|-----------|
+| Result of an action | `useToast()` — top-center, 8s, errors persist |
+| Loading | `Skeleton` and its shaped variants — never a bare "Loading…" |
+| Nothing here yet | `EmptyState` with an action |
+| A number worth noticing | `StatTile` (counts up once, ≤700ms) |
+| Course progress | `Progress` (bar) or `ProgressRing` (circular) |
+| Position in a sequence | `Stepper` |
+| Tabular admin data | `DataTable` — stacks into cards below `md` |
 
 ### Alert
 
@@ -95,7 +109,24 @@ Learning flows: `My Learning → Course → Lesson`. Use `<Breadcrumbs>` with li
 | Landing hero | BlurText, GSAP stagger ≤800ms, slow R3F | scroll-jacking, autoplay video |
 | Marketing sections | IntersectionObserver stagger | infinite loops |
 | Calm zone | CSS transition ≤200ms | GSAP, 3D |
+| Celebration moment | one entrance ≤2s, see below | repeats, confetti loops |
 | prefers-reduced-motion | static hero, instant state | all animation |
+
+### Celebration exception
+
+The calm zone allows exactly one flourish: the moment a learner finishes a
+course or earns a certificate. Finishing something after weeks of lessons
+should feel like an occasion, and a page that changes nothing reads as though
+nothing happened.
+
+Rules, so it stays an exception:
+
+- **Once per achievement.** Triggered by the transition into the earned state,
+  never on re-visiting a page that is already complete.
+- **Under two seconds**, then fully at rest. No loops, no lingering particles.
+- **Reduced motion gets a static badge** with the same wording. Nothing moves.
+- **Never blocks.** The learner can read, click, or navigate straight through it.
+- Implemented with `celebrate()` in `src/lib/motion.js`. Do not hand-roll it.
 
 ## Accessibility
 
@@ -105,9 +136,25 @@ Learning flows: `My Learning → Course → Lesson`. Use `<Breadcrumbs>` with li
 - Quiz submit: confirm dialog before irreversible submit
 - Video lessons: note about captions when available
 
+## Type scale
+
+Named Tailwind sizes map to the tokens; prefer `text-xl` over `text-[length:var(--font-size-xl)]`.
+
+| Class | Use |
+|-------|-----|
+| `text-display` | Landing hero only |
+| `text-2xl` | Page title (`h1`) |
+| `text-xl` | Section heading (`h2`), card title |
+| `text-lg` | Lead paragraph, lesson body |
+| `text-base` | Body — 18px by default |
+| `text-sm` | Metadata, captions — never below 14px |
+
+Fraunces is for display and `h1` only. Everything else is DM Sans.
+
 ## Before writing UI
 
 1. Read this file and `packages/client/src/styles/tokens.css`
 2. Identify zone: Immersive or Calm
-3. Use components from `packages/client/src/components/ui/`
+3. Use components from `packages/client/src/components/ui/` and variants from `src/lib/motion.js`
 4. Match brand teal/gold — do not use generic purple gradients
+5. Check it at 400px wide and at `data-font-size="huge"` before calling it done

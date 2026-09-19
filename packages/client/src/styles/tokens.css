@@ -1,16 +1,26 @@
 /**
- * Design tokens extracted from services/notification/src/templates/emailLayout.js
- * and extended for elderly-first web UI.
+ * EduElderly design tokens — see DESIGN.md for the contract these encode.
+ *
+ * Everything scales from --font-size-base, which the AccessibilityProvider
+ * drives from the learner's saved preference. Sizes are in rem-of-base so a
+ * learner on "huge" gets a proportionally larger page, not just bigger body
+ * text.
  */
 :root {
+  /* ---- Brand palette ---------------------------------------------------- */
   --color-primary: #1b5e6b;
   --color-primary-dark: #134652;
+  --color-primary-soft: #e6f0f2;   /* teal tint for selected/hover surfaces */
   --color-accent: #e8a838;
   --color-accent-soft: #fff4e0;
+  --color-accent-dark: #b57d1c;    /* AA-safe accent on white */
   --color-surface: #f7fafb;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #eef4f6;
   --color-text: #1a2b32;
   --color-text-muted: #4a6270;
   --color-border: #d4e2e8;
+  --color-border-strong: #a8c4ce;
   --color-danger: #b42318;
   --color-danger-soft: #fef3f2;
   --color-success: #2d6a4f;
@@ -20,50 +30,82 @@
   --color-hero-bg: #0d2a32;
   --color-white: #ffffff;
 
-  --space-section: 4rem;
-  --space-section-sm: 2.5rem;
-  --shadow-card: 0 4px 24px rgba(26, 43, 50, 0.08);
+  /* Category tints — course covers without artwork get a branded gradient
+     instead of a grey box, keyed by category so a catalog page reads as a set. */
+  --cover-1: linear-gradient(135deg, #1b5e6b 0%, #2d8a9a 100%);
+  --cover-2: linear-gradient(135deg, #b57d1c 0%, #e8a838 100%);
+  --cover-3: linear-gradient(135deg, #2d6a4f 0%, #4fa37a 100%);
+  --cover-4: linear-gradient(135deg, #134652 0%, #1b5e6b 100%);
+  --cover-5: linear-gradient(135deg, #7c4a1e 0%, #b57d1c 100%);
 
-  /* Base font size — overridden by AccessibilityProvider */
+  --gradient-hero: linear-gradient(160deg, #0d2a32 0%, #14414d 55%, #1b5e6b 100%);
+  --gradient-cta: linear-gradient(135deg, #fff4e0 0%, #ffe7bd 100%);
+
+  /* ---- Type scale ------------------------------------------------------- */
+  /* Base is set per accessibility preference below. */
   --font-size-base: 18px;
+  --font-size-xs: calc(var(--font-size-base) * 0.78);
   --font-size-sm: calc(var(--font-size-base) * 0.875);
   --font-size-lg: calc(var(--font-size-base) * 1.125);
   --font-size-xl: calc(var(--font-size-base) * 1.25);
   --font-size-2xl: calc(var(--font-size-base) * 1.5);
   --font-size-3xl: calc(var(--font-size-base) * 2);
+  --font-size-display: calc(var(--font-size-base) * 2.6);
 
   --line-height-body: 1.65;
-  --focus-ring: 3px solid var(--color-accent);
+  --line-height-tight: 1.2;
+  --tracking-tight: -0.015em;
+
+  /* ---- Space, shape, elevation ------------------------------------------ */
+  --space-section: 4rem;
+  --space-section-sm: 2.5rem;
+  --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
   --touch-min: 44px;
-  --content-max: 72rem;
+  --content-max: 76rem;
+
+  /* One resting shadow plus one lifted shadow. DESIGN.md allows a single
+     shadow level in the calm zone; the lifted value is only used for the
+     ≤150ms hover transform on interactive cards. */
+  --shadow-card: 0 4px 24px rgba(26, 43, 50, 0.08);
+  --shadow-lift: 0 12px 32px rgba(26, 43, 50, 0.14);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  --focus-ring: 3px solid var(--color-accent-dark);
+
+  /* ---- Motion ----------------------------------------------------------- */
+  --motion-fast: 120ms;
+  --motion-calm: 200ms;     /* hard cap inside the app (DESIGN.md) */
+  --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* High contrast mode — synced from user profile highContrast */
+/* High contrast — synced from the profile's highContrast flag. */
 html[data-high-contrast='true'] {
   --color-primary: #0a3d47;
   --color-primary-dark: #062a31;
+  --color-primary-soft: #ffffff;
   --color-text: #000000;
   --color-text-muted: #1a1a1a;
   --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #ffffff;
   --color-border: #000000;
-  --color-accent: #c47f00;
+  --color-border-strong: #000000;
+  --color-accent: #8a5a00;
+  --color-accent-dark: #6b4500;
+  --color-accent-soft: #ffffff;
+  --shadow-card: 0 0 0 2px #000000;
+  --shadow-lift: 0 0 0 3px #000000;
+  --gradient-cta: none;
 }
 
-/* Font size prefs from user profile API */
-html[data-font-size='default'] {
-  --font-size-base: 16px;
-}
-html[data-font-size='large'] {
-  --font-size-base: 18px;
-}
-html[data-font-size='xl'] {
-  --font-size-base: 20px;
-}
-html[data-font-size='huge'] {
-  --font-size-base: 24px;
-}
+/* Font size preference from the user profile. */
+html[data-font-size='default'] { --font-size-base: 16px; }
+html[data-font-size='large']   { --font-size-base: 18px; }
+html[data-font-size='xl']      { --font-size-base: 20px; }
+html[data-font-size='huge']    { --font-size-base: 24px; }
 
 @media (prefers-reduced-motion: reduce) {
   *,
