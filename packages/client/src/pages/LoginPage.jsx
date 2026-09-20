@@ -29,7 +29,7 @@ export function LoginPage() {
     try {
       const res = await authApi.login({ email, password });
       if (res.requiresOtp) {
-        setPendingOtpEmail(email);
+        setPendingOtpEmail(email, res.otpToken);
         navigate('/verify-otp', { state: { from } });
         return;
       }

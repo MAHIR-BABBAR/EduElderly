@@ -24,7 +24,7 @@ router.post('/resend-verification', authSensitiveLimiter, V.emailOnlyRules, rese
 
 router.post('/login', authSensitiveLimiter, V.loginRules, login);
 router.post('/verify-otp', authSensitiveLimiter, V.otpRules, verifyOtpHandler);
-router.post('/resend-otp', authSensitiveLimiter, V.emailOnlyRules, resendOtp);
+router.post('/resend-otp', authSensitiveLimiter, V.resendOtpRules, resendOtp);
 
 router.post('/refresh', refresh);
 router.post('/logout', logout);

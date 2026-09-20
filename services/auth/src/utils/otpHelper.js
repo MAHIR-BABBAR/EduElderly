@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 
 const MAX_OTP_ATTEMPTS = 3;
+const RESEND_COOLDOWN_MS = 60 * 1000;
 
 let redisClient = null;
 let redisReady = false;
@@ -79,6 +80,14 @@ const generateOTP = async (userId, type) => {
   const client = getRedisClient();
   const redisKey = `otp:${userId}:${type}`;
 
+  // One code per minute per account: resending resets the attempt counter,
+  // so without a cooldown it would also reset the brute-force budget (SEC-3).
+  const lastSent = parseInt(await client.hGet(redisKey, 'lastSent'), 10);
+  if (lastSent && Date.now() - lastSent < RESEND_COOLDOWN_MS) {
+    const wait = Math.ceil((RESEND_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+    throw new AppError(`Please wait ${wait} seconds before requesting another code`, 429, ERROR_CODES.E_VALIDATION);
+  }
+
   const rawOtp = crypto.randomInt(100000, 999999).toString();
   const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10);
   const hashedOtp = await bcrypt.hash(rawOtp, salt);
@@ -117,8 +126,6 @@ const verifyOtp = async (userId, type, otp) => {
     throw new AppError('OTP expired or not found', 404, ERROR_CODES.E_OTP_NOT_FOUND);
   }
 
-  const attempts = parseInt(value.attempts, 10) || 0;
-
   const isMatch = await bcrypt.compare(otp, value.hashedOtp);
 
   if (isMatch) {
@@ -126,13 +133,13 @@ const verifyOtp = async (userId, type, otp) => {
     return true;
   }
 
-  const nextAttempts = attempts + 1;
+  // Atomic increment: two concurrent wrong guesses cannot both read the same
+  // count and each only add one.
+  const nextAttempts = await client.hIncrBy(redisKey, 'attempts', 1);
   if (nextAttempts >= MAX_OTP_ATTEMPTS) {
     await client.del(redisKey);
     throw new AppError('Too many OTP attempts. Please request a new code.', 401, ERROR_CODES.E_OTP_INVALID);
   }
-
-  await client.hSet(redisKey, 'attempts', nextAttempts);
   return false;
 };
 

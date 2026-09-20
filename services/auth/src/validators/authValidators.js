@@ -44,8 +44,12 @@ const password = (field = 'password') =>
 const shortString = (field, max = 120) =>
   body(field).isString().withMessage(`${field} must be text`).bail().trim().isLength({ min: 1, max });
 
+const otpToken = () =>
+  body('otpToken').isString().withMessage('otpToken is required').bail().isLength({ min: 20, max: 4096 });
+
 const otpRules = [
   email(),
+  otpToken(),
   body('otp').isString().bail().trim().matches(/^\d{4,8}$/).withMessage('otp must be a 4–8 digit code'),
   body('type').optional().isIn(['login', 'verification']),
   handleValidationErrors,
@@ -55,6 +59,7 @@ module.exports = {
   registerRules: [email(), password(), shortString('name', 80), handleValidationErrors],
   loginRules: [email(), body('password').isString().bail().isLength({ min: 1, max: 72 }), handleValidationErrors],
   emailOnlyRules: [email(), body('type').optional().isIn(['login', 'verification']), handleValidationErrors],
+  resendOtpRules: [email(), otpToken(), body('type').optional().isIn(['login']), handleValidationErrors],
   otpRules,
   resetPasswordRules: [shortString('token', 4096), password('newPassword'), handleValidationErrors],
   changePasswordRules: [

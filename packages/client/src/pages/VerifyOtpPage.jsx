@@ -13,6 +13,7 @@ export function VerifyOtpPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const pendingOtpEmail = useAuthStore((s) => s.pendingOtpEmail);
+  const pendingOtpToken = useAuthStore((s) => s.pendingOtpToken);
   const loginSuccess = useAuthStore((s) => s.loginSuccess);
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -30,7 +31,7 @@ export function VerifyOtpPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await authApi.verifyOtp({ email: pendingOtpEmail, otp });
+      const res = await authApi.verifyOtp({ email: pendingOtpEmail, otp, otpToken: pendingOtpToken });
       await loginSuccess(res.data.accessToken, res.data.user);
       navigate(from, { replace: true });
     } catch (err) {
@@ -45,7 +46,7 @@ export function VerifyOtpPage() {
     setMessage('');
     setError('');
     try {
-      await authApi.resendOtp({ email: pendingOtpEmail });
+      await authApi.resendOtp({ email: pendingOtpEmail, otpToken: pendingOtpToken });
       setMessage('A new code has been sent to your email. Take your time — it will not disappear.');
     } catch (err) {
       setError(err.message || 'Could not resend code.');
