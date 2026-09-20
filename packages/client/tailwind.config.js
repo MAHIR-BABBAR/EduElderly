@@ -30,6 +30,16 @@ export default {
           warning: 'var(--color-warning)',
           'warning-soft': 'var(--color-warning-soft)',
           hero: 'var(--color-hero-bg)',
+          night: 'var(--color-night)',
+          'on-night': 'var(--color-on-night)',
+          'on-night-muted': 'var(--color-on-night-muted)',
+          'accent-ink': 'var(--color-accent-ink)',
+        },
+        // Subject world (SIG-2): resolved from the nearest data-world ancestor.
+        world: {
+          DEFAULT: 'var(--world)',
+          ink: 'var(--world-ink)',
+          soft: 'var(--world-soft)',
         },
       },
       // Named sizes so components stop hand-writing text-[length:var(--…)].
@@ -42,6 +52,7 @@ export default {
         '2xl': 'var(--font-size-2xl)',
         '3xl': 'var(--font-size-3xl)',
         display: ['var(--font-size-display)', { lineHeight: 'var(--line-height-tight)', letterSpacing: 'var(--tracking-tight)' }],
+        hero: ['var(--font-size-hero)', { lineHeight: 'var(--line-height-hero)', letterSpacing: 'var(--tracking-hero)' }],
       },
       borderRadius: {
         sm: 'var(--radius-sm)',
@@ -56,13 +67,15 @@ export default {
       backgroundImage: {
         hero: 'var(--gradient-hero)',
         cta: 'var(--gradient-cta)',
+        world: 'var(--world-gradient)',
       },
-      minHeight: { touch: 'var(--touch-min)' },
+      minHeight: { touch: 'var(--touch-min)', 'touch-primary': 'var(--touch-primary)' },
       minWidth: { touch: 'var(--touch-min)' },
       maxWidth: { content: 'var(--content-max)' },
       transitionDuration: {
         fast: 'var(--motion-fast)',
         calm: 'var(--motion-calm)',
+        spatial: 'var(--motion-spatial)',
       },
       keyframes: {
         'accordion-down': {
