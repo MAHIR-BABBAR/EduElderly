@@ -23,6 +23,7 @@ const ADMIN = { email: 'admin@demo.eduelderly', password: 'Demo1234!' };
 
 mkdirSync(OUT, { recursive: true });
 
+let loggedInAs = null;
 const browser = await chromium.launch();
 const context = await browser.newContext({
   viewport: { width: 1366, height: 900 },
@@ -31,11 +32,23 @@ const context = await browser.newContext({
 const page = await context.newPage();
 
 const issues = [];
+// A 401 from /auth/refresh is how a guest visit learns it has no session; the
+// browser logs it as a failed resource. Everything else is a finding.
+let expectedRefresh401 = false;
 page.on('console', (m) => {
-  if (m.type() === 'error') issues.push(`[console] ${m.text().slice(0, 200)}`);
+  if (m.type() !== 'error') return;
+  if (expectedRefresh401 && /status of 401/.test(m.text())) {
+    expectedRefresh401 = false;
+    return;
+  }
+  issues.push(`[console] ${m.text().slice(0, 200)}`);
 });
 page.on('pageerror', (e) => issues.push(`[pageerror] ${e.message.slice(0, 200)}`));
 page.on('response', (r) => {
+  if (r.status() === 401 && r.url().endsWith('/api/v1/auth/refresh') && !loggedInAs) {
+    expectedRefresh401 = true;
+    return;
+  }
   if (r.status() >= 400 && r.url().includes('/api/')) issues.push(`[http ${r.status()}] ${r.url()}`);
 });
 
@@ -107,7 +120,6 @@ const routes = [
   ['admin-orders', '/admin/orders', ADMIN],
 ].filter(([name, url]) => url && (!ONLY || ONLY.includes(name)));
 
-let loggedInAs = null;
 let failures = 0;
 for (const [name, url, creds] of routes) {
   if (creds && loggedInAs !== creds.email) {
