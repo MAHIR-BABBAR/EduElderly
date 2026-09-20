@@ -2,7 +2,7 @@ import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex min-h-[28px] items-center rounded-full px-3 py-1 text-[length:var(--font-size-sm)] font-semibold',
+  'inline-flex min-h-[28px] items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold',
   {
     variants: {
       variant: {
@@ -11,6 +11,10 @@ const badgeVariants = cva(
         outline: 'border-2 border-brand-border bg-white text-brand-text',
         success: 'bg-[var(--color-success-soft)] text-brand-success',
         warning: 'bg-[var(--color-warning-soft)] text-brand-warning',
+        // Subject world (SIG-2): resolved from the nearest data-world ancestor.
+        world: 'bg-world-soft text-world-ink',
+        'world-solid': 'bg-world text-white',
+        night: 'bg-white/12 text-brand-on-night',
       },
     },
     defaultVariants: { variant: 'secondary' },
