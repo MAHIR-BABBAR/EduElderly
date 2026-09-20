@@ -30,21 +30,45 @@ export function formatPrice(centsOrUnits) {
   return amount === 0 ? 'Free' : `$${amount.toFixed(2)}`;
 }
 
-/** Convert YouTube watch URLs to embeddable iframe URLs. */
-export function toEmbedUrl(url) {
-  if (!url) return null;
+const YOUTUBE_HOSTS = new Set(['www.youtube.com', 'youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']);
+const YOUTUBE_ID = /^[\w-]{6,20}$/;
+
+/**
+ * Decide how a lesson's contentUrl may be shown (SEC-6). Only https URLs are
+ * accepted at all. YouTube (exact host match, so `youtube.com.evil.tld` does
+ * not pass) becomes a sandboxed embed of the privacy-enhanced player;
+ * anything else is offered as an external link, never framed.
+ *
+ * @returns {{ kind: 'youtube', src: string, href: string } | { kind: 'external', href: string } | null}
+ */
+export function classifyContentUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  let parsed;
   try {
-    const parsed = new URL(url);
-    if (parsed.hostname.includes('youtube.com')) {
-      const videoId = parsed.searchParams.get('v');
-      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
-    }
-    if (parsed.hostname === 'youtu.be') {
-      const videoId = parsed.pathname.replace(/^\//, '');
-      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
-    }
+    parsed = new URL(url);
   } catch {
-    /* keep original url */
+    return null;
   }
-  return url;
+  if (parsed.protocol !== 'https:') return null;
+
+  let videoId = null;
+  if (YOUTUBE_HOSTS.has(parsed.hostname)) {
+    videoId = parsed.searchParams.get('v') || parsed.pathname.match(/^\/(?:embed|shorts)\/([\w-]+)/)?.[1] || null;
+  } else if (parsed.hostname === 'youtu.be') {
+    videoId = parsed.pathname.replace(/^\//, '').split('/')[0] || null;
+  }
+  if (videoId && YOUTUBE_ID.test(videoId)) {
+    return {
+      kind: 'youtube',
+      src: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?rel=0`,
+      href: parsed.href,
+    };
+  }
+  return { kind: 'external', href: parsed.href };
+}
+
+/** @deprecated use classifyContentUrl — kept for callers that only need an embed URL. */
+export function toEmbedUrl(url) {
+  const c = classifyContentUrl(url);
+  return c?.kind === 'youtube' ? c.src : null;
 }

@@ -186,6 +186,36 @@ describe('Course Service', () => {
       expect(res.body.data.categoryId).toBe(category.categoryId);
     });
 
+    it('refuses non-https lesson and thumbnail URLs (SEC-6)', async () => {
+      const category = await createCategory();
+      const bad = await request(app)
+        .post('/')
+        .set(adminHeaders)
+        .send({ ...createCoursePayload(category.categoryId), slug: 'bad-thumb', thumbnailUrl: 'javascript:alert(1)' });
+      expect(bad.status).toBe(400);
+
+      const ok = await request(app)
+        .post('/')
+        .set(adminHeaders)
+        .send({ ...createCoursePayload(category.categoryId), slug: 'ok-thumb', thumbnailUrl: '/covers/walking.svg' });
+      expect(ok.status).toBe(201);
+
+      const mod = await request(app)
+        .post(`/${ok.body.data.courseId}/modules`)
+        .set(adminHeaders)
+        .send({ title: 'Week 1', order: 0 });
+      const topic = await request(app)
+        .post(`/modules/${mod.body.data.moduleId}/topics`)
+        .set(adminHeaders)
+        .send({ title: 'Lesson', contentType: 'video', contentUrl: 'javascript:fetch("/api/v1/auth/refresh")', order: 0 });
+      expect(topic.status).toBe(400);
+      const httpTopic = await request(app)
+        .post(`/modules/${mod.body.data.moduleId}/topics`)
+        .set(adminHeaders)
+        .send({ title: 'Lesson', contentType: 'video', contentUrl: 'http://example.com/x', order: 0 });
+      expect(httpTopic.status).toBe(400);
+    });
+
     it('should return 403 for learner', async () => {
       const category = await createCategory();
 
