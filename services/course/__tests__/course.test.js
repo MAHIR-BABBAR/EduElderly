@@ -41,6 +41,32 @@ const createCoursePayload = (categoryId) => ({
 
 describe('Course Service', () => {
   describe('GET /', () => {
+    it('filters, searches and sorts on the server (B-1)', async () => {
+      const category = await createCategory();
+      const other = await Category.create({ name: 'Digital', slug: 'digital', description: 'd' });
+      await Course.create({ ...createCoursePayload(category.categoryId), title: 'Walking for health', slug: 'walking', isPublished: true, isPaid: false });
+      await Course.create({ ...createCoursePayload(other.categoryId), title: 'Using a tablet', slug: 'tablet', isPublished: true, isPaid: true, price: 5, difficulty: 'intermediate' });
+      await Course.create({ ...createCoursePayload(category.categoryId), title: 'Balance basics', slug: 'balance', isPublished: true, isPaid: false });
+
+      const byCategory = await request(app).get(`/?categoryId=${other.categoryId}`);
+      expect(byCategory.status).toBe(200);
+      expect(byCategory.body.data.courses.map((c) => c.slug)).toEqual(['tablet']);
+
+      const paidOnly = await request(app).get('/?isPaid=true');
+      expect(paidOnly.body.data.courses.map((c) => c.slug)).toEqual(['tablet']);
+
+      const searched = await request(app).get('/?search=walking');
+      expect(searched.body.data.courses.map((c) => c.slug)).toEqual(['walking']);
+
+      const az = await request(app).get('/?sort=a-z');
+      expect(az.body.data.courses.map((c) => c.title)).toEqual(['Balance basics', 'Using a tablet', 'Walking for health']);
+
+      const bad = await request(app).get('/?difficulty=impossible');
+      expect(bad.status).toBe(400);
+      const badId = await request(app).get('/?categoryId=$ne%3Anull');
+      expect(badId.status).toBe(400);
+    });
+
     it('should list only published courses with totalTopics', async () => {
       const category = await createCategory();
       const published = await Course.create({

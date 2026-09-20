@@ -12,6 +12,7 @@ const {
 } = require('../controller/courseController');
 const {
   paginationRules,
+  catalogRules,
   createCourseRules,
   updateCourseRules,
   courseIdRules,
@@ -22,7 +23,7 @@ const router = express.Router();
 
 router.get('/admin/courses', extractUser, requireAdmin, paginationRules, listAdminCourses);
 router.get('/admin/courses/:courseId', extractUser, requireAdmin, courseIdRules, getAdminCourse);
-router.get('/', paginationRules, listCourses);
+router.get('/', catalogRules, listCourses);
 router.post('/', extractUser, requireAdmin, createCourseRules, createCourse);
 router.get('/:courseId', courseIdRules, getCourse);
 router.put('/:courseId', extractUser, requireAdmin, updateCourseRules, updateCourse);
