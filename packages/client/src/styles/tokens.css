@@ -50,13 +50,6 @@
   --world-soft: #e2eef0;
   --world-gradient: linear-gradient(135deg, #0c343d 0%, #1f7a8c 100%);
 
-  /* Legacy cover tints: aliased to the world gradient until CourseCover is
-     rewritten in F-3, which removes them. */
-  --cover-1: var(--world-gradient);
-  --cover-2: var(--world-gradient);
-  --cover-3: var(--world-gradient);
-  --cover-4: var(--world-gradient);
-  --cover-5: var(--world-gradient);
 
   --gradient-hero: linear-gradient(160deg, #0a2229 0%, #0c343d 55%, #14505c 100%);
   --gradient-cta: linear-gradient(135deg, #fdf1dc 0%, #fbe4bd 100%);

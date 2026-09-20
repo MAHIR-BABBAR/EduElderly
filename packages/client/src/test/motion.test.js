@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fadeUp, listStagger, pageTransition, pressable, celebrate, heroReveal } from '@/lib/motion';
+import { fadeUp, listStagger, pageTransition, pressable, celebrate, heroReveal, sharedLayout, deckSlide, bentoStagger, bentoTile, spatialSpring } from '@/lib/motion';
 
 /**
  * The reduced-motion contract is the part of the design system most likely to
@@ -90,5 +90,28 @@ describe('motion variants with reduced motion requested', () => {
     const variant = celebrate();
     expect(variant.initial).toBe(false);
     expect(variant.animate.scale).toBe(1);
+  });
+});
+
+describe('spatial tier', () => {
+  it('morphs and slides with the shared spring when motion is allowed', () => {
+    setReducedMotion(false);
+    expect(sharedLayout('cover-1')).toEqual({ layoutId: 'cover-1', transition: spatialSpring });
+    const slide = deckSlide(1);
+    expect(slide.initial.x).toBe(48);
+    expect(slide.exit.x).toBe(-48);
+    expect(deckSlide(-1).initial.x).toBe(-48);
+    expect(bentoStagger().visible.transition.staggerChildren).toBeGreaterThan(0);
+    expect(bentoTile().hidden.opacity).toBe(0);
+  });
+
+  it('collapses to an instant swap under reduced motion', () => {
+    setReducedMotion(true);
+    expect(sharedLayout('cover-1')).toEqual({});
+    const slide = deckSlide(1);
+    expect(slide.initial).toBe(false);
+    expect(slide.transition.duration).toBe(0);
+    expect(bentoStagger().visible.transition.staggerChildren).toBe(0);
+    expect(bentoTile().hidden).toEqual({ opacity: 1 });
   });
 });

@@ -67,7 +67,7 @@ export default {
       backgroundImage: {
         hero: 'var(--gradient-hero)',
         cta: 'var(--gradient-cta)',
-        world: 'var(--world-gradient)',
+        'world-gradient': 'var(--world-gradient)',
       },
       minHeight: { touch: 'var(--touch-min)', 'touch-primary': 'var(--touch-primary)' },
       minWidth: { touch: 'var(--touch-min)' },
