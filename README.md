@@ -23,7 +23,7 @@ To reproduce the screenshots (and the accessibility gate behind them): `npm run 
 
 ## Architecture Overview
 
-EduElderly uses a **microservices architecture** with an API Gateway as the single entry point. Services communicate over REST with internal service authentication (`X-Service-Key`).
+EduElderly uses a **microservices architecture** with an API Gateway as the single entry point. The gateway verifies the JWT once and stamps `X-Gateway-Key` + `X-User-*` on proxied requests; services call each other over REST with a separate `X-Service-Key` on `/internal/*` routes. The request flow, the trust model and the internal route map are in [`docs/architecture.md`](docs/architecture.md); the reasoning behind the main choices is in [`docs/adr/`](docs/adr/).
 
 ```
 ┌─────────────┐
@@ -128,7 +128,7 @@ EduElderly/
 ### 1. Clone
 
 ```bash
-git clone https://github.com/your-org/EduElderly.git
+git clone https://github.com/MAHIR-BABBAR/EduElderly.git
 cd EduElderly
 ```
 
