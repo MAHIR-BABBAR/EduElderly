@@ -9,11 +9,16 @@ const log = createLogger('enrollment-service');
 
 const ACTIVE_STATUSES = [ENROLLMENT_STATUS.ACTIVE, ENROLLMENT_STATUS.COMPLETED];
 
+// The snapshot a learner's screens need without a second round-trip: enough
+// to draw the cover in its subject world and say "2 of 5 lessons".
 const courseSummaryFromStats = (stats) => ({
   courseId: stats.courseId,
   title: stats.title,
   thumbnailUrl: stats.thumbnailUrl ?? null,
   instructorName: stats.instructorName ?? null,
+  categoryId: stats.categoryId ?? null,
+  topicCount: stats.topicCount ?? null,
+  estimatedHours: stats.estimatedHours ?? null,
 });
 
 const computeResumeFields = (enrollment, stats) => {

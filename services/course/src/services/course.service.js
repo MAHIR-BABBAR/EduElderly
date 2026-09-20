@@ -140,6 +140,8 @@ const loadCourseStats = async (courseId, { publishedOnly = false } = {}) => {
     title: course.title,
     thumbnailUrl: course.thumbnailUrl || null,
     instructorName: course.instructorName,
+    categoryId: course.categoryId || null,
+    estimatedHours: course.estimatedHours ?? null,
     isPublished: course.isPublished,
     isDeleted: course.isDeleted,
     isPaid: course.isPaid,

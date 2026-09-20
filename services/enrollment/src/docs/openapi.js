@@ -30,6 +30,9 @@ const CourseSummary = {
     title: { type: 'string' },
     thumbnailUrl: { type: 'string', nullable: true },
     instructorName: { type: 'string', nullable: true },
+    categoryId: { type: 'string', nullable: true, description: 'Drives the subject colour world in the client.' },
+    topicCount: { type: 'integer', nullable: true, description: 'Total lessons, so screens can say "2 of 5 lessons".' },
+    estimatedHours: { type: 'number', nullable: true },
   },
 };
 
