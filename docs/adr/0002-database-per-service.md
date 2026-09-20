@@ -10,6 +10,6 @@ Every service connects to its own database (`eduelderly-auth`, `eduelderly-cours
 
 ## Consequences
 - Boundaries are real: renaming a field in the course schema cannot break enrollment unless the DTO changes, and the DTO is in `packages/shared` where the change is visible.
-- Denormalisation is deliberate: enrollment stores `courseId`, `topicIds` and the course's `estimatedHours`/`categoryId` snapshot so the dashboard renders without a course call per row.
+- Enrollment stores only `courseId` and the learner's `completedTopics`; course facts (`title`, `categoryId`, `topicCount`, `estimatedHours`) are fetched from course `/internal/courses/:id/stats` when a list is read — once per distinct course, in parallel, and Redis-cached on the course side — and merged into the `EnrollmentDTO`. Enrichment at read time was chosen over snapshotting so a course edit shows up everywhere immediately.
 - No cross-service transactions. Where consistency matters (paid enrol after webhook, certificate after completion) the calls are idempotent and re-checked on the next trigger rather than wrapped in a saga.
 - Tests need a database per service; CI provides `TEST_MONGO_URI` per matrix job, and the notification suite further isolates one database per test file to keep a queue worker from racing another file's cleanup.

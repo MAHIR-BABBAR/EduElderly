@@ -75,6 +75,7 @@ quiz submit ─▶ graded server-side ─▶ enrollment /internal/certificate-el
 - **Enrollment owns eligibility** (`certificateEligibility.service.js`): a certificate is issued only when the enrollment is `COMPLETED` *and* every published quiz for the course has a passing attempt. Both the "last topic completed" path and the "quiz passed" path call the same function, so the order in which a learner finishes does not matter.
 - **Content is gated**: `GET /enrollments/:id/topics/:topicId/content` returns a topic's `contentUrl` only for an active/completed enrollment and only if the topic belongs to that course. The catalog never exposes `contentUrl`.
 - **XP** is awarded through user `/internal/:userId/xp` for topic and course completion.
+- **Lists are enriched, not denormalised**: `listEnrollmentsWithCourse` fetches course stats once per distinct course (parallel, Redis-cached by the course service) and merges them into the DTO.
 
 ## 6. Asynchronous work (BullMQ on Redis)
 

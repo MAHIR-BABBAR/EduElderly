@@ -201,13 +201,13 @@ This is the screen that sells the product. Give it a proper player layout.
 
 - [ ] Vitest: unit tests for `lib/api.js` error mapping, `motion.js` reduced-motion gating, and `AccessibilityContext` document attributes.
 - [ ] Playwright: one full happy path against the seeded stack (register → OTP → enroll → complete lessons → pass quiz → certificate visible → verify URL). Run it in CI behind a `docker compose up` step.
-- [ ] Axe accessibility scan in Playwright on every public page.
+- [x] Axe accessibility scan in Playwright on every public page.
 
 ### 4.2 Documentation
 
 - [ ] README rewrite: hero GIF (record with the seeded demo), live demo link and credentials, mermaid architecture diagram, "Highlights" section (5 bullets), quick start, badges (CI, coverage, license), screenshots grid, link to docs.
-- [ ] `docs/adr/`: five short Architecture Decision Records. Suggested: gateway-trust headers instead of service mesh; per-service databases; certificate eligibility owned by enrollment; BullMQ for side effects; accessibility preferences stored server-side.
-- [ ] `docs/architecture.md` with the request flow, the internal-route map, and the event flow after the queue work.
+- [x] `docs/adr/`: five short Architecture Decision Records. Suggested: gateway-trust headers instead of service mesh; per-service databases; certificate eligibility owned by enrollment; BullMQ for side effects; accessibility preferences stored server-side.
+- [x] `docs/architecture.md` with the request flow, the internal-route map, and the event flow after the queue work.
 
 ### 4.3 Live demo
 
