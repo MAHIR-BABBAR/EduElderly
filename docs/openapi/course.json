@@ -166,6 +166,10 @@
                     "type": "string",
                     "maxLength": 120
                   },
+                  "credits": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
                   "slug": {
                     "type": "string",
                     "maxLength": 80
@@ -331,6 +335,10 @@
                   "instructorName": {
                     "type": "string",
                     "maxLength": 120
+                  },
+                  "credits": {
+                    "type": "string",
+                    "maxLength": 300
                   },
                   "slug": {
                     "type": "string",
@@ -1946,6 +1954,10 @@
           "instructorName": {
             "type": "string",
             "example": "Dr. Priya Sharma"
+          },
+          "credits": {
+            "type": "string",
+            "description": "Source attribution shown on the course page."
           },
           "moduleCount": {
             "type": "integer"

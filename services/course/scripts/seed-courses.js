@@ -67,6 +67,7 @@ const upsertCourseTree = async (entry, categoryId) => {
       difficulty: entry.difficulty || 'beginner',
       estimatedHours: entry.estimatedHours ?? 0,
       instructorName: entry.instructorName,
+      credits: entry.credits || '',
       moduleIds: [],
     });
   } else {
@@ -81,6 +82,7 @@ const upsertCourseTree = async (entry, categoryId) => {
       difficulty: entry.difficulty || 'beginner',
       estimatedHours: entry.estimatedHours ?? 0,
       instructorName: entry.instructorName,
+      credits: entry.credits || '',
       moduleIds: [],
     });
     await course.save();

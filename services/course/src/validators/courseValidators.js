@@ -46,6 +46,7 @@ const createCourseRules = [
   body('difficulty').optional().isIn(DIFFICULTY_VALUES),
   body('estimatedHours').optional().isFloat({ min: 0 }),
   body('instructorName').notEmpty().isString().isLength({ max: 120 }),
+  body('credits').optional().isString().isLength({ max: 300 }),
   body('slug').optional().isString().isLength({ max: 80 }),
   handleValidationErrors,
 ];
@@ -61,6 +62,7 @@ const updateCourseRules = [
   body('difficulty').optional().isIn(DIFFICULTY_VALUES),
   body('estimatedHours').optional().isFloat({ min: 0 }),
   body('instructorName').optional().isString().isLength({ max: 120 }),
+  body('credits').optional().isString().isLength({ max: 300 }),
   body('slug').optional().isString().isLength({ max: 80 }),
   handleValidationErrors,
 ];
