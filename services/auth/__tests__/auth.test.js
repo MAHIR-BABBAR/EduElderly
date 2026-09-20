@@ -444,3 +444,26 @@ describe('Auth Service - Comprehensive Test Suite', () => {
     });
   });
 });
+
+describe('input validation (SEC-7 / SEC-10)', () => {
+  it('rejects an operator object where an email string is expected', async () => {
+    const res = await request(app).post('/resend-verification').send({ email: { $regex: '^a' } });
+    expect(res.status).toBe(400);
+    const login = await request(app).post('/login').send({ email: { $gt: '' }, password: 'x' });
+    expect(login.status).toBe(400);
+  });
+
+  it('enforces a password policy on registration', async () => {
+    const weak = await request(app).post('/register').send({ ...VALID_USER_DATA, email: 'weak@test.com', password: 'a' });
+    expect(weak.status).toBe(400);
+    const noDigit = await request(app).post('/register').send({ ...VALID_USER_DATA, email: 'weak2@test.com', password: 'abcdefghij' });
+    expect(noDigit.status).toBe(400);
+  });
+
+  it('gives every refresh token a unique id so same-second logins cannot collide', () => {
+    const { signRefreshToken } = require('../src/utils/jwtHelper');
+    const a = signRefreshToken('user-1');
+    const b = signRefreshToken('user-1');
+    expect(a.tokenHash).not.toBe(b.tokenHash);
+  });
+});

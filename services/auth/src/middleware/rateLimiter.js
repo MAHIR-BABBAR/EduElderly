@@ -21,7 +21,6 @@ const authSensitiveLimiter =
         max: parseInt(process.env.RATE_LIMIT_LOGIN_MAX_REQUESTS, 10) || 10,
         standardHeaders: true,
         legacyHeaders: false,
-        validate: { trustProxy: false },
         handler: rateLimitHandler('Too many attempts, please try again later'),
       });
 

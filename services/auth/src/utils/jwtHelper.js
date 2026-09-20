@@ -28,7 +28,9 @@ const signRefreshToken = (userId) => {
     throw new AppError('signRefreshToken requires userId', 400, ERROR_CODES.E_INTERNAL);
   }
 
-  const rawToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
+  // A unique id per token: two refreshes in the same second must not hash to
+  // the same value (unique index collision surfaced as a bogus 409) (SEC-4).
+  const rawToken = jwt.sign({ userId, jti: crypto.randomUUID() }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d',
     issuer: 'eduelderly',
   });

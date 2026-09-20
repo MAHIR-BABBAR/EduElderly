@@ -41,7 +41,8 @@ const register = catchAsync(async (req, res) => {
 });
 
 const verifyEmail = catchAsync(async (req, res) => {
-  const { user, alreadyVerified } = await verifyEmailWithToken(req.query.token);
+  // Body is preferred so the token does not sit in server logs and referers.
+  const { user, alreadyVerified } = await verifyEmailWithToken(req.body?.token || req.query.token);
 
   res.status(200).json({
     success: true,
