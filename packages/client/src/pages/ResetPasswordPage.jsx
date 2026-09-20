@@ -48,7 +48,7 @@ export function ResetPasswordPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {error && <Alert variant="error">{error}</Alert>}
-            <FormField label="New password" htmlFor="password" hint="At least 8 characters.">
+            <FormField label="New password" htmlFor="password" hint="At least 8 characters with letters and numbers.">
               <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
             </FormField>
             <FormField label="Confirm password" htmlFor="confirm">
