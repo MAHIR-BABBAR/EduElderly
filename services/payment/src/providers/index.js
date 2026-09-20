@@ -24,6 +24,11 @@ const getProvider = () => {
   let provider;
   switch (name) {
     case 'mock':
+      // The mock provider lets a learner confirm their own order. It must never
+      // run in production by accident (SEC-9).
+      if (process.env.NODE_ENV === 'production' && process.env.ALLOW_MOCK_PAYMENTS !== 'true') {
+        throw new Error('PAYMENT_PROVIDER=mock is not allowed in production (set ALLOW_MOCK_PAYMENTS=true to override)');
+      }
       provider = new MockProvider();
       break;
     case 'razorpay':

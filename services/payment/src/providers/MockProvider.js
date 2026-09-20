@@ -21,7 +21,11 @@ class MockProvider extends PaymentProvider {
   }
 
   get webhookSecret() {
-    return process.env.MOCK_WEBHOOK_SECRET || 'mock-webhook-secret';
+    // No fallback: a guessable default would let anyone forge a capture.
+    if (!process.env.MOCK_WEBHOOK_SECRET) {
+      throw new Error('MOCK_WEBHOOK_SECRET is not configured');
+    }
+    return process.env.MOCK_WEBHOOK_SECRET;
   }
 
   get checkoutBaseUrl() {

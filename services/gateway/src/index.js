@@ -62,7 +62,7 @@ const createApp = () => {
       certificate: process.env.CERTIFICATE_SERVICE_URL,
     };
 
-    const serviceUrl = serviceUrls[service];
+    const serviceUrl = Object.hasOwn(serviceUrls, service) ? serviceUrls[service] : undefined;
     if (!serviceUrl) {
       return next(new AppError(`Service '${service}' not found`, 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
     }
