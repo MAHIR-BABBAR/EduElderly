@@ -18,13 +18,13 @@ import { LearningPreview } from '@/components/landing/LearningPreview';
 import { Testimonials } from '@/components/landing/Testimonials';
 import { SectionBand } from '@/components/layout/SectionBand';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CourseCover } from '@/components/ui/course-cover';
 import { Badge } from '@/components/ui/badge';
 import { StatTile } from '@/components/ui/stat-tile';
 import { CourseCardSkeleton, StatTileSkeleton } from '@/components/ui/skeleton';
 import { fadeUp, heroReveal, heroStagger, inViewOnce, listStagger } from '@/lib/motion';
-import { formatPrice } from '@/lib/utils';
+import { worldFor, WORLD_LABELS } from '@/lib/worlds';
+import { hours, plural, price } from '@/lib/format';
 
 const PROMISES = [
   { icon: Type, title: 'Text you can read', body: 'Four text sizes, set once in your settings and used everywhere.' },
@@ -95,58 +95,54 @@ export function LandingPage() {
   return (
     <>
       {/* ---- Immersive zone: the only place with a long entrance ---------- */}
-      <section className="relative isolate min-h-[min(88vh,44rem)] overflow-hidden">
-        <Hero3D />
-        {/* Scrim so the headline keeps AA contrast over any frame of the scene. */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-hero/95 via-brand-hero/70 to-transparent" />
+      <section className="relative isolate overflow-hidden bg-hero text-brand-on-night on-night">
+        <div className="mx-auto grid w-full max-w-content items-center gap-10 px-4 py-14 sm:px-6 lg:min-h-[min(84vh,44rem)] lg:grid-cols-[46fr_54fr] lg:gap-6 lg:px-8 lg:py-10">
+          {/* Copy column: nothing is ever drawn behind it. */}
+          <motion.div variants={heroStagger()} initial="hidden" animate="visible" className="relative z-10 max-w-2xl">
+            <motion.p
+              variants={heroReveal()}
+              className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold uppercase tracking-[0.08em] text-brand-accent ring-1 ring-inset ring-white/20"
+            >
+              Elderly-first learning
+            </motion.p>
 
-        <div className="relative z-10 flex min-h-[min(88vh,44rem)] items-center">
-          <motion.div
-            variants={heroStagger()}
-            initial="hidden"
-            animate="visible"
-            className="mx-auto w-full max-w-content px-4 py-16 sm:px-6 lg:px-8"
-          >
-            <div className="max-w-2xl text-white">
-              <motion.p
-                variants={heroReveal()}
-                className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold uppercase tracking-widest text-brand-accent ring-1 ring-inset ring-white/20"
-              >
-                Elderly-first learning
-              </motion.p>
+            <motion.h1 variants={heroReveal()} className="font-display text-hero text-brand-on-night">
+              Learning made <span className="accent-word">welcoming</span>
+            </motion.h1>
 
-              <motion.h1
-                variants={heroReveal()}
-                className="font-display text-display text-white"
-              >
-                Learning made welcoming
-              </motion.h1>
+            <motion.p variants={heroReveal()} className="mt-6 max-w-[52ch] text-lg text-brand-on-night-muted">
+              Short lessons, large text, and clear steps. Study health, digital skills, and more at
+              whatever pace feels right, and earn a certificate you can share.
+            </motion.p>
 
-              <motion.p variants={heroReveal()} className="mt-6 text-lg text-white/90">
-                Short lessons, large text, and clear steps. Study health, digital skills, and more at
-                whatever pace feels right, and earn a certificate you can share.
-              </motion.p>
+            <motion.div variants={heroReveal()} className="mt-9 flex flex-wrap gap-4">
+              <Button asChild size="lg" variant="accent" className="min-h-touch-primary">
+                <Link to="/courses">
+                  Browse courses
+                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline-inverse" className="min-h-touch-primary">
+                <Link to={isAuthenticated ? '/dashboard' : '/register'}>
+                  {isAuthenticated ? 'Go to my learning' : 'Create a free account'}
+                </Link>
+              </Button>
+            </motion.div>
 
-              <motion.div variants={heroReveal()} className="mt-9 flex flex-wrap gap-4">
-                <Button asChild size="lg" variant="accent">
-                  <Link to="/courses">
-                    Browse courses
-                    <ArrowRight className="h-5 w-5" aria-hidden="true" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline-inverse">
-                  <Link to={isAuthenticated ? '/dashboard' : '/register'}>
-                    {isAuthenticated ? 'Go to My Learning' : 'Create a free account'}
-                  </Link>
-                </Button>
-              </motion.div>
-
-              <motion.p variants={heroReveal()} className="mt-6 flex items-center gap-2 text-sm text-white/75">
-                <ShieldCheck className="h-5 w-5 text-brand-accent" aria-hidden="true" />
-                Free to join. No card needed for free courses.
-              </motion.p>
-            </div>
+            <motion.p variants={heroReveal()} className="mt-6 flex items-center gap-2 text-sm text-brand-on-night-muted">
+              <ShieldCheck className="h-5 w-5 text-brand-accent" aria-hidden="true" />
+              Free to join. No card needed for free courses.
+            </motion.p>
           </motion.div>
+
+          {/* Scene column: the 3D scene (or its static fallback) lives only in
+              this box, clipped to it, so it can never sit under the headline. */}
+          <div
+            aria-hidden="true"
+            className="relative h-64 overflow-hidden rounded-xl sm:h-80 lg:h-[min(70vh,36rem)]"
+          >
+            <Hero3D />
+          </div>
         </div>
       </section>
 
@@ -220,37 +216,44 @@ export function LandingPage() {
             viewport={inViewOnce}
             className="grid gap-6 md:grid-cols-3"
           >
-            {featured.map((course) => (
-              <motion.div key={course.courseId} variants={fadeUp()}>
-                <Card interactive className="flex h-full flex-col p-0">
-                  <CourseCover
-                    title={course.title}
-                    courseId={course.courseId}
-                    src={course.thumbnailUrl}
-                    className="rounded-b-none"
-                  />
-                  <div className="flex flex-1 flex-col p-6">
-                    <CardHeader className="mb-3">
+            {featured.map((course) => {
+              const category = categories.find((c) => c.categoryId === course.categoryId);
+              const world = worldFor({ categorySlug: category?.slug, categoryName: category?.name, categoryId: course.categoryId });
+              return (
+                <motion.div key={course.courseId} variants={fadeUp()}>
+                  <article
+                    data-world={world}
+                    className="card-lift group relative flex h-full flex-col overflow-hidden rounded-lg border border-brand-border bg-brand-surface-raised shadow-card"
+                  >
+                    <CourseCover
+                      title={course.title}
+                      courseId={course.courseId}
+                      src={course.thumbnailUrl}
+                      world={world}
+                      layoutId={`cover-${course.courseId}`}
+                      className="rounded-none border-0"
+                    />
+                    <div className="flex flex-1 flex-col gap-3 p-5">
                       <div className="flex flex-wrap gap-2">
-                        <Badge className="capitalize">{course.difficulty}</Badge>
-                        <Badge variant="outline">{formatPrice(course.price)}</Badge>
+                        <Badge variant="world">{WORLD_LABELS[world]}</Badge>
+                        <Badge variant="outline">{price(course.price)}</Badge>
                       </div>
-                      <CardTitle>
+                      <h3 className="font-display text-xl text-brand-primary-dark">
                         {/* Stretched link: the whole card is the target, but the
                             accessible name stays the course title. */}
-                        <Link to={`/courses/${course.courseId}`} className="after:absolute after:inset-0">
+                        <Link to={`/courses/${course.courseId}`} className="after:absolute after:inset-0 focus-visible:outline-none">
                           {course.title}
                         </Link>
-                      </CardTitle>
-                      <CardDescription className="line-clamp-2">{course.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="mt-auto pt-2 text-sm text-brand-muted">
-                      {course.totalTopics} lessons · about {course.estimatedHours} hours
-                    </CardContent>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
+                      </h3>
+                      <p className="line-clamp-2 text-brand-muted">{course.description}</p>
+                      <p className="mt-auto pt-2 text-sm font-semibold text-brand-muted">
+                        {plural(course.totalTopics ?? 0, 'lesson')} · {hours(course.estimatedHours)}
+                      </p>
+                    </div>
+                  </article>
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
 
