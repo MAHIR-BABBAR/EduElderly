@@ -10,7 +10,8 @@ test.describe('EduElderly public pages', () => {
 
   test('course catalog page loads', async ({ page }) => {
     await page.goto('/courses');
-    await expect(page.getByRole('heading', { name: 'Course catalog' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /Find your next course/ })).toBeVisible();
+    await expect(page.getByLabel('Search courses')).toBeVisible();
   });
 
   test('login page has accessible form', async ({ page }) => {
