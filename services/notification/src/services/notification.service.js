@@ -2,6 +2,7 @@ const { AppError, ERROR_CODES, isQueueEnabled } = require('@eduelderly/shared');
 const {
   NOTIFICATION_CHANNEL,
   NOTIFICATION_STATUS,
+  SECRET_NOTIFICATION_TYPES,
 } = require('@eduelderly/shared/constants/notificationTypes');
 const { Notification } = require('../models/Notification');
 const { renderEmail } = require('../templates');
@@ -21,15 +22,21 @@ const sendNotification = async ({ userId, email, type, templateData = {} }) => {
     throw new AppError('email or userId is required', 400, ERROR_CODES.E_VALIDATION);
   }
 
-  const channel = resolveChannel(userId, email);
+  const secret = SECRET_NOTIFICATION_TYPES.includes(type);
+  if (secret && !email) {
+    throw new AppError('email is required for this notification type', 400, ERROR_CODES.E_VALIDATION);
+  }
+  // A code or reset link is delivered to the inbox only; it is never listed
+  // in the in-app feed, and it is not tied to the user record at all.
+  const channel = secret ? NOTIFICATION_CHANNEL.EMAIL : resolveChannel(userId, email);
   const { subject, textContent } = renderEmail(type, templateData);
 
   const notification = await Notification.create({
-    userId: userId || null,
+    userId: secret ? null : userId || null,
     type,
     channel,
     subject,
-    body: textContent,
+    body: secret ? '[sent by email]' : textContent,
     payload: { email, templateData },
     status: NOTIFICATION_STATUS.PENDING,
   });

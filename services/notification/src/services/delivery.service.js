@@ -1,4 +1,4 @@
-const { NOTIFICATION_STATUS } = require('@eduelderly/shared/constants/notificationTypes');
+const { NOTIFICATION_STATUS, SECRET_NOTIFICATION_TYPES } = require('@eduelderly/shared/constants/notificationTypes');
 const { createLogger } = require('@eduelderly/shared');
 const { Notification } = require('../models/Notification');
 const { sendTransactionalEmail } = require('../clients/brevoClient');
@@ -50,6 +50,7 @@ const deliverNotification = async (notificationId, { attempt = 1, maxAttempts = 
     notification.error = error.message;
     if (attempt >= maxAttempts) {
       notification.status = NOTIFICATION_STATUS.FAILED;
+      redactSecret(notification);
     }
     await notification.save();
     throw error;
@@ -59,9 +60,21 @@ const deliverNotification = async (notificationId, { attempt = 1, maxAttempts = 
   notification.error = null;
   notification.status = NOTIFICATION_STATUS.SENT;
   notification.sentAt = new Date();
+  redactSecret(notification);
   await notification.save();
 
   return { sent: true };
 };
+
+/**
+ * Once a code or reset link has left for the inbox (or delivery has been given
+ * up on) nothing in the database should still contain it (SEC-8).
+ */
+function redactSecret(notification) {
+  if (!SECRET_NOTIFICATION_TYPES.includes(notification.type)) return;
+  notification.body = '[sent by email]';
+  notification.payload = { email: notification.payload?.email, templateData: { redacted: true } };
+  notification.markModified('payload');
+}
 
 module.exports = { deliverNotification };
