@@ -32,6 +32,9 @@ export function CourseCover({
 }) {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(src) && !failed;
+  // Illustrated SVG covers are already drawn in their world colour; the
+  // duotone multiply is for photographs only.
+  const duotone = showImage && !/\.svg(\?|#|$)/i.test(src);
   const initial = title.trim().charAt(0).toUpperCase();
   const Root = layoutId ? motion.div : 'div';
   const rootProps = layoutId ? sharedLayout(layoutId) : {};
@@ -58,7 +61,9 @@ export function CourseCover({
             className="cover-photo absolute inset-0 h-full w-full object-cover"
           />
           {/* Duotone: the world colour multiplied over the photo. */}
-          <div aria-hidden="true" className="cover-duotone absolute inset-0 bg-world mix-blend-multiply opacity-70" />
+          {duotone && (
+            <div aria-hidden="true" className="cover-duotone absolute inset-0 bg-world mix-blend-multiply opacity-70" />
+          )}
         </>
       ) : (
         <div aria-hidden="true" className="absolute inset-0">

@@ -16,6 +16,10 @@ dotenv.config({ path: path.join(root, 'services', 'course', '.env') });
 if (!process.env.MONGO_URI) {
   process.env.MONGO_URI = 'mongodb://127.0.0.1:27017';
 }
+// The service .env names the Docker host ("mongo"), which only resolves inside
+// the compose network. This script runs on the host, where the published port
+// is on localhost. Pass SEED_MONGO_URI to point elsewhere.
+process.env.MONGO_URI = process.env.SEED_MONGO_URI || process.env.MONGO_URI.replace(/\/\/mongo(:|\/)/, '//127.0.0.1$1');
 
 const run = (cwd, script, args = []) => {
   const result = spawnSync(process.execPath, [script, ...args], {

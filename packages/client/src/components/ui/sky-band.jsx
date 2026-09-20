@@ -40,12 +40,14 @@ export function SkyBand({ hour = new Date().getHours(), className, children }) {
       )}
     >
       <div aria-hidden="true" className="sky-gradient absolute inset-0" style={{ background: sky.gradient }} />
+      {/* Small and tucked top-right on phones so it never sits under the
+          headline; full size at its daypart position from sm up. */}
       <div
         aria-hidden="true"
-        className="sky-disc absolute h-40 w-40 rounded-full sm:h-56 sm:w-56"
+        className="sky-disc absolute right-4 top-4 h-16 w-16 rounded-full sm:bottom-[var(--disc-bottom)] sm:right-[var(--disc-right)] sm:top-auto sm:h-56 sm:w-56"
         style={{
-          bottom: sky.disc.bottom,
-          right: sky.disc.right,
+          '--disc-bottom': sky.disc.bottom,
+          '--disc-right': sky.disc.right,
           background: sky.disc.moon
             ? `radial-gradient(circle at 35% 35%, ${sky.disc.color} 0%, #b9c4c8 60%, #8e9ca1 100%)`
             : sky.disc.color,
