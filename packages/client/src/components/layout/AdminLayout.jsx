@@ -1,9 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { BookOpen, ClipboardList, FolderTree, LayoutDashboard, ShoppingCart, Users } from 'lucide-react';
+import { BookOpen, ClipboardList, FolderTree, LayoutDashboard, Shield, ShoppingCart, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/courses', label: 'Courses', icon: BookOpen },
   { to: '/admin/categories', label: 'Categories', icon: FolderTree },
@@ -11,29 +11,34 @@ const navItems = [
   { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
 ];
 
+/**
+ * Admin console (plan S-9): a slim night sidebar on desktop, a scrolling row
+ * of chips on phones, and a content column whose tables share one recipe
+ * (`.admin-console table` in index.css) so every admin page reads the same.
+ */
 export function AdminLayout() {
   return (
-    <div className="page-container pb-24 md:pb-8">
-      <div className="flex flex-col gap-8 lg:flex-row">
+    <div className="page-container pb-24 md:pb-12">
+      <div className="grid gap-6 lg:grid-cols-[15rem_1fr]">
         <nav
           aria-label="Admin navigation"
-          className="shrink-0 rounded-xl border border-brand-border bg-white p-4 lg:w-56"
+          className="on-night rounded-xl bg-brand-night p-3 text-brand-on-night shadow-lift lg:sticky lg:top-24 lg:self-start lg:p-4"
         >
-          <p className="mb-4 font-display text-[length:var(--font-size-lg)] font-bold text-brand-primary-dark">
-            Admin
+          <p className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold uppercase tracking-[0.08em] text-brand-on-night-muted">
+            <Shield className="h-4 w-4 text-brand-accent" aria-hidden="true" />
+            Admin console
           </p>
-          <ul className="space-y-1">
+          <ul className="scroll-x flex gap-1 lg:flex-col">
             {navItems.map(({ to, label, icon: Icon, end }) => (
-              <li key={to}>
+              <li key={to} className="shrink-0">
                 <NavLink
                   to={to}
                   end={end}
                   className={({ isActive }) =>
                     cn(
-                      'flex min-h-touch items-center gap-2 rounded-lg px-3 py-2 font-semibold transition-colors',
-                      isActive
-                        ? 'bg-brand-primary text-white'
-                        : 'text-brand-text hover:bg-brand-primary/10',
+                      'flex min-h-touch items-center gap-2 rounded-md px-3 py-2 font-semibold transition-colors duration-fast',
+                      'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#ffd27a]',
+                      isActive ? 'bg-white/12 text-brand-on-night' : 'text-brand-on-night-muted hover:bg-white/8 hover:text-brand-on-night',
                     )
                   }
                 >
@@ -44,7 +49,7 @@ export function AdminLayout() {
             ))}
           </ul>
         </nav>
-        <div className="min-w-0 flex-1">
+        <div className="admin-console min-w-0">
           <Outlet />
         </div>
       </div>

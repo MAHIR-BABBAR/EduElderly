@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { BookOpen, GraduationCap, UserCheck, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatTile } from '@/components/ui/stat-tile';
+import { StatTileSkeleton } from '@/components/ui/skeleton';
 import { Alert } from '@/components/ui/alert';
 import { formatPrice } from '@/lib/utils';
 
@@ -26,18 +29,22 @@ export function AdminDashboardPage() {
 
   const statCards = stats
     ? [
-        { label: 'Total users', value: stats.users?.total },
-        { label: 'Active learners', value: stats.users?.learners ?? stats.users?.active },
-        { label: 'Courses', value: stats.courses?.total },
-        { label: 'Enrollments', value: stats.enrollments?.total },
+        { label: 'Total users', value: stats.users?.total, icon: Users },
+        { label: 'Active learners', value: stats.users?.learners ?? stats.users?.active, icon: UserCheck, tone: 'success' },
+        { label: 'Courses', value: stats.courses?.total, icon: BookOpen },
+        { label: 'Enrollments', value: stats.enrollments?.total, icon: GraduationCap, tone: 'accent' },
       ]
     : [];
 
   return (
     <>
-      <PageHeader title="Admin dashboard" description="Platform overview and recent activity." />
+      <PageHeader eyebrow="Admin" title="Overview" documentTitle="Admin dashboard" description="Platform numbers and the latest audit activity." />
 
-      {dashboardQuery.isLoading && <p role="status">Loading dashboard…</p>}
+      {dashboardQuery.isLoading && (
+        <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" role="status" aria-label="Loading dashboard">
+          {[1, 2, 3, 4].map((i) => <StatTileSkeleton key={i} />)}
+        </div>
+      )}
       {dashboardQuery.error && <Alert variant="error">{dashboardQuery.error.message}</Alert>}
       {stats?.partialErrors?.length > 0 && (
         <Alert variant="warning" className="mb-6">
@@ -49,12 +56,7 @@ export function AdminDashboardPage() {
       {statCards.length > 0 && (
         <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {statCards.map((item) => (
-            <Card key={item.label}>
-              <CardHeader>
-                <CardDescription>{item.label}</CardDescription>
-                <CardTitle className="text-[length:var(--font-size-3xl)]">{item.value ?? '—'}</CardTitle>
-              </CardHeader>
-            </Card>
+            <StatTile key={item.label} label={item.label} value={item.value ?? 0} icon={item.icon} tone={item.tone} />
           ))}
         </div>
       )}
