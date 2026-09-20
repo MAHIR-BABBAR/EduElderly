@@ -11,12 +11,12 @@ export function PageHeader({ eyebrow, title, description, documentTitle, childre
   return (
     <header className="mb-8">
       {eyebrow && (
-        <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-brand-primary">{eyebrow}</p>
+        <p className="mb-2 text-sm font-semibold uppercase tracking-[0.08em] text-brand-accent-ink">{eyebrow}</p>
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl text-brand-primary-dark">{title}</h1>
-          {description && <p className="mt-2 max-w-2xl text-brand-muted">{description}</p>}
+          <h1 className="font-display text-3xl text-brand-primary-dark" tabIndex={-1}>{title}</h1>
+          {description && <p className="mt-3 max-w-[60ch] text-lg text-brand-muted">{description}</p>}
         </div>
         {children}
       </div>
