@@ -1,48 +1,67 @@
 /**
- * EduElderly design tokens — see DESIGN.md for the contract these encode.
+ * EduElderly design tokens — "Sunroom" (docs/NEXT-GEN-PLAN.md §4).
+ *
+ * Warm paper surfaces, deep ink-teal, a marigold accent, and a colour "world"
+ * per course subject. Every colour pair here was contrast-checked against the
+ * surface it is used on (ratios in the plan); do not add colours elsewhere.
  *
  * Everything scales from --font-size-base, which the AccessibilityProvider
- * drives from the learner's saved preference. Sizes are in rem-of-base so a
- * learner on "huge" gets a proportionally larger page, not just bigger body
- * text.
+ * drives from the learner's saved preference.
  */
 :root {
-  /* ---- Brand palette ---------------------------------------------------- */
-  --color-primary: #1b5e6b;
-  --color-primary-dark: #134652;
-  --color-primary-soft: #e6f0f2;   /* teal tint for selected/hover surfaces */
-  --color-accent: #e8a838;
-  --color-accent-soft: #fff4e0;
-  --color-accent-dark: #b57d1c;    /* AA-safe accent on white */
-  --color-surface: #f7fafb;
-  --color-surface-raised: #ffffff;
-  --color-surface-sunken: #eef4f6;
-  --color-text: #1a2b32;
-  --color-text-muted: #4a6270;
-  --color-border: #d4e2e8;
-  --color-border-strong: #a8c4ce;
-  --color-danger: #b42318;
-  --color-danger-soft: #fef3f2;
-  --color-success: #2d6a4f;
-  --color-success-soft: #e8f5ee;
-  --color-warning: #b45309;
-  --color-warning-soft: #fff7ed;
-  --color-hero-bg: #0d2a32;
+  /* ---- Paper & ink -------------------------------------------------------- */
+  --color-surface: #faf6ef;          /* paper */
+  --color-surface-raised: #fffdf9;   /* cards, sheets, inputs */
+  --color-surface-sunken: #f1eadf;   /* wells, table headers, skeleton base */
+  --color-text: #15242b;             /* 14.78:1 on paper */
+  --color-text-muted: #4f5f66;       /* 6.17:1 on paper, 5.56:1 on sunken */
   --color-white: #ffffff;
 
-  /* Category tints — course covers without artwork get a branded gradient
-     instead of a grey box, keyed by category so a catalog page reads as a set. */
-  --cover-1: linear-gradient(135deg, #1b5e6b 0%, #2d8a9a 100%);
-  --cover-2: linear-gradient(135deg, #b57d1c 0%, #e8a838 100%);
-  --cover-3: linear-gradient(135deg, #2d6a4f 0%, #4fa37a 100%);
-  --cover-4: linear-gradient(135deg, #134652 0%, #1b5e6b 100%);
-  --cover-5: linear-gradient(135deg, #7c4a1e 0%, #b57d1c 100%);
+  --color-primary: #14505c;          /* 8.36:1 on paper; white on it 9.01:1 */
+  --color-primary-dark: #0c343d;
+  --color-primary-soft: #e2eef0;
 
-  --gradient-hero: linear-gradient(160deg, #0d2a32 0%, #14414d 55%, #1b5e6b 100%);
-  --gradient-cta: linear-gradient(135deg, #fff4e0 0%, #ffe7bd 100%);
+  --color-night: #0a2229;            /* hero band, lesson focus band, footer */
+  --color-on-night: #faf6ef;         /* 15.30:1 */
+  --color-on-night-muted: #b9cbd0;   /* 9.83:1 */
+  --color-hero-bg: var(--color-night);
+
+  --color-accent: #e9a23b;           /* marigold; ink on it 7.35:1, on night 7.61:1 */
+  --color-accent-ink: #8a5a0b;       /* accent-coloured TEXT on paper, 5.49:1 */
+  --color-accent-dark: var(--color-accent-ink); /* legacy alias */
+  --color-accent-soft: #fdf1dc;
+
+  --color-border: #e2d8c8;           /* decorative hairlines */
+  --color-border-strong: #8c7f69;    /* meaningful boundaries, 3.64:1 */
+
+  --color-danger: #a8261b;           /* 6.59:1 */
+  --color-danger-soft: #fcebe8;
+  --color-success: #23634a;          /* 6.60:1 */
+  --color-success-soft: #e3f0e8;
+  --color-warning: #8a5a0b;
+  --color-warning-soft: #fdf1dc;
+
+  /* ---- Subject worlds ------------------------------------------------------
+     Set `data-world="health|digital|life|money"` on any ancestor; components
+     read these four variables. :root carries the default (teal) world so
+     nothing breaks without an attribute. */
+  --world: #14505c;
+  --world-ink: #0c343d;
+  --world-soft: #e2eef0;
+  --world-gradient: linear-gradient(135deg, #0c343d 0%, #1f7a8c 100%);
+
+  /* Legacy cover tints: aliased to the world gradient until CourseCover is
+     rewritten in F-3, which removes them. */
+  --cover-1: var(--world-gradient);
+  --cover-2: var(--world-gradient);
+  --cover-3: var(--world-gradient);
+  --cover-4: var(--world-gradient);
+  --cover-5: var(--world-gradient);
+
+  --gradient-hero: linear-gradient(160deg, #0a2229 0%, #0c343d 55%, #14505c 100%);
+  --gradient-cta: linear-gradient(135deg, #fdf1dc 0%, #fbe4bd 100%);
 
   /* ---- Type scale ------------------------------------------------------- */
-  /* Base is set per accessibility preference below. */
   --font-size-base: 18px;
   --font-size-xs: calc(var(--font-size-base) * 0.78);
   --font-size-sm: calc(var(--font-size-base) * 0.875);
@@ -51,37 +70,81 @@
   --font-size-2xl: calc(var(--font-size-base) * 1.5);
   --font-size-3xl: calc(var(--font-size-base) * 2);
   --font-size-display: calc(var(--font-size-base) * 2.6);
+  --font-size-hero: clamp(
+    calc(var(--font-size-base) * 2.4),
+    calc(5.2vw + var(--font-size-base)),
+    calc(var(--font-size-base) * 4)
+  );
 
   --line-height-body: 1.65;
   --line-height-tight: 1.2;
+  --line-height-hero: 1.05;
   --tracking-tight: -0.015em;
+  --tracking-hero: -0.025em;
 
   /* ---- Space, shape, elevation ------------------------------------------ */
-  --space-section: 4rem;
-  --space-section-sm: 2.5rem;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --space-section: 6rem;
+  --space-section-sm: 3.5rem;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
   --touch-min: 44px;
+  --touch-primary: 56px;
   --content-max: 76rem;
 
-  /* One resting shadow plus one lifted shadow. DESIGN.md allows a single
-     shadow level in the calm zone; the lifted value is only used for the
-     ≤150ms hover transform on interactive cards. */
-  --shadow-card: 0 4px 24px rgba(26, 43, 50, 0.08);
-  --shadow-lift: 0 12px 32px rgba(26, 43, 50, 0.14);
-  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  /* Warm-tinted two-layer shadows. */
+  --shadow-card: 0 1px 2px rgba(60, 42, 20, 0.06), 0 8px 24px -8px rgba(60, 42, 20, 0.12);
+  --shadow-lift: 0 2px 4px rgba(60, 42, 20, 0.08), 0 20px 40px -12px rgba(60, 42, 20, 0.22);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 
-  --focus-ring: 3px solid var(--color-accent-dark);
+  /* Paper grain, painted once on body::before at 3% opacity. */
+  --texture-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --texture-opacity: 0.03;
+
+  --focus-ring: 3px solid var(--color-accent-ink);
+  --focus-ring-on-night: 3px solid #ffd27a;
 
   /* ---- Motion ----------------------------------------------------------- */
   --motion-fast: 120ms;
-  --motion-calm: 200ms;     /* hard cap inside the app (DESIGN.md) */
+  --motion-calm: 200ms;     /* hard cap for everyday UI (DESIGN.md) */
+  --motion-spatial: 400ms;  /* user-initiated spatial moves only (DESIGN.md "Spatial tier") */
   --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* High contrast — synced from the profile's highContrast flag. */
+/* ---- Worlds ---------------------------------------------------------------- */
+[data-world='default'] {
+  --world: #14505c;
+  --world-ink: #0c343d;
+  --world-soft: #e2eef0;
+  --world-gradient: linear-gradient(135deg, #0c343d 0%, #1f7a8c 100%);
+}
+[data-world='health'] {
+  --world: #2f6b4f;
+  --world-ink: #1f4a36;
+  --world-soft: #e3f0e8;
+  --world-gradient: linear-gradient(135deg, #1f4a36 0%, #4e9c78 100%);
+}
+[data-world='digital'] {
+  --world: #2f4b8f;
+  --world-ink: #22386b;
+  --world-soft: #e6ebf7;
+  --world-gradient: linear-gradient(135deg, #22386b 0%, #5673bd 100%);
+}
+[data-world='life'] {
+  --world: #a4482b;
+  --world-ink: #7a3520;
+  --world-soft: #fbe9e2;
+  --world-gradient: linear-gradient(135deg, #7a3520 0%, #d0714f 100%);
+}
+[data-world='money'] {
+  --world: #6b3a6e;
+  --world-ink: #512b54;
+  --world-soft: #f3e6f4;
+  --world-gradient: linear-gradient(135deg, #512b54 0%, #9a5f9e 100%);
+}
+
+/* ---- High contrast — synced from the profile's highContrast flag ----------- */
 html[data-high-contrast='true'] {
   --color-primary: #0a3d47;
   --color-primary-dark: #062a31;
@@ -94,18 +157,36 @@ html[data-high-contrast='true'] {
   --color-border: #000000;
   --color-border-strong: #000000;
   --color-accent: #8a5a00;
-  --color-accent-dark: #6b4500;
+  --color-accent-ink: #6b4500;
   --color-accent-soft: #ffffff;
+  --color-night: #000000;
+  --color-on-night: #ffffff;
+  --color-on-night-muted: #ffffff;
   --shadow-card: 0 0 0 2px #000000;
   --shadow-lift: 0 0 0 3px #000000;
+  --shadow-inset: none;
   --gradient-cta: none;
+  --gradient-hero: none;
+  --texture-opacity: 0;
+  --focus-ring: 3px solid #000000;
+}
+html[data-high-contrast='true'] [data-world],
+html[data-high-contrast='true'] {
+  --world: #000000;
+  --world-ink: #000000;
+  --world-soft: #ffffff;
+  --world-gradient: none;
 }
 
-/* Font size preference from the user profile. */
+/* ---- Font size preference from the user profile --------------------------- */
 html[data-font-size='default'] { --font-size-base: 16px; }
 html[data-font-size='large']   { --font-size-base: 18px; }
 html[data-font-size='xl']      { --font-size-base: 20px; }
 html[data-font-size='huge']    { --font-size-base: 24px; }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --texture-opacity: 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

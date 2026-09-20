@@ -15,6 +15,23 @@
     @apply bg-brand-surface text-brand-text font-sans antialiased;
     font-size: var(--font-size-base);
     line-height: var(--line-height-body);
+    position: relative;
+  }
+
+  /* Paper grain (SIG-1). Fixed, non-interactive, removed in high contrast and
+     under prefers-reduced-transparency via --texture-opacity. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: var(--texture-grain);
+    opacity: var(--texture-opacity);
+  }
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   /* One visible focus treatment everywhere, thick enough to find at a glance. */
@@ -29,6 +46,36 @@
   h3 {
     @apply font-display text-brand-primary-dark;
     line-height: var(--line-height-tight);
+    font-optical-sizing: auto;
+  }
+
+  /* One italic accent word per headline (SIG-3). Decorative emphasis only. */
+  .accent-word {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--color-accent-ink);
+  }
+  .on-night .accent-word,
+  .on-night.accent-word {
+    color: var(--color-accent);
+  }
+
+  /* Anything placed on the night surface: paper text and a brighter ring. */
+  .on-night {
+    color: var(--color-on-night);
+  }
+  .on-night h1,
+  .on-night h2,
+  .on-night h3 {
+    color: var(--color-on-night);
+  }
+  .on-night :focus-visible {
+    outline: var(--focus-ring-on-night);
+  }
+
+  /* Big numerals line up. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 
   h1 { @apply text-2xl; }
