@@ -8,6 +8,17 @@ const assertRequiredEnv = (keys, serviceName = 'service') => {
     console.error(`[${serviceName}] Missing required env var(s): ${missing.join(', ')}`);
     process.exit(1);
   }
+  // The gateway key must differ from the internal service key in production,
+  // otherwise the key split (SEC-1) is nominal and a leaked internal key can
+  // still impersonate the gateway.
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.INTERNAL_SERVICE_KEY &&
+    (!process.env.GATEWAY_KEY || process.env.GATEWAY_KEY === process.env.INTERNAL_SERVICE_KEY)
+  ) {
+    console.error(`[${serviceName}] GATEWAY_KEY must be set and differ from INTERNAL_SERVICE_KEY in production`);
+    process.exit(1);
+  }
 };
 
 const getInternalServiceKey = () => {

@@ -41,6 +41,9 @@ export function SegmentedControl({ value, onValueChange, options = [], label, cl
   };
 
   return (
+    // Roving tabindex: the selected radio is the group's single tab stop, per
+    // the ARIA radiogroup pattern; the lint rule cannot model that.
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus
     <div
       role="radiogroup"
       aria-label={label}

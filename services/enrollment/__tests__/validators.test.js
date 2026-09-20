@@ -14,7 +14,6 @@ const {
 const runRules = async (rules, { body = {}, params = {} } = {}) => {
   const req = { body, params, query: {} };
   for (const rule of rules) {
-    // eslint-disable-next-line no-await-in-loop
     const err = await new Promise((resolve) => {
       const maybe = rule(req, {}, (e) => resolve(e));
       if (maybe && typeof maybe.then === 'function') maybe.then(() => {});

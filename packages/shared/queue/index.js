@@ -45,9 +45,14 @@ const createConnection = () => {
   return connection;
 };
 
+// Key prefix so several deployments (or a test run next to a live worker) can
+// share one Redis without stealing each other's jobs.
+const queuePrefix = () => process.env.QUEUE_PREFIX || 'bull';
+
 const createQueue = (name, { defaultJobOptions = {} } = {}) => {
   const queue = new Queue(name, {
     connection: createConnection(),
+    prefix: queuePrefix(),
     defaultJobOptions: { ...DEFAULT_JOB_OPTIONS, ...defaultJobOptions },
   });
   openQueues.push(queue);
@@ -60,7 +65,11 @@ const createQueue = (name, { defaultJobOptions = {} } = {}) => {
  * @param {{ concurrency?: number }} [options]
  */
 const createWorker = (name, processor, { concurrency = 5 } = {}) => {
-  const worker = new Worker(name, processor, { connection: createConnection(), concurrency });
+  const worker = new Worker(name, processor, {
+    connection: createConnection(),
+    prefix: queuePrefix(),
+    concurrency,
+  });
 
   worker.on('completed', (job) => {
     log.info('Job completed', { queue: name, jobId: job.id, attempt: job.attemptsMade });
