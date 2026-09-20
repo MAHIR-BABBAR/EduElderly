@@ -39,7 +39,8 @@ services:
         SERVICE_DIR: gateway
     container_name: eduelderly-gateway
     ports:
-      - "8080:8080"
+      # Host port is configurable: some backup/agent software squats on 8080.
+      - "${GATEWAY_HOST_PORT:-8080}:8080"
     volumes:
       - ./services/gateway:/app
       - /app/node_modules
