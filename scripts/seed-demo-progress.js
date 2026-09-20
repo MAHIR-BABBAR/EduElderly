@@ -111,6 +111,17 @@ const run = async () => {
     console.log(`[demo-progress] ${e.status.padEnd(9)} ${e.progressPercent}%  ${course.title}`);
   }
 
+  // Award the points the app itself would have (10 per lesson, 100 per finished
+  // course), so the dashboard shows real numbers rather than "0 points".
+  const lessons = seeded.reduce((n, e) => n + e.completedTopics.length, 0);
+  const finished = seeded.filter((e) => e.status === 'completed').length;
+  const totalXP = lessons * 10 + finished * 100;
+  await mongoose.connection
+    .useDb('eduelderly-user')
+    .collection('userprofiles')
+    .updateOne({ userId: learner.userId }, { $set: { totalXP } });
+  console.log(`[demo-progress] totalXP ${totalXP} (${lessons} lessons, ${finished} course finished)`);
+
   await mongoose.disconnect();
 };
 

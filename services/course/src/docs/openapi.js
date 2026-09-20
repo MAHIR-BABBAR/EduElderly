@@ -48,6 +48,7 @@ const Course = {
     difficulty: { type: 'string', enum: ['beginner', 'intermediate', 'advanced'] },
     estimatedHours: { type: 'number', example: 2.5 },
     instructorName: { type: 'string', example: 'Dr. Priya Sharma' },
+    credits: { type: 'string', description: 'Source attribution shown on the course page.' },
     moduleCount: { type: 'integer' },
     totalTopics: { type: 'integer' },
     createdAt: S.dateTime,
@@ -104,6 +105,7 @@ const courseWrite = {
     difficulty: { type: 'string', enum: ['beginner', 'intermediate', 'advanced'] },
     estimatedHours: { type: 'number', minimum: 0 },
     instructorName: { type: 'string', maxLength: 120 },
+    credits: { type: 'string', maxLength: 300 },
     slug: { type: 'string', maxLength: 80 },
   },
 };

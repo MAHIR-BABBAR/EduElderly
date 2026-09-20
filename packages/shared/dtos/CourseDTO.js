@@ -66,6 +66,7 @@ const toPublicCourseDTO = (courseDoc, { totalTopics } = {}) => {
     difficulty: course.difficulty,
     estimatedHours: course.estimatedHours ?? 0,
     instructorName: course.instructorName,
+    credits: course.credits || '',
     moduleCount: course.moduleCount ?? moduleIds.length,
     totalTopics: totalTopics ?? course.totalTopics ?? 0,
     createdAt: course.createdAt,
