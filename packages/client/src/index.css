@@ -136,6 +136,47 @@
     color: #000000;
   }
 
+  /* Interactive card: lift on hover (pointer devices only), photo zooms inside
+     its clipped frame. Calm tier. */
+  .card-lift {
+    @apply transition-[transform,box-shadow] duration-calm;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .card-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lift);
+    }
+    .card-lift:hover .cover-photo {
+      transform: scale(1.03);
+    }
+  }
+  .cover-photo {
+    @apply transition-transform duration-calm;
+  }
+
+  /* Pointer spotlight painted from --mx/--my (set by useSpotlight). */
+  .spotlight {
+    --mx: 50%;
+    --my: 50%;
+  }
+  .spotlight::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: radial-gradient(
+      420px circle at var(--mx) var(--my),
+      rgba(233, 162, 59, 0.16),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity var(--motion-calm) var(--motion-ease);
+  }
+  .spotlight:hover::after {
+    opacity: 1;
+  }
+
   /* Decorative divider used between marketing bands. */
   .rule-soft {
     @apply h-px w-full border-0 bg-brand-border;
