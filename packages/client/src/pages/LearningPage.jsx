@@ -1,252 +1,331 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
-import { Award, CheckCircle2, Circle } from 'lucide-react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Award, Check, ExternalLink, ListChecks, Sparkles } from 'lucide-react';
 import { courseApi, enrollmentApi } from '@/lib/api';
-import { toEmbedUrl } from '@/lib/utils';
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { classifyContentUrl } from '@/lib/utils';
+import { useCourseWorld } from '@/hooks/useCategories';
+import { ofTotal, plural } from '@/lib/format';
+import { celebrate } from '@/lib/motion';
+import { usePageTitle } from '@/components/layout/RouteChange';
+import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
+import { Meter } from '@/components/ui/meter';
+import { Trail } from '@/components/ui/trail';
+import { Skeleton, LessonSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-function CourseCompleteCard({ courseTitle, courseId, certificateIssued }) {
-  return (
-    <Card className="border-brand-success">
-      <CardHeader>
-        <CardTitle>Course complete!</CardTitle>
-        <CardDescription>
-          {certificateIssued
-            ? `Congratulations on finishing ${courseTitle}. Your certificate is ready.`
-            : `You finished all lessons in ${courseTitle}. Pass every quiz to earn your certificate.`}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-wrap gap-4">
-        {!certificateIssued && (
-          <Button asChild size="lg">
-            <Link to={`/quiz/${courseId}`}>Take quizzes</Link>
-          </Button>
-        )}
-        {certificateIssued && (
-          <Button asChild size="lg">
-            <Link to="/certificates">
-              <Award className="mr-2 h-5 w-5" aria-hidden="true" />
-              View certificate
-            </Link>
-          </Button>
-        )}
-        <Button asChild variant="outline" size="lg">
-          <Link to="/dashboard">Back to My Learning</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
+/**
+ * Lesson player (plan S-4): a night "focus band" naming the course and the
+ * lesson with a meter, the video in a sandboxed frame (SEC-6), and a trail
+ * of the whole course on the right so the learner always knows where they
+ * are and what is next. `?topic=<id>` opens any lesson; without it the
+ * page opens the first unfinished one. Finishing the last lesson earns the
+ * one celebration the calm zone allows.
+ */
 export function LearningPage() {
   const { enrollmentId } = useParams();
+  const [params, setParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const toasts = useToast();
+  const headingRef = useRef(null);
 
-  const enrollmentQuery = useQuery({
-    queryKey: ['enrollment', enrollmentId],
-    queryFn: () => enrollmentApi.get(enrollmentId),
-  });
-
+  const enrollmentQuery = useQuery({ queryKey: ['enrollment', enrollmentId], queryFn: () => enrollmentApi.get(enrollmentId) });
   const enrollment = enrollmentQuery.data?.data;
   const courseId = enrollment?.courseId;
-  const nextTopicId = enrollment?.nextTopicId;
-  const isComplete = enrollment?.status === 'completed' || enrollment?.progressPercent >= 100;
+  const courseQuery = useQuery({ queryKey: ['course', courseId], queryFn: () => courseApi.getById(courseId), enabled: Boolean(courseId) });
+  const course = courseQuery.data?.data;
+  const { world } = useCourseWorld(course ?? enrollment?.course);
 
-  const courseQuery = useQuery({
-    queryKey: ['course', courseId],
-    queryFn: () => courseApi.getById(courseId),
-    enabled: Boolean(courseId),
-  });
+  const topics = useMemo(
+    () => (course?.modules ?? []).flatMap((m) => (m.topics ?? []).map((t) => ({ ...t, moduleTitle: m.title }))),
+    [course],
+  );
+  const completed = useMemo(() => new Set(enrollment?.completedTopics ?? []), [enrollment]);
+  const nextTopicId = topics.find((t) => !completed.has(t.topicId))?.topicId ?? null;
+  const requested = params.get('topic');
+  const topicId = topics.some((t) => t.topicId === requested) ? requested : nextTopicId ?? topics[topics.length - 1]?.topicId ?? null;
+  const index = topics.findIndex((t) => t.topicId === topicId);
+  const topic = index >= 0 ? topics[index] : null;
+  const isComplete = enrollment?.status === 'completed' || (enrollment?.progressPercent ?? 0) >= 100;
+  const courseTitle = enrollment?.course?.title || course?.title || 'Course';
 
-  const topic = useMemo(() => {
-    const modules = courseQuery.data?.data?.modules || [];
-    for (const mod of modules) {
-      const found = (mod.topics || []).find((t) => t.topicId === nextTopicId);
-      if (found) return { ...found, moduleTitle: mod.title };
-    }
-    return null;
-  }, [courseQuery.data, nextTopicId]);
+  usePageTitle(topic ? `${topic.title} · ${courseTitle}` : courseTitle);
+
+  // Focus the lesson heading when the lesson changes so a screen reader lands on it.
+  useEffect(() => {
+    headingRef.current?.focus({ preventScroll: true });
+  }, [topicId]);
 
   const contentQuery = useQuery({
-    queryKey: ['topic-content', enrollmentId, nextTopicId],
-    queryFn: () => enrollmentApi.topicContent(enrollmentId, nextTopicId),
-    enabled: Boolean(nextTopicId) && !isComplete,
+    queryKey: ['topic-content', enrollmentId, topicId],
+    queryFn: () => enrollmentApi.topicContent(enrollmentId, topicId),
+    enabled: Boolean(topicId),
   });
 
   const progressMutation = useMutation({
-    mutationFn: (topicId) => enrollmentApi.progress(enrollmentId, topicId),
-    onSuccess: () => {
+    mutationFn: (id) => enrollmentApi.progress(enrollmentId, id),
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['enrollment', enrollmentId] });
       queryClient.invalidateQueries({ queryKey: ['enrollments'] });
       queryClient.invalidateQueries({ queryKey: ['my-certificates'] });
+      const finishedCourse = res?.data?.status === 'completed' || (res?.data?.progressPercent ?? 0) >= 100;
+      if (finishedCourse) {
+        setParams({}, { replace: true });
+      } else {
+        toasts.success('Lesson finished', { description: 'Nice work. The next one is ready when you are.' });
+        const following = topics[index + 1];
+        if (following) setParams({ topic: following.topicId }, { replace: true });
+      }
     },
   });
 
-  const rawContentUrl = contentQuery.data?.data?.contentUrl;
-  const contentUrl = toEmbedUrl(rawContentUrl);
-  const courseTitle = enrollment?.course?.title || courseQuery.data?.data?.title || 'Course';
-  const completedTopics = new Set(enrollment?.completedTopics || []);
+  if (enrollmentQuery.isLoading || (courseId && courseQuery.isLoading)) return <LearningSkeleton />;
 
-  if (enrollmentQuery.isLoading) {
+  if (enrollmentQuery.error || !enrollment) {
     return (
-      <div className="page-container pb-24 md:pb-8">
-        <p role="status">Loading lesson…</p>
-      </div>
-    );
-  }
-
-  if (enrollmentQuery.error) {
-    return (
-      <div className="page-container max-w-2xl pb-24 md:pb-8">
-        <Alert variant="error">{enrollmentQuery.error.message}</Alert>
-        <Button asChild className="mt-4" size="lg">
-          <Link to="/dashboard">Back to My Learning</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  if (!enrollment) {
-    return (
-      <div className="page-container max-w-2xl pb-24 md:pb-8">
-        <Alert variant="error">Enrollment not found.</Alert>
-        <Button asChild className="mt-4" size="lg">
-          <Link to="/dashboard">Back to My Learning</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  if (isComplete || !nextTopicId || !topic) {
-    return (
-      <div className="page-container max-w-2xl pb-24 md:pb-8">
-        <CourseCompleteCard
-          courseTitle={courseTitle}
-          courseId={courseId}
-          certificateIssued={enrollment.certificateIssued}
+      <div className="page-container pb-24 md:pb-12">
+        <EmptyState
+          icon={ListChecks}
+          title="We could not open that course"
+          description="It may no longer be in your learning list."
+          actionLabel="Back to my learning"
+          actionHref="/dashboard"
         />
       </div>
     );
   }
 
-  const isVideo = topic.contentType === 'video';
+  const content = classifyContentUrl(contentQuery.data?.data?.contentUrl);
+  const done = completed.size;
+  const total = topics.length || enrollment.course?.topicCount || 0;
+  const showCelebration = isComplete && !requested;
+
+  const trailItems = topics.map((t) => ({
+    id: t.topicId,
+    title: t.title,
+    meta: t.durationMinutes ? `${t.durationMinutes} min` : undefined,
+    state: completed.has(t.topicId) ? 'done' : t.topicId === topicId ? 'current' : 'upcoming',
+    href: `/learn/${enrollmentId}?topic=${t.topicId}`,
+  }));
+
+  const trail = <Trail items={trailItems} label="Lessons in this course" />;
+  const prev = topics[index - 1];
+  const next = topics[index + 1];
 
   return (
-    <div className="page-container max-w-6xl pb-24 md:pb-8">
-      <Breadcrumbs
-        items={[
-          { label: 'My Learning', href: '/dashboard' },
-          { label: courseTitle, href: '/dashboard' },
-          { label: topic.title },
-        ]}
-      />
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
-        <div className="space-y-6">
-          <Progress value={enrollment.progressPercent ?? 0} label="Your progress" />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{topic.title}</CardTitle>
-              <CardDescription>{topic.moduleTitle} · {topic.durationMinutes} minutes</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {contentQuery.isLoading && <p role="status">Loading content…</p>}
-              {contentQuery.error && (
-                <Alert variant="error">Could not load lesson content. Please try again.</Alert>
+    <div className="page-container pb-28 md:pb-12" data-world={world}>
+      {/* Focus band */}
+      <section className="on-night relative overflow-hidden rounded-xl bg-brand-night p-6 text-brand-on-night shadow-lift sm:p-8">
+        <div aria-hidden="true" className="absolute inset-y-0 right-0 w-1/2 bg-world-gradient opacity-30" />
+        <div className="relative z-10 grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.08em] text-brand-on-night-muted">
+              <Link to={`/courses/${courseId}`} className="hover:underline">{courseTitle}</Link>
+              {topic?.moduleTitle ? ` · ${topic.moduleTitle}` : ''}
+            </p>
+            <h1 ref={headingRef} tabIndex={-1} className="mt-2 font-display text-3xl text-brand-on-night focus-visible:outline-none">
+              {showCelebration ? (
+                <>
+                  You finished <span className="accent-word">{courseTitle}</span>
+                </>
+              ) : topic ? (
+                <>
+                  <span className="text-brand-on-night-muted">Lesson {index + 1}.</span> {topic.title}
+                </>
+              ) : (
+                courseTitle
               )}
+            </h1>
+          </div>
+          <div className="w-full md:w-72">
+            <Meter value={done} max={total || 1} noun="lesson" label="Progress" onNight />
+          </div>
+        </div>
+      </section>
 
-              {contentUrl && isVideo && (
-                <div>
-                  <div className="aspect-video overflow-hidden rounded-lg border border-brand-border bg-black">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div>
+          {showCelebration ? (
+            <CoursePanel enrollment={enrollment} courseId={courseId} courseTitle={courseTitle} nextLessonHref={topics[0] ? `/learn/${enrollmentId}?topic=${topics[0].topicId}` : null} />
+          ) : !topic ? (
+            <Alert variant="info">This course has no lessons yet.</Alert>
+          ) : (
+            <>
+              {contentQuery.isLoading && <Skeleton className="aspect-video w-full rounded-xl" />}
+              {contentQuery.error && (
+                <Alert variant="error">
+                  We could not load this lesson.{' '}
+                  <button type="button" className="font-semibold underline" onClick={() => contentQuery.refetch()}>Try again</button>
+                </Alert>
+              )}
+              {content?.kind === 'youtube' && (
+                <div className="overflow-hidden rounded-xl border border-brand-border bg-brand-night shadow-card">
+                  <div className="aspect-video">
                     <iframe
                       title={topic.title}
-                      src={contentUrl}
+                      src={content.src}
                       className="h-full w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      // Third-party content is contained: no top-navigation and no
+                      // popups. YouTube refuses to play (error 153) without a
+                      // Referer, so send the origin only — never the lesson path.
+                      sandbox="allow-scripts allow-same-origin allow-presentation"
+                      referrerPolicy="strict-origin"
+                      allow="encrypted-media; picture-in-picture; fullscreen"
                       allowFullScreen
                     />
                   </div>
-                  <p className="mt-2 text-[length:var(--font-size-sm)] text-brand-muted">
-                    Tip: Use your video player&apos;s closed captions if available.
-                  </p>
                 </div>
               )}
-
-              {contentUrl && !isVideo && (
-                <div className="rounded-lg border border-brand-border bg-brand-surface p-4">
-                  <p className="mb-4">Read the lesson material below or open it in a new tab.</p>
-                  <iframe title={topic.title} src={contentUrl} className="min-h-[400px] w-full rounded-lg border" />
-                  <p className="mt-4">
-                    <a
-                      href={rawContentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-brand-primary underline"
-                    >
-                      Open lesson in a new tab
+              {content?.kind === 'external' && (
+                <div className="rounded-xl border border-brand-border bg-brand-surface-raised p-6 shadow-card">
+                  <p className="text-lg">This lesson opens on another website.</p>
+                  <p className="mt-1 text-brand-muted">It will open in a new tab; come back here to mark it finished.</p>
+                  <Button asChild size="lg" className="mt-4">
+                    <a href={content.href} target="_blank" rel="noopener noreferrer">
+                      Open the lesson
+                      <ExternalLink className="h-5 w-5" aria-hidden="true" />
                     </a>
-                  </p>
+                  </Button>
                 </div>
               )}
-
-              <div className="flex flex-wrap gap-4">
-                <Button
-                  size="lg"
-                  onClick={() => progressMutation.mutate(topic.topicId)}
-                  disabled={progressMutation.isPending}
-                >
-                  {progressMutation.isPending ? 'Saving…' : 'Mark lesson complete'}
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link to="/dashboard">Back to dashboard</Link>
-                </Button>
-              </div>
-
-              {progressMutation.error && (
-                <Alert variant="error">{progressMutation.error.message}</Alert>
+              {!contentQuery.isLoading && !contentQuery.error && !content && (
+                <Alert variant="info">This lesson has no content attached yet.</Alert>
               )}
-            </CardContent>
-          </Card>
+
+              {progressMutation.error && <Alert variant="error" className="mt-4">{progressMutation.error.message}</Alert>}
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                {completed.has(topic.topicId) ? (
+                  <span className="inline-flex min-h-touch-primary items-center gap-2 rounded-md bg-brand-success-soft px-5 font-semibold text-brand-success">
+                    <Check className="h-5 w-5" aria-hidden="true" strokeWidth={3} />
+                    Finished
+                  </span>
+                ) : (
+                  <Button
+                    size="lg"
+                    className="min-h-touch-primary"
+                    onClick={() => progressMutation.mutate(topic.topicId)}
+                    loading={progressMutation.isPending}
+                    loadingLabel="Saving…"
+                  >
+                    <Check className="h-5 w-5" aria-hidden="true" strokeWidth={3} />
+                    Mark lesson finished
+                  </Button>
+                )}
+                {next ? (
+                  <Button asChild variant="outline" size="lg" className="min-h-touch-primary">
+                    <Link to={`/learn/${enrollmentId}?topic=${next.topicId}`}>
+                      Next lesson
+                      <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="lg" className="min-h-touch-primary">
+                    <Link to={`/quiz/${courseId}`}>
+                      Take the quiz
+                      <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                )}
+                {prev && (
+                  <Button asChild variant="ghost" size="lg">
+                    <Link to={`/learn/${enrollmentId}?topic=${prev.topicId}`}>
+                      <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                      Previous
+                    </Link>
+                  </Button>
+                )}
+              </div>
+              <p className="mt-3 text-sm text-brand-muted">
+                {ofTotal(index + 1, total, 'lesson')}{topic.durationMinutes ? ` · about ${plural(topic.durationMinutes, 'minute')}` : ''}
+              </p>
+            </>
+          )}
         </div>
 
-        <aside className="hidden lg:block">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-[length:var(--font-size-lg)]">Lessons</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {(courseQuery.data?.data?.modules || []).flatMap((mod) =>
-                  (mod.topics || []).map((t) => {
-                    const done = completedTopics.has(t.topicId);
-                    const current = t.topicId === nextTopicId;
-                    return (
-                      <li
-                        key={t.topicId}
-                        className={`flex items-start gap-2 rounded-lg p-2 text-[length:var(--font-size-sm)] ${
-                          current ? 'bg-brand-accent-soft font-semibold' : ''
-                        }`}
-                      >
-                        {done ? (
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-success" aria-hidden="true" />
-                        ) : (
-                          <Circle className="mt-0.5 h-4 w-4 shrink-0 text-brand-muted" aria-hidden="true" />
-                        )}
-                        <span>{t.title}</span>
-                      </li>
-                    );
-                  }),
-                )}
-              </ul>
-            </CardContent>
-          </Card>
+        <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
+          <div className="rounded-lg border border-brand-border bg-brand-surface-raised p-4 shadow-card">
+            <h2 className="mb-2 px-2 font-display text-xl text-brand-primary-dark">Lessons</h2>
+            {trail}
+          </div>
         </aside>
+      </div>
+
+      {/* Phones: lessons live in a sheet behind a sticky button. */}
+      <div className="fixed inset-x-0 bottom-[64px] z-30 border-t border-brand-border bg-brand-surface-raised/95 p-3 backdrop-blur md:bottom-0 lg:hidden">
+        <div className="mx-auto max-w-content">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="min-h-touch-primary w-full">
+                <ListChecks className="h-5 w-5" aria-hidden="true" />
+                Lessons ({ofTotal(done, total, 'lesson')})
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" title="Lessons in this course">
+              {trail}
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CoursePanel({ enrollment, courseId, courseTitle, nextLessonHref }) {
+  return (
+    <motion.div {...celebrate()} className="rounded-xl border border-brand-border bg-brand-surface-raised p-8 shadow-lift">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-accent-soft">
+        <Sparkles className="h-7 w-7 text-brand-accent-ink" aria-hidden="true" />
+      </span>
+      <h2 className="mt-4 font-display text-2xl text-brand-primary-dark">Every lesson finished</h2>
+      <p className="mt-2 max-w-[50ch] text-lg text-brand-muted">
+        {enrollment.certificateIssued
+          ? `Your certificate for ${courseTitle} is ready.`
+          : `Pass the quiz for ${courseTitle} and your certificate will be waiting.`}
+      </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        {enrollment.certificateIssued ? (
+          <Button asChild size="lg" className="min-h-touch-primary">
+            <Link to="/certificates">
+              <Award className="h-5 w-5" aria-hidden="true" />
+              View certificate
+            </Link>
+          </Button>
+        ) : (
+          <Button asChild size="lg" className="min-h-touch-primary">
+            <Link to={`/quiz/${courseId}`}>
+              Take the quiz
+              <ArrowRight className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </Button>
+        )}
+        {nextLessonHref && (
+          <Button asChild variant="outline" size="lg">
+            <Link to={nextLessonHref}>Review the lessons</Link>
+          </Button>
+        )}
+        <Button asChild variant="ghost" size="lg">
+          <Link to="/dashboard">Back to my learning</Link>
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+function LearningSkeleton() {
+  return (
+    <div className="page-container pb-24 md:pb-12" role="status" aria-label="Loading lesson">
+      <Skeleton className="h-40 w-full rounded-xl" />
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div>
+          <Skeleton className="aspect-video w-full rounded-xl" />
+          <Skeleton className="mt-6 h-14 w-64" />
+        </div>
+        <LessonSkeleton />
       </div>
     </div>
   );

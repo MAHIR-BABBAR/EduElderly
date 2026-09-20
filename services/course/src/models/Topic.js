@@ -34,6 +34,8 @@ const TopicSchema = new mongoose.Schema({
     type: String,
     default: '',
     trim: true,
+    // Defence in depth for SEC-6: the validator already refuses non-https.
+    match: [/^https:\/\//, 'contentUrl must be an https URL'],
   },
   durationMinutes: {
     type: Number,
