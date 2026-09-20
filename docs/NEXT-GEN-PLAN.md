@@ -1,7 +1,7 @@
 # EduElderly — Next-Gen UI + Security Hardening Plan
 
 > **Audience:** an AI model (or engineer) implementing this with no prior context.
-> **Status:** plan only. Nothing in here is built yet unless listed in §2 "What already exists".
+> **Status (2026-09-20): implemented.** SEC-1…SEC-10 (all ten), F-1…F-8, B-1, B-2, S-1…S-9, V-1, V-2 and V-6 are done and committed on `feature/quiz-payment-demo`. Not done: B-3 (`/users/me/summary` — the dashboard composes existing calls instead), V-5 (CI run not yet observed green; `CODECOV_TOKEN` still to add). Known flake: the notification BullMQ test when both Jest projects share a process (see commit 9303162).
 > **Supersedes:** Phase 3 of [`RESUME-READY-PLAN.md`](./RESUME-READY-PLAN.md). Phases 0–2 of that file are done. Phase 4 (E2E, README media, ADRs, deploy) still applies after this plan.
 > **Before screenshots:** [`docs/screenshots/before/`](./screenshots/before/) — look at them first. They are the problem statement.
 
