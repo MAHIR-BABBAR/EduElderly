@@ -64,7 +64,7 @@ const sendNotification = async ({ userId, email, type, templateData = {} }) => {
   }
 
   await deliverNotification(notification.notificationId, { attempt: 1, maxAttempts: 1 });
-  return Notification.findOne({ notificationId: notification.notificationId });
+  return (await Notification.findOne({ notificationId: notification.notificationId })) ?? notification;
 };
 
 const listForUser = async (userId, { page = 1, limit = 20 } = {}) => {
