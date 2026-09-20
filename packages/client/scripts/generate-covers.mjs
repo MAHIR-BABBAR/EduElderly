@@ -83,7 +83,7 @@ const COVERS = {
       <path d="M300 300 H 700"/><path d="M300 380 H 640"/><path d="M300 460 H 690"/><path d="M300 540 H 560"/>
     </g>
     <circle cx="790" cy="420" r="150" fill="${PAPER}" fill-opacity="0.18" stroke="${PAPER}" stroke-width="18"/>
-    <path d="M900 530 L 1010 640" ${stroke} stroke-width="30"/>
+    <path d="M900 530 L 1010 640" fill="none" stroke="${PAPER}" stroke-width="30" stroke-linecap="round"/>
     <path d="M730 430 L 775 475 L 860 370" fill="none" stroke="${MARIGOLD}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>`,
   ),
   // Ageing and society: overlapping circles — a community.
