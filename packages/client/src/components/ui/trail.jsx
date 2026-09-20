@@ -93,7 +93,10 @@ function TrailItem({ item, isLast, horizontal, compact, index }) {
       <Link
         to={href}
         aria-current={state === 'current' ? 'step' : undefined}
-        className="trail-link flex min-h-[56px] items-center gap-4 rounded-md px-2 py-2 transition-colors duration-fast hover:bg-world-soft focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-accent-ink"
+        className={cn(
+          'trail-link flex min-h-[56px] rounded-md px-2 py-2 transition-colors duration-fast hover:bg-world-soft focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-accent-ink',
+          horizontal ? 'flex-col items-start gap-2' : 'items-center gap-4',
+        )}
       >
         {node}
         {body}
@@ -103,7 +106,10 @@ function TrailItem({ item, isLast, horizontal, compact, index }) {
         type="button"
         onClick={onSelect}
         aria-current={state === 'current' ? 'step' : undefined}
-        className="trail-link flex min-h-[56px] w-full items-center gap-4 rounded-md px-2 py-2 text-left transition-colors duration-fast hover:bg-world-soft focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-accent-ink"
+        className={cn(
+          'trail-link flex min-h-[56px] w-full rounded-md px-2 py-2 text-left transition-colors duration-fast hover:bg-world-soft focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-accent-ink',
+          horizontal ? 'flex-col items-start gap-2' : 'items-center gap-4',
+        )}
       >
         {node}
         {body}
@@ -112,7 +118,7 @@ function TrailItem({ item, isLast, horizontal, compact, index }) {
   ) : (
     <span
       aria-disabled={state === 'locked' ? 'true' : undefined}
-      className="flex min-h-[56px] items-center gap-4 px-2 py-2"
+      className={cn('flex min-h-[56px] px-2 py-2', horizontal ? 'flex-col items-start gap-2' : 'items-center gap-4')}
     >
       {node}
       {body}
@@ -123,7 +129,7 @@ function TrailItem({ item, isLast, horizontal, compact, index }) {
     <li
       className={cn(
         'relative',
-        horizontal ? 'flex min-w-[12rem] flex-1 flex-col' : '',
+        horizontal ? 'flex min-w-[11rem] flex-1 flex-col' : '',
       )}
     >
       {/* Connector to the next node. */}
@@ -133,7 +139,9 @@ function TrailItem({ item, isLast, horizontal, compact, index }) {
           className={cn(
             'trail-connector absolute bg-brand-border',
             horizontal
-              ? 'left-[2.5rem] top-[calc(0.5rem+1rem)] h-0.5 w-[calc(100%-2rem)]'
+              // Node is 2rem wide at 0.5rem padding; the line starts at its right edge,
+              // at its vertical centre (0.5rem padding + 1rem), and runs to the next node.
+              ? 'left-[2.5rem] top-[calc(1.5rem-1px)] h-0.5 w-[calc(100%-2rem)]'
               : 'left-[calc(0.5rem+1rem-1px)] top-[2.75rem] h-[calc(100%-1.75rem)] w-0.5',
             state === 'done' && 'bg-world',
           )}
