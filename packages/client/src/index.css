@@ -187,6 +187,28 @@
     opacity: 1;
   }
 
+  /* Admin console tables: one recipe for every admin page. */
+  .admin-console table {
+    @apply w-full border-separate border-spacing-0 overflow-hidden rounded-lg border border-brand-border bg-brand-surface-raised text-left;
+  }
+  .admin-console thead th {
+    @apply bg-brand-surface-sunken px-4 py-3 text-sm font-semibold uppercase tracking-[0.06em] text-brand-muted;
+  }
+  .admin-console tbody td {
+    @apply border-t border-brand-border px-4 py-3 align-middle;
+    min-height: var(--touch-min);
+  }
+  .admin-console tbody tr:hover td {
+    background: var(--color-primary-soft);
+  }
+  .admin-console .card-surface {
+    @apply shadow-card;
+  }
+  /* A wide table scrolls inside its card instead of being clipped. */
+  .admin-console :is(.card-surface, .overflow-hidden):has(> table, > div > table) {
+    overflow-x: auto;
+  }
+
   /* Decorative divider used between marketing bands. */
   .rule-soft {
     @apply h-px w-full border-0 bg-brand-border;
