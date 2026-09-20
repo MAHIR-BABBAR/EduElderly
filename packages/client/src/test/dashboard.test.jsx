@@ -44,6 +44,14 @@ beforeEach(() => {
   api.course.mockResolvedValue({ data: { modules: [] } });
 });
 
+const COURSE = {
+  data: {
+    modules: [
+      { moduleId: 'm1', topics: [{ topicId: 't1', title: 'Getting started' }, { topicId: 't2', title: 'Walking' }, { topicId: 't3', title: 'Sleep' }] },
+    ],
+  },
+};
+
 describe('DashboardPage', () => {
   it('greets by time of day with the first name as the h1', async () => {
     api.enrollments.mockResolvedValue({ data: [] });
@@ -81,6 +89,28 @@ describe('DashboardPage', () => {
     const cover = document.querySelector('[data-course-cover="c-1"]');
     expect(cover).toHaveAttribute('data-world', 'health');
     expect(screen.getByText('Last opened yesterday.', { exact: false })).toBeInTheDocument();
+  });
+
+  it('marks the first unfinished lesson as current, even when currentLessonId is a finished one', async () => {
+    api.course.mockResolvedValue(COURSE);
+    api.enrollments.mockResolvedValue({
+      data: [
+        {
+          enrollmentId: 'enr-1',
+          courseId: 'c-1',
+          status: 'active',
+          progressPercent: 33,
+          completedTopics: ['t1'],
+          currentLessonId: 't1', // the seed sets this to the lesson just finished
+          course: { courseId: 'c-1', title: 'Healthy Living', categoryId: 'cat-1', topicCount: 3 },
+        },
+      ],
+    });
+    renderPage();
+    const current = await screen.findByRole('link', { name: /Walking/ });
+    expect(current).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByText('You are here')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Getting started/ })).not.toHaveAttribute('aria-current');
   });
 
   it('offers a retry when progress cannot be loaded', async () => {

@@ -35,3 +35,6 @@ afterEach(async () => {
   }
   jest.clearAllMocks();
 });
+
+// Isolate test queues from any live worker sharing this Redis.
+process.env.QUEUE_PREFIX = process.env.QUEUE_PREFIX || 'test-notification';

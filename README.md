@@ -159,13 +159,20 @@ npm run dev:client     # React client on http://localhost:5173
 
 Demo accounts (created by `demo:seed`): learner `learner@demo.eduelderly` and admin `admin@demo.eduelderly`, both with password `Demo1234!`.
 
-Starts MongoDB, Redis, backend services on the internal network, and the gateway on **8080**. All microservices run with `GATEWAY_TRUST_ENFORCED=true` (gateway injects `X-Service-Key` on every proxied request), matching production trust behavior.
+Starts MongoDB, Redis, backend services on the internal network, and the gateway on **8080**. All microservices run with `GATEWAY_TRUST_ENFORCED=true` (the gateway stamps `X-Gateway-Key` on every proxied request), matching production trust behavior.
+
+If something else already listens on 8080 (some backup/agent software does), pick another host port and point the client's dev proxy at it:
+
+```bash
+GATEWAY_HOST_PORT=8081 docker compose up -d
+VITE_GATEWAY_URL=http://localhost:8081 npm run dev -w packages/client
+```
 
 ### 5. Run services locally (without Docker)
 
 Ensure MongoDB and Redis are running. Copy `.env` files and use **localhost** URLs in `services/gateway/.env` (see `services/gateway/.env.example`). `JWT_ACCESS_SECRET` must match auth.
 
-**Gateway trust (local dev):** Downstream services only accept identity headers (`X-User-Id`, `X-User-Role`) when the request includes a valid `X-Service-Key` from the gateway. In production this is always enforced; locally it is enforced when `GATEWAY_TRUST_ENFORCED=true` or `NODE_ENV=production`. If you run microservices directly on host ports (3001–3009) without the gateway in front, set `GATEWAY_TRUST_ENFORCED=true` in each service `.env` so spoofed headers cannot bypass auth. Alternatively, bind services to localhost only and route all traffic through the gateway on port 8080.
+**Gateway trust (two keys):** Downstream services only accept identity headers (`X-User-Id`, `X-User-Role`) when the request carries the gateway's `X-Gateway-Key` (`GATEWAY_KEY`). Service-to-service `/internal/*` routes are guarded by a *different* secret, `X-Service-Key` (`INTERNAL_SERVICE_KEY`), which the gateway never holds — and the gateway returns 404 for any client request aimed at `/internal`, `/docs` or `/metrics` on a service. In production both checks are always enforced and services refuse to start if the two keys are equal; locally they are enforced when `GATEWAY_TRUST_ENFORCED=true`. If you run microservices directly on host ports (3001–3009) without the gateway in front, set `GATEWAY_TRUST_ENFORCED=true` in each service `.env` so spoofed headers cannot bypass auth.
 
 **Dev compose note:** `docker-compose.yml` exposes MongoDB (`27017`) and Redis (`6379`) on the host for local tooling. These ports are **not** exposed in `docker-compose.prod.yml`. Do not use the dev compose Mongo/Redis exposure on any network-accessible machine.
 

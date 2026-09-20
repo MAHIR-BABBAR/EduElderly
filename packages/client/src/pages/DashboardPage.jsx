@@ -200,14 +200,14 @@ function ContinueCard({ enrollment, course, world }) {
   const done = enrollment.completedTopics?.length ?? 0;
   const completedSet = new Set(enrollment.completedTopics ?? []);
   const topics = (course?.modules ?? []).flatMap((m) => m.topics ?? []);
+  // "You are here" is the first lesson not yet finished — the same thing the
+  // resume endpoint calls nextTopicId. currentLessonId is the lesson last
+  // opened, which is usually one already completed, so it is not used.
+  const nextTopicId = topics.find((t) => !completedSet.has(t.topicId))?.topicId;
   const trail = topics.map((topic) => ({
     id: topic.topicId,
     title: topic.title,
-    state: completedSet.has(topic.topicId)
-      ? 'done'
-      : topic.topicId === (enrollment.currentLessonId ?? topics.find((t) => !completedSet.has(t.topicId))?.topicId)
-        ? 'current'
-        : 'upcoming',
+    state: completedSet.has(topic.topicId) ? 'done' : topic.topicId === nextTopicId ? 'current' : 'upcoming',
     href: `/learn/${enrollment.enrollmentId}?topic=${topic.topicId}`,
   }));
 

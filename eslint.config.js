@@ -42,7 +42,7 @@ module.exports = [
 
   // Frontend: React client (ESM, browser, Vitest)
   {
-    files: ['packages/client/**/*.{js,jsx}'],
+    files: ['packages/client/**/*.{js,jsx,mjs}'],
     plugins: { react, 'react-hooks': reactHooks, 'jsx-a11y': jsxA11y },
     languageOptions: {
       ecmaVersion: 2024,

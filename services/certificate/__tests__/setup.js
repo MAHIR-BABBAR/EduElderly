@@ -41,3 +41,6 @@ afterEach(async () => {
     await collections[key].deleteMany();
   }
 });
+
+// Isolate test queues from any live worker sharing this Redis.
+process.env.QUEUE_PREFIX = process.env.QUEUE_PREFIX || 'test-certificate';
