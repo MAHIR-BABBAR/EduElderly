@@ -12,6 +12,16 @@ const NOTIFICATION_TYPE = Object.freeze({
 
 const NOTIFICATION_TYPE_VALUES = Object.freeze(Object.values(NOTIFICATION_TYPE));
 
+// Types whose content is a credential (a code or a signed link). They go by
+// email only, never into the in-app feed, and their stored content is
+// scrubbed once delivered (SEC-8): a stolen 15-minute access token must not
+// be able to read a password-reset link out of /notifications/me.
+const SECRET_NOTIFICATION_TYPES = Object.freeze([
+  NOTIFICATION_TYPE.OTP,
+  NOTIFICATION_TYPE.EMAIL_VERIFICATION,
+  NOTIFICATION_TYPE.PASSWORD_RESET,
+]);
+
 const NOTIFICATION_CHANNEL = Object.freeze({
   EMAIL: 'email',
   IN_APP: 'in_app',
@@ -29,6 +39,7 @@ const NOTIFICATION_STATUS = Object.freeze({
 const NOTIFICATION_STATUS_VALUES = Object.freeze(Object.values(NOTIFICATION_STATUS));
 
 module.exports = {
+  SECRET_NOTIFICATION_TYPES,
   NOTIFICATION_TYPE,
   NOTIFICATION_TYPE_VALUES,
   NOTIFICATION_CHANNEL,
