@@ -7,8 +7,13 @@
  *   WALK_BASE=http://localhost:5173 WALK_OUT=docs/screenshots/after npm run walk -w packages/client
  *   WALK_ROUTES=dashboard,catalog npm run walk -w packages/client   # subset
  *   WALK_FONT=huge WALK_CONTRAST=1 WALK_REDUCED=1 ...                # a11y variants
+ *   WALK_AXE=0 ...                                                    # skip the axe scan
+ *
+ * Every route is also scanned with axe-core; serious/critical violations fail
+ * the route (plan V-2).
  */
 import { chromium } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -18,6 +23,7 @@ const ONLY = process.env.WALK_ROUTES ? process.env.WALK_ROUTES.split(',') : null
 const FONT = process.env.WALK_FONT; // default|large|xl|huge
 const CONTRAST = process.env.WALK_CONTRAST === '1';
 const REDUCED = process.env.WALK_REDUCED === '1';
+const AXE = process.env.WALK_AXE !== '0';
 const LEARNER = { email: 'learner@demo.eduelderly', password: 'Demo1234!' };
 const ADMIN = { email: 'admin@demo.eduelderly', password: 'Demo1234!' };
 
@@ -80,6 +86,19 @@ async function visit(name, url) {
   await page.waitForTimeout(800);
   const h1s = await page.locator('h1').count();
   const h1 = h1s ? (await page.locator('h1').first().textContent())?.trim() : '(none)';
+
+  if (AXE) {
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      // The YouTube frame and the WebGL canvas are third-party / decorative.
+      .exclude('iframe')
+      .exclude('canvas')
+      .analyze();
+    for (const v of results.violations) {
+      if (!['serious', 'critical'].includes(v.impact)) continue;
+      issues.push(`[axe ${v.impact}] ${v.id}: ${v.help} (${v.nodes.length}× e.g. ${v.nodes[0]?.target?.[0]})`);
+    }
+  }
   const suffix = [FONT && `-${FONT}`, CONTRAST && '-hc', REDUCED && '-rm'].filter(Boolean).join('');
   await page.screenshot({ path: path.join(OUT, `${name}${suffix}.png`), fullPage: true });
   await page.setViewportSize({ width: 400, height: 860 });

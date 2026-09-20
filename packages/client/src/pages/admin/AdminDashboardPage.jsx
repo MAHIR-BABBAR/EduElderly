@@ -100,7 +100,7 @@ export function AdminDashboardPage() {
         {auditQuery.error && <Alert variant="error">{auditQuery.error.message}</Alert>}
         {logs.length > 0 && (
           <Card>
-            <CardContent className="overflow-x-auto p-0">
+            <CardContent className="overflow-x-auto p-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-accent-ink" tabIndex={0} role="region" aria-label="Table, scrolls sideways when wide">
               <table className="w-full min-w-[32rem] text-left text-[length:var(--font-size-base)]">
                 <thead>
                   <tr className="border-b border-brand-border bg-brand-surface">

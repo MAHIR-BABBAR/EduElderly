@@ -69,7 +69,7 @@ export function AdminCategoriesPage() {
       {categoriesQuery.error && <Alert variant="error">{categoriesQuery.error.message}</Alert>}
 
       <Card>
-        <CardContent className="overflow-x-auto p-0">
+        <CardContent className="overflow-x-auto p-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand-accent-ink" tabIndex={0} role="region" aria-label="Table, scrolls sideways when wide">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-brand-border bg-brand-surface">
