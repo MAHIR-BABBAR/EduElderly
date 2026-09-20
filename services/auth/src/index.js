@@ -14,9 +14,11 @@ const SERVICE_NAME = 'auth-service';
 const createApp = () => {
   const app = express();
 
-  app.use(express.json({ limit: '10mb' }));
-  app.set('trust proxy', true);
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  // Only the gateway sits in front of this service, so trust exactly one hop
+  // for X-Forwarded-For (SEC-5); `true` let any client choose its own IP.
+  app.set('trust proxy', 1);
+  app.use(express.json({ limit: '100kb' }));
+  app.use(express.urlencoded({ extended: false, limit: '100kb' }));
   app.use(cookieParser());
 
   app.get('/health', (_req, res) => {

@@ -50,15 +50,15 @@ const issueAuthSession = async (req, res, user, { message = 'Login successful', 
 
 const rotateRefreshSession = async (req, res, user, rawToken) => {
   const tokenHash = hashRefreshToken(rawToken);
-  const storedToken = await RefreshToken.findOne({ tokenHash, userId: user.userId });
+  // Find-and-delete in one step: two concurrent refreshes with the same token
+  // cannot both succeed, so the token family cannot fork (SEC-4).
+  const storedToken = await RefreshToken.findOneAndDelete({ tokenHash, userId: user.userId });
 
   if (!storedToken) {
     console.warn(`[SECURITY] Refresh token reuse detected for userId: ${user.userId}`);
     await RefreshToken.deleteMany({ userId: user.userId });
     throw new AppError('Session expired. Please log in again.', 401, ERROR_CODES.E_AUTH_REFRESH_INVALID);
   }
-
-  await storedToken.deleteOne();
 
   const { rawToken: newRaw, tokenHash: newHash } = signRefreshToken(user.userId);
   await persistRefreshToken(req, user.userId, newHash);

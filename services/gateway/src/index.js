@@ -23,6 +23,9 @@ const SERVICE_NAME = 'gateway';
 
 const createApp = () => {
   const app = express();
+  // Hops between the internet and this gateway (a TLS terminator or load
+  // balancer). 0 = none, so a client-sent X-Forwarded-For is ignored.
+  app.set('trust proxy', parseInt(process.env.TRUST_PROXY_HOPS, 10) || 0);
 
   app.use(helmet());
   app.use(cors(corsOptions));

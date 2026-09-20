@@ -73,6 +73,10 @@ const onProxyReq = (proxyReq, req, _res) => {
     req.get('X-Request-ID') ||
     `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   proxyReq.setHeader('X-Request-ID', requestId);
+  // The client IP as this gateway determined it (honouring its own trust-proxy
+  // setting), never a client-supplied X-Forwarded-For — rate limits and audit
+  // logs downstream rely on it (SEC-5).
+  proxyReq.setHeader('X-Forwarded-For', req.ip || '');
 
   // Always clear any client-supplied identity headers before (re)setting them,
   // so a forged X-User-* on a public route can never reach a service.
