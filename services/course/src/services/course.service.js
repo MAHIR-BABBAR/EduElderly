@@ -33,14 +33,46 @@ const getActiveCourse = async (courseId, { publishedOnly = false } = {}) => {
   return course;
 };
 
-const loadPublishedCourses = async ({ page = 1, limit = 20 }) => {
-  const safePage = Math.max(1, parseInt(page, 10) || 1);
-  const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+const SORTS = {
+  newest: { createdAt: -1 },
+  'a-z': { title: 1 },
+  // No enrollment counts live in this service; "popular" falls back to the
+  // most recently updated courses until that signal exists.
+  popular: { updatedAt: -1 },
+};
+
+/**
+ * Normalise the public catalog query once, so the filter, the cache key and
+ * the pagination all agree. Anything unrecognised is dropped rather than
+ * passed into a Mongo filter (the validators reject it earlier anyway).
+ */
+const normaliseCatalogQuery = ({ page = 1, limit = 20, search, categoryId, difficulty, isPaid, sort } = {}) => ({
+  page: Math.max(1, parseInt(page, 10) || 1),
+  limit: Math.min(100, Math.max(1, parseInt(limit, 10) || 20)),
+  search: typeof search === 'string' ? search.trim().slice(0, 100) : '',
+  categoryId: typeof categoryId === 'string' ? categoryId : '',
+  difficulty: ['beginner', 'intermediate', 'advanced'].includes(difficulty) ? difficulty : '',
+  isPaid: isPaid === true || isPaid === 'true' ? true : isPaid === false || isPaid === 'false' ? false : null,
+  sort: Object.keys(SORTS).includes(sort) ? sort : 'newest',
+});
+
+const loadPublishedCourses = async (rawQuery) => {
+  const q = normaliseCatalogQuery(rawQuery);
+  const safePage = q.page;
+  const safeLimit = q.limit;
   const skip = (safePage - 1) * safeLimit;
   const filter = { isPublished: true, isDeleted: false };
+  if (q.categoryId) filter.categoryId = q.categoryId;
+  if (q.difficulty) filter.difficulty = q.difficulty;
+  if (q.isPaid !== null) filter.isPaid = q.isPaid;
+  // $text uses the title+description index; never a $regex over user input.
+  if (q.search) filter.$text = { $search: q.search };
+
+  const sort = q.search && q.sort === 'newest' ? { score: { $meta: 'textScore' } } : SORTS[q.sort];
+  const projection = q.search ? { score: { $meta: 'textScore' } } : undefined;
 
   const [courses, total] = await Promise.all([
-    Course.find(filter).sort({ createdAt: -1 }).skip(skip).limit(safeLimit),
+    Course.find(filter, projection).sort(sort).skip(skip).limit(safeLimit),
     Course.countDocuments(filter),
   ]);
 
@@ -157,10 +189,12 @@ const loadCourseStats = async (courseId, { publishedOnly = false } = {}) => {
 };
 
 
-const listPublishedCourses = async ({ page = 1, limit = 20 } = {}) => {
-  const key = `${CATALOG_PREFIX}list:${page}:${limit}`;
+const listPublishedCourses = async (rawQuery = {}) => {
+  const q = normaliseCatalogQuery(rawQuery);
+  // Key from the normalised query so "?page=0001" and "?page=1" share an entry.
+  const key = `${CATALOG_PREFIX}list:${[q.page, q.limit, q.sort, q.categoryId, q.difficulty, q.isPaid ?? '', q.search].join(':')}`;
   const { value, hit } = await cache.remember(key, catalogTtl(), async () => {
-    const result = await loadPublishedCourses({ page, limit });
+    const result = await loadPublishedCourses(q);
     return { ...result, courses: result.courses.map((c) => JSON.parse(JSON.stringify(c))) };
   });
   return { ...value, cacheHit: hit };

@@ -18,6 +18,18 @@ const paginationRules = [
   handleValidationErrors,
 ];
 
+// Public catalog: pagination plus search/filter/sort (plan B-1).
+const catalogRules = [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('search').optional().isString().trim().isLength({ max: 100 }),
+  query('categoryId').optional().isString().matches(/^[\w-]{1,64}$/),
+  query('difficulty').optional().isIn(['beginner', 'intermediate', 'advanced']),
+  query('isPaid').optional().isBoolean().toBoolean(),
+  query('sort').optional().isIn(['newest', 'popular', 'a-z']),
+  handleValidationErrors,
+];
+
 const createCategoryRules = [
   body('name').notEmpty().isString().isLength({ max: 120 }),
   body('description').optional().isString().isLength({ max: 500 }),
@@ -124,6 +136,7 @@ const topicIdRules = [
 
 module.exports = {
   paginationRules,
+  catalogRules,
   createCategoryRules,
   updateCategoryRules,
   categoryIdRules,

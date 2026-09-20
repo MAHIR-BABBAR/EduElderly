@@ -131,8 +131,16 @@ module.exports = buildSpec({
       get: {
         tags: ['Catalog'],
         summary: 'List published courses',
+        description: 'Search, filter and sort happen server-side so the client never filters a single page in memory.',
         security: S.publicRoute,
-        parameters: S.PAGINATION_QUERY,
+        parameters: [
+          ...S.PAGINATION_QUERY,
+          S.query('search', { type: 'string', maxLength: 100 }, 'Full-text search over title and description'),
+          S.query('categoryId', { type: 'string', format: 'uuid' }, 'Only courses in this category'),
+          S.query('difficulty', { type: 'string', enum: ['beginner', 'intermediate', 'advanced'] }, 'Only this difficulty'),
+          S.query('isPaid', { type: 'boolean' }, 'true = paid only, false = free only'),
+          S.query('sort', { type: 'string', enum: ['newest', 'popular', 'a-z'], default: 'newest' }, 'Sort order'),
+        ],
         responses: { 200: S.envelope(S.paginated('courses', S.ref('Course'))) },
       },
       post: {
