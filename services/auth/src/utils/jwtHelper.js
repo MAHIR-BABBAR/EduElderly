@@ -83,7 +83,28 @@ const verifyPasswordResetToken = (token) => {
   return decoded;
 };
 
+/**
+ * Proof that a password was just accepted for this account (SEC-3). The OTP
+ * endpoints require it, so a code can never be requested or guessed for an
+ * account without first passing its password.
+ */
+const signOtpPendingToken = (userId, email) =>
+  jwt.sign({ userId, email, purpose: 'otp-pending' }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: '5m',
+    issuer: 'eduelderly',
+  });
+
+const verifyOtpPendingToken = (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { issuer: 'eduelderly', algorithms: ['HS256'] });
+  if (decoded.purpose !== 'otp-pending') {
+    throw new Error('Invalid token purpose');
+  }
+  return decoded;
+};
+
 module.exports = {
+  signOtpPendingToken,
+  verifyOtpPendingToken,
   signAccessToken,
   verifyAccessToken,
   signRefreshToken,

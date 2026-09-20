@@ -18,8 +18,10 @@ export const useAuthStore = create(
       isAuthenticated: false,
       isLoading: true,
       pendingOtpEmail: null,
+      // Short-lived proof the password step passed; required by the OTP routes.
+      pendingOtpToken: null,
 
-      setPendingOtpEmail: (email) => set({ pendingOtpEmail: email }),
+      setPendingOtpEmail: (email, token = null) => set({ pendingOtpEmail: email, pendingOtpToken: token }),
 
       bootstrap: async () => {
         if (sessionBootstrapped) {
@@ -60,7 +62,7 @@ export const useAuthStore = create(
 
       loginSuccess: async (accessToken, user) => {
         setAccessToken(accessToken);
-        set({ user, isAuthenticated: true, pendingOtpEmail: null });
+        set({ user, isAuthenticated: true, pendingOtpEmail: null, pendingOtpToken: null });
         try {
           const profileRes = await userApi.getProfile();
           set({ profile: profileRes.data, user: profileRes.data });
@@ -82,12 +84,12 @@ export const useAuthStore = create(
           /* ignore */
         }
         setAccessToken(null);
-        set({ user: null, profile: null, isAuthenticated: false, pendingOtpEmail: null });
+        set({ user: null, profile: null, isAuthenticated: false, pendingOtpEmail: null, pendingOtpToken: null });
       },
     }),
     {
       name: 'eduelderly-auth',
-      partialize: (state) => ({ pendingOtpEmail: state.pendingOtpEmail }),
+      partialize: (state) => ({ pendingOtpEmail: state.pendingOtpEmail, pendingOtpToken: state.pendingOtpToken }),
     },
   ),
 );

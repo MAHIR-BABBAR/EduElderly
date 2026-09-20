@@ -228,6 +228,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
 
   describe('POST /verify-otp', () => {
     let capturedOtp;
+    let otpToken;
 
     beforeEach(async () => {
       const { sendOtpEmail } = require('../src/services/mailService');
@@ -246,10 +247,11 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         is2FAEnabled: true,
       });
 
-      await request(app).post('/login').send({
+      const loginRes = await request(app).post('/login').send({
         email: '2fa@test.com',
         password: 'Password123!',
       });
+      otpToken = loginRes.body.otpToken;
     });
 
     it('should complete login with valid OTP', async () => {
@@ -257,6 +259,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         email: '2fa@test.com',
         otp: capturedOtp,
         type: 'login',
+        otpToken,
       });
 
       expect(res.status).toBe(200);
@@ -264,11 +267,24 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       expect(res.body.data.accessToken).toBeDefined();
     });
 
+    it('refuses the OTP step without the token from the password step (SEC-3)', async () => {
+      const res = await request(app).post('/verify-otp').send({
+        email: '2fa@test.com',
+        otp: capturedOtp,
+        type: 'login',
+        otpToken: 'not-a-real-token-at-all-xxxxxxxx',
+      });
+      expect(res.status).toBe(401);
+      const resend = await request(app).post('/resend-otp').send({ email: '2fa@test.com', type: 'login' });
+      expect(resend.status).toBe(400);
+    });
+
     it('should reject invalid OTP', async () => {
       const res = await request(app).post('/verify-otp').send({
         email: '2fa@test.com',
         otp: '000000',
         type: 'login',
+        otpToken,
       });
 
       expect(res.status).toBe(401);
@@ -281,6 +297,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
           email: '2fa@test.com',
           otp: '000000',
           type: 'login',
+          otpToken,
         });
         expect(attempt.status).toBe(401);
         expect(attempt.body.message).toMatch(/Invalid or expired OTP/i);
@@ -290,6 +307,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         email: '2fa@test.com',
         otp: '000000',
         type: 'login',
+        otpToken,
       });
 
       expect(res.status).toBe(401);
@@ -310,14 +328,26 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         is2FAEnabled: true,
       });
 
-      const res = await request(app).post('/resend-otp').send({
-        email: 'resend@test.com',
-        type: 'login',
-      });
+      // The OTP step is only reachable with the token from the password step.
+      const loginRes = await request(app).post('/login').send({ email: 'resend@test.com', password: 'Password123!' });
+      const { otpToken } = loginRes.body;
+      sendOtpEmail.mockClear();
 
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(sendOtpEmail).toHaveBeenCalled();
+      // Straight away: inside the 60s cooldown.
+      const tooSoon = await request(app).post('/resend-otp').send({ email: 'resend@test.com', type: 'login', otpToken });
+      expect(tooSoon.status).toBe(429);
+
+      // A minute later: allowed.
+      const realNow = Date.now;
+      Date.now = () => realNow() + 61_000;
+      try {
+        const res = await request(app).post('/resend-otp').send({ email: 'resend@test.com', type: 'login', otpToken });
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(sendOtpEmail).toHaveBeenCalled();
+      } finally {
+        Date.now = realNow;
+      }
     });
   });
 
