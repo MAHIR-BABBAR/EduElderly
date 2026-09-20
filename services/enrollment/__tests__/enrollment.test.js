@@ -170,6 +170,10 @@ describe('Enrollment Service', () => {
         title: freeCourse.title,
         thumbnailUrl: freeCourse.thumbnailUrl,
         instructorName: freeCourse.instructorName,
+        // Snapshot fields the client needs for the subject world and "n of m lessons".
+        categoryId: freeCourse.categoryId ?? null,
+        topicCount: freeCourse.topicCount ?? null,
+        estimatedHours: freeCourse.estimatedHours ?? null,
       });
       expect(courseClient.getCourseStats).toHaveBeenCalledWith(freeCourse.courseId);
     });
