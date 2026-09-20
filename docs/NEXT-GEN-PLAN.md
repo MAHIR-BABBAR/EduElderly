@@ -1,7 +1,10 @@
 # EduElderly — Next-Gen UI + Security Hardening Plan
 
 > **Audience:** an AI model (or engineer) implementing this with no prior context.
-> **Status (2026-09-20): implemented.** SEC-1…SEC-10 (all ten), F-1…F-8, B-1, B-2, S-1…S-9, V-1, V-2 and V-6 are done and committed on `feature/quiz-payment-demo`. Not done: B-3 (`/users/me/summary` — the dashboard composes existing calls instead), V-5 (CI run not yet observed green; `CODECOV_TOKEN` still to add). Known flake: the notification BullMQ test when both Jest projects share a process (see commit 9303162).
+> **Status (2026-09-20): implemented, with two partial security groups.** SEC-1…SEC-8 (SEC-1, the critical `/internal` hole, live-verified closed), F-1…F-8, B-1, B-2, S-1…S-9, V-1, V-2 and V-6 are done and committed on `feature/quiz-payment-demo`.
+> **SEC-9 partial** — done: mock provider refused in prod, no webhook-secret fallback. Still open: Razorpay resolve by `payment.order_id` + amount/currency check; refund → un-enrol + revoke certificate; XP farming via drop/re-enrol; atomic `findOneAndUpdate` order transitions + stale-pending TTL; HMAC over the raw `Buffer`.
+> **SEC-10 partial** — done: prod ignores `GATEWAY_TRUST_DISABLED`, password policy, course field whitelist, refresh-cookie path, `timeSpentMinutes` bounds, `HS256` pinned, `X-Service-Key` out of CORS, `Object.hasOwn` on `/health`, 100 KB auth bodies. Still open: single-use reset token; secret-strength check in `assertRequiredEnv`; `X-Request-ID` validation; gateway stripping `Cookie` for non-auth targets; dev-compose Mongo/Redis bound to `127.0.0.1`; per-service internal keys in prod compose. (`sanitizeFilter` was tried and reverted — it breaks server-built `$in`/`$ne` filters.)
+> **Not done:** B-3 (`/users/me/summary` — the dashboard composes existing calls instead), V-5 (CI run not yet observed green; `CODECOV_TOKEN` still to add).
 > **Supersedes:** Phase 3 of [`RESUME-READY-PLAN.md`](./RESUME-READY-PLAN.md). Phases 0–2 of that file are done. Phase 4 (E2E, README media, ADRs, deploy) still applies after this plan.
 > **Before screenshots:** [`docs/screenshots/before/`](./screenshots/before/) — look at them first. They are the problem statement.
 
