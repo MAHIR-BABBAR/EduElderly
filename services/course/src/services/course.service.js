@@ -216,7 +216,17 @@ const getCourseStats = async (courseId, options = {}) => {
   return value;
 };
 
-const createCourse = async (payload) => {
+// Fields an admin may set directly. Publication goes through /publish (which
+// writes the audit log), soft-deletion through DELETE; ids are never client-set.
+const WRITABLE_COURSE_FIELDS = [
+  'title', 'description', 'categoryId', 'thumbnailUrl', 'isPaid', 'price',
+  'difficulty', 'estimatedHours', 'instructorName', 'credits', 'slug',
+];
+const pickWritable = (input = {}) =>
+  Object.fromEntries(Object.entries(input).filter(([key]) => WRITABLE_COURSE_FIELDS.includes(key)));
+
+const createCourse = async (rawPayload) => {
+  const payload = pickWritable(rawPayload);
   await assertCategoryExists(payload.categoryId);
   const slug = payload.slug || slugify(payload.title);
   const existing = await Course.findOne({ slug, isDeleted: false });
@@ -235,7 +245,7 @@ const createCourse = async (payload) => {
 
 const updateCourse = async (courseId, payload) => {
   const course = await getActiveCourse(courseId);
-  const updates = { ...payload };
+  const updates = pickWritable(payload);
 
   if (updates.categoryId) {
     await assertCategoryExists(updates.categoryId);

@@ -102,7 +102,7 @@ const authValidation = (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    req.user = jwt.verify(token, process.env.JWT_ACCESS_SECRET, {
+    req.user = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'],
       issuer: 'eduelderly',
       audience: 'eduelderly-client',
     });

@@ -8,10 +8,15 @@ const {
 } = require('../utils/jwtHelper');
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
+// Scoped to the auth routes: the refresh token is only ever needed by
+// /refresh and /logout, so no other service should receive it.
+const REFRESH_COOKIE_PATH = process.env.REFRESH_COOKIE_PATH || '/api/v1/auth';
+
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',
+  path: REFRESH_COOKIE_PATH,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -100,6 +105,7 @@ const clearRefreshCookie = (res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
+    path: REFRESH_COOKIE_PATH,
   });
 };
 

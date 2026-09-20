@@ -15,7 +15,7 @@ const createAdminGate = (publicFlagEnv) => (req, _res, next) => {
     return next(new AppError('Admin token required', 401, ERROR_CODES.E_AUTH_INVALID));
   }
   try {
-    const payload = jwt.verify(header.slice(7), process.env.JWT_ACCESS_SECRET, {
+    const payload = jwt.verify(header.slice(7), process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'],
       issuer: 'eduelderly',
       audience: 'eduelderly-client',
     });

@@ -18,7 +18,7 @@ const signAccessToken = (payload) => {
 };
 
 const verifyAccessToken = (token) =>
-  jwt.verify(token, process.env.JWT_ACCESS_SECRET, {
+  jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'],
     issuer: 'eduelderly',
     audience: 'eduelderly-client',
   });
@@ -40,7 +40,7 @@ const signRefreshToken = (userId) => {
 };
 
 const verifyRefreshToken = (token) =>
-  jwt.verify(token, process.env.JWT_REFRESH_SECRET, { issuer: 'eduelderly' });
+  jwt.verify(token, process.env.JWT_REFRESH_SECRET, { algorithms: ['HS256'], issuer: 'eduelderly' });
 
 const hashRefreshToken = (rawToken) =>
   crypto.createHash('sha256').update(rawToken).digest('hex');
@@ -57,7 +57,7 @@ const signEmailVerificationToken = (userId, email) => {
 };
 
 const verifyEmailVerificationToken = (token) => {
-  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { issuer: 'eduelderly' });
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'], issuer: 'eduelderly' });
   if (decoded.purpose !== 'email-verification') {
     throw new Error('Invalid token purpose');
   }
@@ -76,7 +76,7 @@ const signPasswordResetToken = (userId, email) => {
 };
 
 const verifyPasswordResetToken = (token) => {
-  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { issuer: 'eduelderly' });
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'], issuer: 'eduelderly' });
   if (decoded.purpose !== 'password-reset') {
     throw new Error('Invalid token purpose');
   }
