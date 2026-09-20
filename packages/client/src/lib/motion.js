@@ -114,3 +114,50 @@ export const celebrate = () =>
 
 /** Standard viewport trigger for scroll reveals: fire once, slightly early. */
 export const inViewOnce = { once: true, margin: '-8%' };
+
+/* ---- Spatial tier (DESIGN.md "Spatial tier") ----------------------------
+ * 320–450ms moves that only ever follow a tap or click and never loop: a
+ * cover morphing into a course hero, quiz questions sliding like a deck of
+ * cards, a sheet rising from the control that opened it. Continuity helps a
+ * learner who loses context on hard cuts. Under reduced motion every helper
+ * collapses to an instant swap.
+ */
+
+const STATIC = { initial: false, animate: {}, transition: { duration: 0 } };
+
+/** Spring shared by every spatial move so they all feel like one material. */
+export const spatialSpring = { type: 'spring', stiffness: 260, damping: 30, mass: 0.9 };
+
+/**
+ * Props for a shared-element morph. Spread onto both ends of the move
+ * (`<motion.div {...sharedLayout(`cover-${id}`)}>`); returns nothing under
+ * reduced motion so there is no `layoutId` and therefore no morph.
+ */
+export const sharedLayout = (id) =>
+  prefersReducedMotion() ? {} : { layoutId: id, transition: spatialSpring };
+
+/**
+ * One card of a deck entering from `direction` (1 = forward, -1 = back) while
+ * the previous one leaves the other way. Use with AnimatePresence + `custom`.
+ */
+export const deckSlide = (direction = 1) => {
+  if (prefersReducedMotion()) return STATIC;
+  return {
+    initial: { opacity: 0, x: 48 * direction },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -48 * direction },
+    transition: spatialSpring,
+  };
+};
+
+/** Bento tiles arrive in quick sequence, once. Pair with `bentoTile` on items. */
+export const bentoStagger = (staggerSeconds = 0.06) => ({
+  hidden: {},
+  visible: { transition: { staggerChildren: prefersReducedMotion() ? 0 : staggerSeconds } },
+});
+
+export const bentoTile = () =>
+  respectMotion({
+    hidden: { opacity: 0, y: 14, scale: 0.985 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: spatialSpring },
+  });

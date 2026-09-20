@@ -109,6 +109,7 @@ Learning flows: `My Learning → Course → Lesson`. Use `<Breadcrumbs>` with li
 | Landing hero | BlurText, GSAP stagger ≤800ms, slow R3F | scroll-jacking, autoplay video |
 | Marketing sections | IntersectionObserver stagger | infinite loops |
 | Calm zone | CSS transition ≤200ms | GSAP, 3D |
+| Spatial tier | 320–450ms spring, user-initiated, see below | anything not caused by a tap/click, loops |
 | Celebration moment | one entrance ≤2s, see below | repeats, confetti loops |
 | prefers-reduced-motion | static hero, instant state | all animation |
 
@@ -127,6 +128,32 @@ Rules, so it stays an exception:
 - **Reduced motion gets a static badge** with the same wording. Nothing moves.
 - **Never blocks.** The learner can read, click, or navigate straight through it.
 - Implemented with `celebrate()` in `src/lib/motion.js`. Do not hand-roll it.
+
+### Spatial tier
+
+Between the calm zone's 200 ms cap and the celebration exception sits one
+more, narrow allowance: **spatial continuity**. When a learner taps a course
+card, the cover slides into place as the course hero; when they answer a quiz
+question, the next one arrives like the next card in a deck; a sheet rises
+from the button that opened it. Hard cuts make older learners lose their
+place; a short, physical move keeps the thread.
+
+Rules, so it stays narrow:
+
+- **Only ever the direct result of a tap or click.** Nothing spatial happens
+  on load, on scroll, or on a timer.
+- **320–450 ms, one shared spring** (`spatialSpring` in `src/lib/motion.js`),
+  so every move feels like the same material. Never loops.
+- **Permitted call-sites:** cover morph (catalog → course detail, dashboard →
+  course detail), quiz question deck, sheets, bento tile entrance. Add a new
+  one here before using it.
+- **Reduced motion gets an instant swap.** `sharedLayout()` returns nothing,
+  `deckSlide()` returns a static state, staggers become zero. The screen is
+  complete without the move.
+- Use `sharedLayout`, `deckSlide`, `bentoStagger`/`bentoTile`. Do not
+  hand-roll spring values.
+
+The 200 ms rule for everything else is unchanged.
 
 ## Accessibility
 

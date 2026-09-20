@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { Stepper } from '@/components/ui/stepper';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { CourseCover } from '@/components/ui/course-cover';
+import { worldFor } from '@/lib/worlds';
+import { sharedLayout } from '@/lib/motion';
 
 describe('ProgressRing', () => {
   it('exposes progress to assistive technology, not just visually', () => {
@@ -108,5 +110,56 @@ describe('CourseCover', () => {
     const { container } = render(<CourseCover title="Email Basics" courseId="c1" />);
     expect(container.querySelector('img')).toBeNull();
     expect(screen.getByText('E')).toBeInTheDocument();
+  });
+
+  it('swaps to the fallback art when the photo fails to load', () => {
+    const { container } = render(
+      <CourseCover title="Email Basics" courseId="c1" src="https://cdn.example/broken.jpg" />,
+    );
+    fireEvent.error(container.querySelector('img'));
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText('E')).toBeInTheDocument();
+  });
+
+  it('carries its subject world as a data attribute so tokens can colour it', () => {
+    const { container } = render(<CourseCover title="Walking" courseId="c2" world="health" />);
+    expect(container.firstChild).toHaveAttribute('data-world', 'health');
+  });
+
+  it('does not morph (no layoutId) under reduced motion', () => {
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    const { container } = render(<CourseCover title="Walking" courseId="c2" layoutId="cover-c2" />);
+    // framer-motion exposes layoutId on the element only when it is set.
+    expect(container.firstChild).not.toHaveAttribute('data-layout-id');
+    expect(sharedLayout('cover-c2')).toEqual({});
+    vi.restoreAllMocks();
+  });
+});
+
+describe('worldFor', () => {
+  it('maps seeded category names to the expected worlds', () => {
+    expect(worldFor({ categoryName: 'Health & Wellness' })).toBe('health');
+    expect(worldFor({ categorySlug: 'digital-skills' })).toBe('digital');
+    expect(worldFor({ categoryName: 'Life & Learning' })).toBe('life');
+    expect(worldFor({ categoryName: 'Money Matters' })).toBe('money');
+  });
+
+  it('is deterministic and never "default" for an unknown category with an id', () => {
+    const a = worldFor({ categoryName: 'Zebras', categoryId: 'abc-123' });
+    const b = worldFor({ categoryName: 'Zebras', categoryId: 'abc-123' });
+    expect(a).toBe(b);
+    expect(a).not.toBe('default');
+  });
+
+  it('returns default when nothing is known', () => {
+    expect(worldFor()).toBe('default');
   });
 });

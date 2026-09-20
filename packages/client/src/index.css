@@ -119,6 +119,23 @@
     @apply mt-4;
   }
 
+  /* CourseCover in high contrast: no photo, no gradient, black on white. */
+  html[data-high-contrast='true'] .course-cover {
+    background: #ffffff;
+    border: 2px solid #000000;
+  }
+  html[data-high-contrast='true'] .course-cover :is(.cover-photo, .cover-duotone, .cover-pattern) {
+    display: none;
+  }
+  html[data-high-contrast='true'] .course-cover .cover-initial {
+    color: #000000;
+    opacity: 1;
+  }
+  html[data-high-contrast='true'] .course-cover .cover-scrim {
+    background: #ffffff;
+    color: #000000;
+  }
+
   /* Decorative divider used between marketing bands. */
   .rule-soft {
     @apply h-px w-full border-0 bg-brand-border;
