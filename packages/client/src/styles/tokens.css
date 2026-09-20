@@ -159,7 +159,7 @@ html[data-high-contrast='true'] {
   --shadow-lift: 0 0 0 3px #000000;
   --shadow-inset: none;
   --gradient-cta: none;
-  --gradient-hero: none;
+  --gradient-hero: linear-gradient(0deg, #000000, #000000); /* flat black band */
   --texture-opacity: 0;
   --focus-ring: 3px solid #000000;
 }
