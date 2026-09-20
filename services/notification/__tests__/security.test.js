@@ -32,17 +32,33 @@ describe('Gateway trust security', () => {
     expect(res.status).toBe(401);
   });
 
-  it('allows requests with valid service key when trust is enforced', async () => {
+  it('allows requests with valid gateway key when trust is enforced', async () => {
     delete process.env.GATEWAY_TRUST_DISABLED;
     process.env.GATEWAY_TRUST_ENFORCED = 'true';
 
     const app = createApp();
     const res = await request(app)
       .get('/me')
-      .set('X-Service-Key', 'test_internal_key')
+      .set('X-Gateway-Key', 'test_internal_key')
       .set('X-User-Id', 'learner-1')
       .set('X-User-Role', ROLES.LEARNER);
 
     expect(res.status).not.toBe(401);
+  });
+
+  it('rejects the internal service key on a user route when trust is enforced', async () => {
+    delete process.env.GATEWAY_TRUST_DISABLED;
+    process.env.GATEWAY_TRUST_ENFORCED = 'true';
+
+    const app = createApp();
+    const res = await request(app)
+      .get('/me')
+      // Only the gateway key proves gateway origin (SEC-1 key split); a leaked
+      // internal key must not be enough to impersonate the gateway.
+      .set('X-Service-Key', 'test_internal_key')
+      .set('X-User-Id', 'learner-1')
+      .set('X-User-Role', ROLES.LEARNER);
+
+    expect(res.status).toBe(401);
   });
 });

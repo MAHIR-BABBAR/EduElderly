@@ -59,3 +59,5 @@ afterEach(async () => {
   await Transaction.syncIndexes();
   jest.clearAllMocks();
 });
+
+process.env.MOCK_WEBHOOK_SECRET = process.env.MOCK_WEBHOOK_SECRET || 'test-mock-webhook-secret';

@@ -34,6 +34,19 @@ const CertificateSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  pdfStatus: {
+    type: String,
+    enum: ['pending', 'ready', 'failed'],
+    default: 'pending',
+  },
+  pdfGeneratedAt: {
+    type: Date,
+    default: null,
+  },
+  pdfError: {
+    type: String,
+    default: null,
+  },
 }, {
   timestamps: true,
   toJSON: {

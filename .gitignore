@@ -16,6 +16,8 @@ npm-debug.log*
 
 # Test / coverage
 coverage/
+packages/client/test-results/
+packages/client/playwright-report/
 
 # Build output
 dist/

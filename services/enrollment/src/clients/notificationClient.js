@@ -39,12 +39,14 @@ const notifyEnroll = ({ userId, email, name, courseTitle }) => {
   });
 };
 
-const notifyCompletion = ({ userId, email, name, courseTitle, certId, verifyUrl }) => {
+const notifyCompletion = ({
+  userId, email, name, courseTitle, certId, verifyUrl, quizzesRemaining,
+}) => {
   sendNotification({
     userId,
     email,
     type: 'completion',
-    templateData: { name, courseTitle, certId, verifyUrl },
+    templateData: { name, courseTitle, certId, verifyUrl, quizzesRemaining },
   }).catch((error) => {
     console.error('[enrollment-notification] completion notify failed:', error.message);
   });

@@ -25,7 +25,6 @@ const corsOptions = {
     'Content-Type',
     'Authorization',
     'X-Requested-With',
-    'X-Service-Key',
     'X-Request-ID',
   ],
   exposedHeaders: ['X-Request-ID', 'X-RateLimit-Remaining'],

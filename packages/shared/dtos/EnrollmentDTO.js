@@ -26,7 +26,7 @@ const toPublicEnrollmentDTO = (enrollmentDoc) => {
 
 /**
  * @param {Object} enrollmentDoc
- * @param {Object|null} courseSummary - { courseId, title, thumbnailUrl, instructorName } from course service
+ * @param {Object|null} courseSummary - { courseId, title, thumbnailUrl, instructorName, categoryId, topicCount, estimatedHours } from course service
  */
 const toEnrollmentWithCourseDTO = (enrollmentDoc, courseSummary = null) => {
   const base = toPublicEnrollmentDTO(enrollmentDoc);
@@ -40,6 +40,9 @@ const toEnrollmentWithCourseDTO = (enrollmentDoc, courseSummary = null) => {
       title: courseSummary.title,
       thumbnailUrl: courseSummary.thumbnailUrl ?? null,
       instructorName: courseSummary.instructorName ?? null,
+      categoryId: courseSummary.categoryId ?? null,
+      topicCount: courseSummary.topicCount ?? null,
+      estimatedHours: courseSummary.estimatedHours ?? null,
     },
   };
 };

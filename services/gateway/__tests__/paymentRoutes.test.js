@@ -29,6 +29,18 @@ const makeToken = (overrides = {}) =>
   );
 
 describe('Gateway Payment Routes', () => {
+  describe('POST /api/v1/payments/webhook', () => {
+    it('is public (no JWT) and proxied to the payment service', async () => {
+      const res = await request(app)
+        .post('/api/v1/payments/webhook')
+        .set('X-Webhook-Signature', 'abc')
+        .send({ event: 'payment.captured', orderId: 'x' });
+
+      expect(res.status).not.toBe(401);
+      expect(res.status).not.toBe(404);
+    });
+  });
+
   describe('GET /api/v1/payments/transactions/me', () => {
     it('returns 401 without a token', async () => {
       const res = await request(app).get('/api/v1/payments/transactions/me');

@@ -45,6 +45,32 @@ describe('Notification Service - internal send', () => {
     expect(saved.status).toBe('sent');
   });
 
+  it('never lists a reset link or code in the in-app feed, and scrubs it after sending (SEC-8)', async () => {
+    const res = await request(app)
+      .post('/internal/send')
+      .set('X-Service-Key', 'test_internal_key')
+      .send({
+        userId: 'learner-1',
+        email: 'user@test.com',
+        type: 'password_reset',
+        templateData: { name: 'Test User', link: 'https://app.example/reset?token=SECRET-TOKEN' },
+      });
+    expect(res.status).toBe(200);
+    expect(sendTransactionalEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ htmlContent: expect.stringContaining('SECRET-TOKEN') }),
+    );
+
+    const saved = await Notification.findOne({ notificationId: res.body.data.notificationId });
+    expect(saved.channel).toBe('email');
+    expect(saved.userId).toBeNull();
+    expect(JSON.stringify(saved.toObject())).not.toContain('SECRET-TOKEN');
+
+    const feed = await request(app).get('/me').set(learnerHeaders);
+    expect(feed.status).toBe(200);
+    const items = feed.body.data?.notifications ?? feed.body.data ?? [];
+    expect(items.some((n) => n.type === 'password_reset')).toBe(false);
+  });
+
   it('creates in-app notification when userId is provided', async () => {
     const res = await request(app)
       .post('/internal/send')

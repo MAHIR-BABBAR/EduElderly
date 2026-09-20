@@ -2,7 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
+const openApiSpec = require('./docs/openapi');
 const { initRedis, closeRedis, isRedisReady } = require('./utils/otpHelper');
 const authRoutes = require('./routes/authRoutes');
 
@@ -13,9 +14,11 @@ const SERVICE_NAME = 'auth-service';
 const createApp = () => {
   const app = express();
 
-  app.use(express.json({ limit: '10mb' }));
-  app.set('trust proxy', true);
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  // Only the gateway sits in front of this service, so trust exactly one hop
+  // for X-Forwarded-For (SEC-5); `true` let any client choose its own IP.
+  app.set('trust proxy', 1);
+  app.use(express.json({ limit: '100kb' }));
+  app.use(express.urlencoded({ extended: false, limit: '100kb' }));
   app.use(cookieParser());
 
   app.get('/health', (_req, res) => {
@@ -31,6 +34,10 @@ const createApp = () => {
       uptime: process.uptime(),
     });
   });
+
+  // API docs are public documentation; mounted before gateway trust so they
+  // open directly on the service port during host development.
+  mountDocs(app, openApiSpec);
 
   app.use(requireGateway);
   app.use(requestId);

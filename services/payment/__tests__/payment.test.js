@@ -179,6 +179,75 @@ describe('Payment Service', () => {
     });
   });
 
+  describe('POST /orders/:orderId/confirm (mock provider)', () => {
+    afterEach(() => {
+      delete process.env.PAYMENT_PROVIDER;
+    });
+
+    it('lets the owner confirm a pending order and enrolls them', async () => {
+      process.env.PAYMENT_PROVIDER = 'mock';
+      const checkoutRes = await createCheckout();
+      const orderId = checkoutRes.body.data.orderId;
+
+      const res = await request(app)
+        .post(`/orders/${orderId}/confirm`)
+        .set(learnerHeaders);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe(TX_STATUS.SUCCESS);
+      expect(enrollmentClient.enrollAfterPayment).toHaveBeenCalledWith({
+        userId: 'learner-1',
+        courseId: 'course-paid-1',
+        paymentRef: orderId,
+      });
+
+      const { Transaction } = require('../src/models/Transaction');
+      const saved = await Transaction.findOne({ orderId });
+      expect(saved.statusUpdatedBy).toBe('mock-provider');
+    });
+
+    it('rejects confirmation from a different learner', async () => {
+      process.env.PAYMENT_PROVIDER = 'mock';
+      const checkoutRes = await createCheckout();
+      const orderId = checkoutRes.body.data.orderId;
+
+      const res = await request(app)
+        .post(`/orders/${orderId}/confirm`)
+        .set(otherLearnerHeaders);
+
+      expect(res.status).toBe(403);
+      expect(enrollmentClient.enrollAfterPayment).not.toHaveBeenCalled();
+    });
+
+    it('rejects confirming an order that is not pending', async () => {
+      process.env.PAYMENT_PROVIDER = 'mock';
+      const checkoutRes = await createCheckout();
+      const orderId = checkoutRes.body.data.orderId;
+      await request(app).post(`/orders/${orderId}/confirm`).set(learnerHeaders);
+
+      const res = await request(app)
+        .post(`/orders/${orderId}/confirm`)
+        .set(learnerHeaders);
+
+      expect(res.status).toBe(400);
+      expect(enrollmentClient.enrollAfterPayment).toHaveBeenCalledTimes(1);
+    });
+
+    it('is unavailable when the provider is not mock', async () => {
+      process.env.PAYMENT_PROVIDER = 'mock';
+      const checkoutRes = await createCheckout();
+      const orderId = checkoutRes.body.data.orderId;
+      process.env.PAYMENT_PROVIDER = 'none';
+
+      const res = await request(app)
+        .post(`/orders/${orderId}/confirm`)
+        .set(learnerHeaders);
+
+      expect(res.status).toBe(404);
+      expect(enrollmentClient.enrollAfterPayment).not.toHaveBeenCalled();
+    });
+  });
+
   describe('GET /internal/stats', () => {
     it('returns payment counts and revenue with service key', async () => {
       await createCheckout();

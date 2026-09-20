@@ -5,6 +5,9 @@ const { ROLES } = require('@eduelderly/shared/constants/roles');
 const courseClient = require('../src/clients/courseClient');
 const userClient = require('../src/clients/userClient');
 const paymentClient = require('../src/clients/paymentClient');
+const certificateClient = require('../src/clients/certificateClient');
+const quizClient = require('../src/clients/quizClient');
+const notificationClient = require('../src/clients/notificationClient');
 
 const app = createApp();
 
@@ -13,17 +16,12 @@ const learnerHeaders = {
   'x-user-role': ROLES.LEARNER,
 };
 
-const otherLearnerHeaders = {
-  'x-user-id': 'learner-2',
-  'x-user-role': ROLES.LEARNER,
-};
-
 const serviceHeaders = {
   'x-service-key': 'test_internal_key',
 };
 
 const freeCourse = {
-  courseId: 'course-free-1',
+  courseId: '01a09b65-0001-7000-8000-000000000001',
   title: 'Free Wellness',
   thumbnailUrl: 'https://cdn.example/thumb.jpg',
   instructorName: 'Dr. Smith',
@@ -32,15 +30,15 @@ const freeCourse = {
   isPaid: false,
   price: 0,
   topicCount: 2,
-  topicIds: ['topic-1', 'topic-2'],
+  topicIds: ['01a09b65-1001-7000-8000-000000000001', '01a09b65-1002-7000-8000-000000000002'],
   modules: [
-    { moduleId: 'mod-1', topicIds: ['topic-1', 'topic-2'] },
+    { moduleId: 'mod-1', topicIds: ['01a09b65-1001-7000-8000-000000000001', '01a09b65-1002-7000-8000-000000000002'] },
   ],
 };
 
 const paidCourse = {
   ...freeCourse,
-  courseId: 'course-paid-1',
+  courseId: '01a09b65-0002-7000-8000-000000000002',
   isPaid: true,
   price: 499,
 };
@@ -70,6 +68,12 @@ describe('Enrollment Service', () => {
     paymentClient.initiateCheckout.mockResolvedValue({
       orderId: 'order-1',
       checkoutUrl: 'https://pay.example/checkout',
+    });
+    quizClient.getCourseQuizEligibility.mockResolvedValue({
+      allPassed: false,
+      totalQuizzes: 1,
+      passedCount: 0,
+      quizzes: [{ quizId: 'quiz-1', title: 'Final', passed: false }],
     });
   });
 
@@ -166,6 +170,10 @@ describe('Enrollment Service', () => {
         title: freeCourse.title,
         thumbnailUrl: freeCourse.thumbnailUrl,
         instructorName: freeCourse.instructorName,
+        // Snapshot fields the client needs for the subject world and "n of m lessons".
+        categoryId: freeCourse.categoryId ?? null,
+        topicCount: freeCourse.topicCount ?? null,
+        estimatedHours: freeCourse.estimatedHours ?? null,
       });
       expect(courseClient.getCourseStats).toHaveBeenCalledWith(freeCourse.courseId);
     });
@@ -185,7 +193,7 @@ describe('Enrollment Service', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.course.title).toBe(freeCourse.title);
-      expect(res.body.data.nextTopicId).toBe('topic-1');
+      expect(res.body.data.nextTopicId).toBe('01a09b65-1001-7000-8000-000000000001');
       expect(res.body.data.currentModuleId).toBeNull();
       expect(res.body.data.currentLessonId).toBeNull();
     });
@@ -216,10 +224,10 @@ describe('Enrollment Service', () => {
       const res = await request(app)
         .patch(`/${enrollment.enrollmentId}/progress`)
         .set(learnerHeaders)
-        .send({ topicId: 'topic-1', timeSpentMinutes: 3 });
+        .send({ topicId: '01a09b65-1001-7000-8000-000000000001', timeSpentMinutes: 3 });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.completedTopics).toContain('topic-1');
+      expect(res.body.data.completedTopics).toContain('01a09b65-1001-7000-8000-000000000001');
       expect(res.body.data.progressPercent).toBe(50);
       expect(userClient.incrementXP).toHaveBeenCalledWith('learner-1', 10);
     });
@@ -229,19 +237,88 @@ describe('Enrollment Service', () => {
         userId: 'learner-1',
         courseId: freeCourse.courseId,
         status: 'active',
-        completedTopics: ['topic-1'],
+        completedTopics: ['01a09b65-1001-7000-8000-000000000001'],
         progressPercent: 50,
       });
 
       const res = await request(app)
         .patch(`/${enrollment.enrollmentId}/progress`)
         .set(learnerHeaders)
-        .send({ topicId: 'topic-2' });
+        .send({ topicId: '01a09b65-1002-7000-8000-000000000002' });
 
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('completed');
       expect(res.body.data.progressPercent).toBe(100);
       expect(userClient.incrementXP).toHaveBeenCalledWith('learner-1', 100);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(certificateClient.issueCertificateSafe).not.toHaveBeenCalled();
+      // Exactly one "lessons done, quizzes remaining" email, no certificate link.
+      expect(notificationClient.notifyCompletion).toHaveBeenCalledTimes(1);
+      expect(notificationClient.notifyCompletion).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'test@example.com', quizzesRemaining: 1 }),
+      );
+      expect(notificationClient.notifyCompletion.mock.calls[0][0].certId).toBeUndefined();
+    });
+
+    it('should issue certificate when lessons complete and all quizzes passed', async () => {
+      quizClient.getCourseQuizEligibility.mockResolvedValue({
+        allPassed: true,
+        totalQuizzes: 1,
+        passedCount: 1,
+        quizzes: [{ quizId: 'quiz-1', title: 'Final', passed: true }],
+      });
+      certificateClient.issueCertificateSafe.mockResolvedValue({
+        certId: 'cert-1',
+        verifyUrl: 'http://localhost:5173/verify-certificate?certId=cert-1',
+      });
+
+      const enrollment = await Enrollment.create({
+        userId: 'learner-1',
+        courseId: freeCourse.courseId,
+        status: 'active',
+        completedTopics: ['01a09b65-1001-7000-8000-000000000001'],
+        progressPercent: 50,
+      });
+
+      await request(app)
+        .patch(`/${enrollment.enrollmentId}/progress`)
+        .set(learnerHeaders)
+        .send({ topicId: '01a09b65-1002-7000-8000-000000000002' });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(certificateClient.issueCertificateSafe).toHaveBeenCalled();
+      const updated = await Enrollment.findOne({ enrollmentId: enrollment.enrollmentId });
+      expect(updated.certificateIssued).toBe(true);
+      expect(updated.certificateId).toBe('cert-1');
+      // Exactly one email, and it carries the certificate.
+      expect(notificationClient.notifyCompletion).toHaveBeenCalledTimes(1);
+      expect(notificationClient.notifyCompletion).toHaveBeenCalledWith(
+        expect.objectContaining({ certId: 'cert-1', verifyUrl: expect.stringContaining('cert-1') }),
+      );
+    });
+
+    it('should not re-issue or re-email when certificate already issued', async () => {
+      quizClient.getCourseQuizEligibility.mockResolvedValue({
+        allPassed: true, totalQuizzes: 1, passedCount: 1, quizzes: [],
+      });
+      await Enrollment.create({
+        userId: 'learner-1',
+        courseId: freeCourse.courseId,
+        status: 'completed',
+        progressPercent: 100,
+        certificateIssued: true,
+        certificateId: 'cert-existing',
+      });
+
+      const res = await request(app)
+        .post('/internal/certificate-eligibility')
+        .set(serviceHeaders)
+        .send({ userId: 'learner-1', courseId: freeCourse.courseId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual({ issued: true, certId: 'cert-existing', alreadyIssued: true });
+      expect(certificateClient.issueCertificateSafe).not.toHaveBeenCalled();
+      expect(notificationClient.notifyCompletion).not.toHaveBeenCalled();
     });
   });
 
@@ -254,7 +331,7 @@ describe('Enrollment Service', () => {
       });
 
       const res = await request(app)
-        .get(`/${enrollment.enrollmentId}/topics/topic-1/content`)
+        .get(`/${enrollment.enrollmentId}/topics/01a09b65-1001-7000-8000-000000000001/content`)
         .set(learnerHeaders);
 
       expect(res.status).toBe(200);
@@ -269,11 +346,37 @@ describe('Enrollment Service', () => {
       });
 
       const res = await request(app)
-        .get(`/${enrollment.enrollmentId}/topics/topic-1/content`)
+        .get(`/${enrollment.enrollmentId}/topics/01a09b65-1001-7000-8000-000000000001/content`)
         .set(learnerHeaders);
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe('E_NOT_ENROLLED');
+    });
+  });
+
+  describe('POST /internal/certificate-eligibility', () => {
+    it('should check eligibility with service key', async () => {
+      quizClient.getCourseQuizEligibility.mockResolvedValue({
+        allPassed: false,
+        totalQuizzes: 1,
+        passedCount: 0,
+        quizzes: [],
+      });
+
+      await Enrollment.create({
+        userId: 'learner-1',
+        courseId: freeCourse.courseId,
+        status: 'completed',
+        progressPercent: 100,
+      });
+
+      const res = await request(app)
+        .post('/internal/certificate-eligibility')
+        .set(serviceHeaders)
+        .send({ userId: 'learner-1', courseId: freeCourse.courseId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.issued).toBe(false);
     });
   });
 

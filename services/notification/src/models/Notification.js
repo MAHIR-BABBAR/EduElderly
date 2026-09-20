@@ -57,6 +57,10 @@ const NotificationSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  attempts: {
+    type: Number,
+    default: 0,
+  },
 }, {
   timestamps: true,
   toJSON: {

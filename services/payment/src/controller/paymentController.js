@@ -19,7 +19,19 @@ const getMyOrder = catchAsync(async (req, res) => {
   });
 });
 
+const confirmMyOrder = catchAsync(async (req, res) => {
+  const tx = await transactionService.confirmOrderForLearner(
+    req.params.orderId,
+    req.user.userId,
+  );
+  res.status(200).json({
+    success: true,
+    data: toPublicTransactionDTO(tx),
+  });
+});
+
 module.exports = {
   listMyTransactions,
   getMyOrder,
+  confirmMyOrder,
 };

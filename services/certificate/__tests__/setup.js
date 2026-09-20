@@ -1,3 +1,6 @@
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const mongoose = require('mongoose');
 
 const TEST_DB_URI =
@@ -7,6 +10,8 @@ process.env.NODE_ENV = 'test';
 process.env.INTERNAL_SERVICE_KEY = 'test_internal_key';
 process.env.GATEWAY_TRUST_DISABLED = 'true';
 process.env.APP_URL = 'http://localhost:8080';
+process.env.CERT_STORAGE = 'local';
+process.env.CERT_STORAGE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'eduelderly-certs-'));
 
 jest.mock('uuid', () => ({
   v7: jest.fn(() => `mocked-uuid-${Math.random().toString(36).substring(7)}`),
@@ -21,6 +26,7 @@ beforeAll(async () => {
 }, 60000);
 
 afterAll(async () => {
+  fs.rmSync(process.env.CERT_STORAGE_DIR, { recursive: true, force: true });
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
@@ -35,3 +41,6 @@ afterEach(async () => {
     await collections[key].deleteMany();
   }
 });
+
+// Isolate test queues from any live worker sharing this Redis.
+process.env.QUEUE_PREFIX = process.env.QUEUE_PREFIX || 'test-certificate';

@@ -9,6 +9,18 @@ RUN npm install -g nodemon
 WORKDIR /app
 
 COPY packages/shared /deps/shared
+
+# The shared package is linked into each service by path, so Node resolves its
+# `require` calls starting at /deps/shared — it never looks in /app/node_modules.
+# Its runtime dependencies therefore have to live on that path. They go one
+# level up, in /deps/node_modules, so they survive docker-compose bind-mounting
+# the host's packages/shared over /deps/shared for hot reload.
+WORKDIR /deps
+RUN npm init -y > /dev/null \
+    && SHARED_DEPS="$(node -p "Object.entries(require('/deps/shared/package.json').dependencies||{}).map(([n,v])=>n+'@'+v).join(' ')")" \
+    && if [ -n "$SHARED_DEPS" ]; then npm install --omit=dev --no-audit --no-fund $SHARED_DEPS; fi
+
+WORKDIR /app
 COPY services/${SERVICE_DIR}/package*.json ./
 
 RUN npm pkg set "dependencies.@eduelderly/shared=file:/deps/shared" \
@@ -16,4 +28,7 @@ RUN npm pkg set "dependencies.@eduelderly/shared=file:/deps/shared" \
 
 COPY services/${SERVICE_DIR}/ .
 
-CMD ["nodemon", "src/index.js"]
+# Poll for changes: inotify events do not cross Docker bind mounts on Windows
+# or macOS, so without this the container silently keeps running old code after
+# an edit — the file is updated but nodemon never sees it.
+CMD ["nodemon", "--legacy-watch", "--polling-interval", "1000", "src/index.js"]

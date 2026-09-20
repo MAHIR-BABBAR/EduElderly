@@ -1,0 +1,633 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EduElderly Notification Service",
+    "version": "1.0.0",
+    "description": "Transactional email through Brevo plus an in-app inbox. Other services never talk to Brevo directly; they post to `/internal/send` with a template type and data, and this service renders branded, accessible HTML with a plain-text fallback.",
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1/notifications",
+      "description": "Through the API gateway"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Inbox",
+      "description": "In-app notifications for the signed-in learner"
+    },
+    {
+      "name": "Internal",
+      "description": "Service-to-service endpoints. Require the shared `X-Service-Key`; not routed by the gateway."
+    }
+  ],
+  "paths": {
+    "/me": {
+      "get": {
+        "tags": [
+          "Inbox"
+        ],
+        "summary": "List my notifications",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "notifications",
+                        "pagination"
+                      ],
+                      "properties": {
+                        "notifications": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Notification"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/me/{notificationId}/read": {
+      "patch": {
+        "tags": [
+          "Inbox"
+        ],
+        "summary": "Mark a notification as read",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "description": "Notification id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Notification"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/internal/send": {
+      "post": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Render a template and send it",
+        "description": "Template types and their required `templateData`: `otp` (otp), `email_verification` and `password_reset` (link), `enroll` (courseTitle), `completion` (courseTitle plus either certId+verifyUrl or quizzesRemaining), `welcome`, `quiz_result`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "description": "Also creates an in-app record when present"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "otp",
+                      "email_verification",
+                      "password_reset",
+                      "welcome",
+                      "enroll",
+                      "quiz_result",
+                      "completion"
+                    ]
+                  },
+                  "templateData": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "example": {
+                "userId": "0192b1d2-7c3e-7a1b-9f2e-1a2b3c4d5e6f",
+                "email": "margaret@example.com",
+                "type": "completion",
+                "templateData": {
+                  "name": "Margaret",
+                  "courseTitle": "Email Basics",
+                  "certId": "cert-1",
+                  "verifyUrl": "http://localhost:5173/verify-certificate?certId=cert-1"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sent inline (no queue configured)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SendResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Queued; a worker delivers it with up to 5 retries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SendResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://notification:3007",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    },
+    "/internal/queue/stats": {
+      "get": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Email queue counts (BullMQ)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QueueStats"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "http://notification:3007",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token from `POST /api/v1/auth/login`. The gateway validates it and forwards `X-User-Id` / `X-User-Role` to services."
+      },
+      "serviceKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Service-Key",
+        "description": "Shared secret (`INTERNAL_SERVICE_KEY`) injected by the gateway or another service."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "success",
+          "statusCode",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "statusCode": {
+            "type": "integer",
+            "example": 404
+          },
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "description": "Machine-readable error code from @eduelderly/shared ERROR_CODES",
+            "example": "E_NOT_FOUND"
+          },
+          "message": {
+            "type": "string",
+            "example": "Enrollment not found"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "example": 42
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 3
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0192b1d2-0000-7a1b-9f2e-000000000081"
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "otp",
+              "email_verification",
+              "password_reset",
+              "welcome",
+              "enroll",
+              "quiz_result",
+              "completion"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "in_app",
+              "both"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "example": "Certificate ready: Email Basics"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "sent",
+              "failed"
+            ]
+          },
+          "isRead": {
+            "type": "boolean"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-13T10:00:00.000Z",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-13T10:00:00.000Z"
+          }
+        }
+      },
+      "SendResult": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "sent",
+              "failed"
+            ]
+          }
+        }
+      },
+      "QueueStats": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "False when the service runs without Redis"
+          },
+          "name": {
+            "type": "string",
+            "example": "email"
+          },
+          "waiting": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "delayed": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request failed validation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 400,
+              "code": "E_VALIDATION",
+              "message": "courseId is required"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid credentials",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 401,
+              "code": "E_AUTH_INVALID",
+              "message": "No token provided"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Authenticated but not allowed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 403,
+              "code": "E_FORBIDDEN",
+              "message": "Admin access required"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 404,
+              "code": "E_NOT_FOUND",
+              "message": "Enrollment not found"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "State conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 409,
+              "code": "E_ALREADY_ENROLLED",
+              "message": "Already enrolled in this course"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 429,
+              "code": "E_RATE_LIMIT",
+              "message": "Too many requests, please try again later"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "A downstream dependency is unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 503,
+              "code": "E_SERVICE_UNAVAILABLE",
+              "message": "The requested service is temporarily unavailable"
+            }
+          }
+        }
+      }
+    }
+  }
+}

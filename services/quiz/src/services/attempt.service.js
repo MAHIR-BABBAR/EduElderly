@@ -1,6 +1,7 @@
 const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 const { Attempt } = require('../models/Attempt');
 const quizService = require('./quiz.service');
+const enrollmentClient = require('../clients/enrollmentClient');
 
 const countAttempts = async (quizId, userId) =>
   Attempt.countDocuments({ quizId, userId });
@@ -81,6 +82,12 @@ const submitAttempt = async (quizId, userId, answers) => {
       throw new AppError('Maximum attempts reached', 403, ERROR_CODES.E_MAX_ATTEMPTS);
     }
     throw error;
+  }
+
+  if (passed) {
+    enrollmentClient.triggerCertificateEligibility(userId, quiz.courseId).catch((err) => {
+      console.error('[quiz] certificate eligibility trigger failed:', err.message);
+    });
   }
 
   return { attempt, questionFeedback };

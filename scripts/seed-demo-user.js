@@ -1,250 +1,117 @@
 #!/usr/bin/env node
-
 /**
-
- * Create verified demo users for the sample site.
-
+ * Create (or refresh) verified demo accounts.
  *
-
  *   Learner: learner@demo.eduelderly / Demo1234!
-
- *   Admin:   admin@demo.eduelderly / Demo1234!
-
+ *   Admin:   admin@demo.eduelderly   / Demo1234!
+ *
+ * Writes directly to the auth and user databases so it works before any
+ * service is running. Idempotent: re-running resets passwords and roles.
  */
 
-
-
 const path = require('path');
-
 const mongoose = require('mongoose');
-
 const bcrypt = require('bcrypt');
-
 const dotenv = require('dotenv');
-
-
 
 dotenv.config({ path: path.join(__dirname, '..', 'services', 'auth', '.env') });
 
-
-
 const DEMO_USERS = [
-
   {
-
     email: 'learner@demo.eduelderly',
-
     password: 'Demo1234!',
-
-    name: 'Demo Learner',
-
+    name: 'Margaret Demo',
     userId: 'demo-learner-user-id',
-
     role: 'learner',
-
   },
-
   {
-
     email: 'admin@demo.eduelderly',
-
     password: 'Demo1234!',
-
     name: 'Demo Admin',
-
     userId: 'demo-admin-user-id',
-
     role: 'admin',
-
   },
-
 ];
 
-
-
 const AuthUserSchema = new mongoose.Schema({
-
   userId: String,
-
   name: String,
-
   email: String,
-
   passHash: String,
-
   role: String,
-
   isVerified: Boolean,
-
   isActive: Boolean,
-
   is2FAEnabled: Boolean,
-
   failedLoginAttempts: Number,
-
   lockedUntil: Date,
-
-});
-
-
+}, { timestamps: true });
 
 const UserProfileSchema = new mongoose.Schema({
-
   userId: String,
-
   name: String,
-
   email: String,
-
   role: String,
-
   isActive: Boolean,
-
-});
-
-
+  fontSizePref: String,
+  highContrast: Boolean,
+  lang: String,
+  totalXP: Number,
+  bio: String,
+}, { timestamps: true });
 
 const upsertDemoUser = async (AuthUser, UserProfile, demo) => {
-
   const passHash = await bcrypt.hash(demo.password, 10);
 
+  await AuthUser.updateOne(
+    { email: demo.email },
+    {
+      $set: {
+        userId: demo.userId,
+        name: demo.name,
+        email: demo.email,
+        passHash,
+        role: demo.role,
+        isVerified: true,
+        isActive: true,
+        is2FAEnabled: false,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      },
+    },
+    { upsert: true },
+  );
 
+  await UserProfile.updateOne(
+    { userId: demo.userId },
+    {
+      $set: { name: demo.name, email: demo.email, role: demo.role, isActive: true },
+      $setOnInsert: { fontSizePref: 'large', highContrast: false, lang: 'en', totalXP: 0, bio: '' },
+    },
+    { upsert: true },
+  );
 
-  let user = await AuthUser.findOne({ email: demo.email });
-
-  if (!user) {
-
-    user = await AuthUser.create({
-
-      userId: demo.userId,
-
-      name: demo.name,
-
-      email: demo.email,
-
-      passHash,
-
-      role: demo.role,
-
-      isVerified: true,
-
-      isActive: true,
-
-      is2FAEnabled: false,
-
-      failedLoginAttempts: 0,
-
-      lockedUntil: null,
-
-    });
-
-    console.log(`[demo-user] Created auth user: ${demo.email}`);
-
-  } else {
-
-    user.passHash = passHash;
-
-    user.role = demo.role;
-
-    user.isVerified = true;
-
-    user.isActive = true;
-
-    user.is2FAEnabled = false;
-
-    user.failedLoginAttempts = 0;
-
-    user.lockedUntil = null;
-
-    await user.save();
-
-    console.log(`[demo-user] Updated auth user: ${demo.email}`);
-
-  }
-
-
-
-  const profile = await UserProfile.findOne({ userId: user.userId });
-
-  if (!profile) {
-
-    await UserProfile.create({
-
-      userId: user.userId,
-
-      name: user.name,
-
-      email: user.email,
-
-      role: user.role,
-
-      isActive: true,
-
-    });
-
-    console.log(`[demo-user] Created profile: ${demo.email}`);
-
-  } else {
-
-    profile.role = demo.role;
-
-    await profile.save();
-
-    console.log(`[demo-user] Profile already exists: ${demo.email}`);
-
-  }
-
+  console.log(`[demo-user] ${demo.role.padEnd(7)} ${demo.email}`);
 };
-
-
 
 const run = async () => {
-
   const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017';
 
-
-
   await mongoose.connect(uri, { dbName: 'eduelderly-auth' });
-
   const AuthUser = mongoose.model('User', AuthUserSchema);
-
-
-
-  const userDb = mongoose.connection.useDb('eduelderly-user');
-
-  const UserProfile = userDb.model('UserProfile', UserProfileSchema);
-
-
+  const UserProfile = mongoose.connection.useDb('eduelderly-user').model('UserProfile', UserProfileSchema);
 
   for (const demo of DEMO_USERS) {
-
     await upsertDemoUser(AuthUser, UserProfile, demo);
-
   }
-
-
-
-  console.log('[demo-user] Ready for sample site:');
-
-  for (const demo of DEMO_USERS) {
-
-    console.log(`  ${demo.role}: ${demo.email} / ${demo.password}`);
-
-  }
-
-
 
   await mongoose.disconnect();
-
 };
 
+if (require.main === module) {
+  run().catch((err) => {
+    console.error('[demo-user] Failed:', err.message);
+    process.exit(1);
+  });
+}
 
-
-run().catch((err) => {
-
-  console.error('[demo-user] Failed:', err.message);
-
-  process.exit(1);
-
-});
-
+module.exports = { DEMO_USERS };

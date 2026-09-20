@@ -1,0 +1,193 @@
+/**
+ * EduElderly design tokens — "Sunroom" (docs/NEXT-GEN-PLAN.md §4).
+ *
+ * Warm paper surfaces, deep ink-teal, a marigold accent, and a colour "world"
+ * per course subject. Every colour pair here was contrast-checked against the
+ * surface it is used on (ratios in the plan); do not add colours elsewhere.
+ *
+ * Everything scales from --font-size-base, which the AccessibilityProvider
+ * drives from the learner's saved preference.
+ */
+:root {
+  /* ---- Paper & ink -------------------------------------------------------- */
+  --color-surface: #faf6ef;          /* paper */
+  --color-surface-raised: #fffdf9;   /* cards, sheets, inputs */
+  --color-surface-sunken: #f1eadf;   /* wells, table headers, skeleton base */
+  --color-text: #15242b;             /* 14.78:1 on paper */
+  --color-text-muted: #4f5f66;       /* 6.17:1 on paper, 5.56:1 on sunken */
+  --color-white: #ffffff;
+
+  --color-primary: #14505c;          /* 8.36:1 on paper; white on it 9.01:1 */
+  --color-primary-dark: #0c343d;
+  --color-primary-soft: #e2eef0;
+
+  --color-night: #0a2229;            /* hero band, lesson focus band, footer */
+  --color-on-night: #faf6ef;         /* 15.30:1 */
+  --color-on-night-muted: #b9cbd0;   /* 9.83:1 */
+  --color-hero-bg: var(--color-night);
+
+  --color-accent: #e9a23b;           /* marigold; ink on it 7.35:1, on night 7.61:1 */
+  --color-accent-ink: #8a5a0b;       /* accent-coloured TEXT on paper, 5.49:1 */
+  --color-accent-dark: var(--color-accent-ink); /* legacy alias */
+  --color-accent-soft: #fdf1dc;
+
+  --color-border: #e2d8c8;           /* decorative hairlines */
+  --color-border-strong: #8c7f69;    /* meaningful boundaries, 3.64:1 */
+
+  --color-danger: #a8261b;           /* 6.59:1 */
+  --color-danger-soft: #fcebe8;
+  --color-success: #23634a;          /* 6.60:1 */
+  --color-success-soft: #e3f0e8;
+  --color-warning: #8a5a0b;
+  --color-warning-soft: #fdf1dc;
+
+  /* ---- Subject worlds ------------------------------------------------------
+     Set `data-world="health|digital|life|money"` on any ancestor; components
+     read these four variables. :root carries the default (teal) world so
+     nothing breaks without an attribute. */
+  --world: #14505c;
+  --world-ink: #0c343d;
+  --world-soft: #e2eef0;
+  --world-gradient: linear-gradient(135deg, #0c343d 0%, #1f7a8c 100%);
+
+
+  --gradient-hero: linear-gradient(160deg, #0a2229 0%, #0c343d 55%, #14505c 100%);
+  --gradient-cta: linear-gradient(135deg, #fdf1dc 0%, #fbe4bd 100%);
+
+  /* ---- Type scale ------------------------------------------------------- */
+  --font-size-base: 18px;
+  --font-size-xs: calc(var(--font-size-base) * 0.78);
+  --font-size-sm: calc(var(--font-size-base) * 0.875);
+  --font-size-lg: calc(var(--font-size-base) * 1.125);
+  --font-size-xl: calc(var(--font-size-base) * 1.25);
+  --font-size-2xl: calc(var(--font-size-base) * 1.5);
+  --font-size-3xl: calc(var(--font-size-base) * 2);
+  --font-size-display: calc(var(--font-size-base) * 2.6);
+  --font-size-hero: clamp(
+    calc(var(--font-size-base) * 2.4),
+    calc(5.2vw + var(--font-size-base)),
+    calc(var(--font-size-base) * 4)
+  );
+
+  --line-height-body: 1.65;
+  --line-height-tight: 1.2;
+  --line-height-hero: 1.05;
+  --tracking-tight: -0.015em;
+  --tracking-hero: -0.025em;
+
+  /* ---- Space, shape, elevation ------------------------------------------ */
+  --space-section: 6rem;
+  --space-section-sm: 3.5rem;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+  --touch-min: 44px;
+  --touch-primary: 56px;
+  --content-max: 76rem;
+
+  /* Warm-tinted two-layer shadows. */
+  --shadow-card: 0 1px 2px rgba(60, 42, 20, 0.06), 0 8px 24px -8px rgba(60, 42, 20, 0.12);
+  --shadow-lift: 0 2px 4px rgba(60, 42, 20, 0.08), 0 20px 40px -12px rgba(60, 42, 20, 0.22);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  /* Paper grain, painted once on body::before at 3% opacity. */
+  --texture-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --texture-opacity: 0.03;
+
+  --focus-ring: 3px solid var(--color-accent-ink);
+  --focus-ring-on-night: 3px solid #ffd27a;
+
+  /* ---- Motion ----------------------------------------------------------- */
+  --motion-fast: 120ms;
+  --motion-calm: 200ms;     /* hard cap for everyday UI (DESIGN.md) */
+  --motion-spatial: 400ms;  /* user-initiated spatial moves only (DESIGN.md "Spatial tier") */
+  --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ---- Worlds ---------------------------------------------------------------- */
+[data-world='default'] {
+  --world: #14505c;
+  --world-ink: #0c343d;
+  --world-soft: #e2eef0;
+  --world-gradient: linear-gradient(135deg, #0c343d 0%, #1f7a8c 100%);
+}
+[data-world='health'] {
+  --world: #2f6b4f;
+  --world-ink: #1f4a36;
+  --world-soft: #e3f0e8;
+  --world-gradient: linear-gradient(135deg, #1f4a36 0%, #4e9c78 100%);
+}
+[data-world='digital'] {
+  --world: #2f4b8f;
+  --world-ink: #22386b;
+  --world-soft: #e6ebf7;
+  --world-gradient: linear-gradient(135deg, #22386b 0%, #5673bd 100%);
+}
+[data-world='life'] {
+  --world: #a4482b;
+  --world-ink: #7a3520;
+  --world-soft: #fbe9e2;
+  --world-gradient: linear-gradient(135deg, #7a3520 0%, #d0714f 100%);
+}
+[data-world='money'] {
+  --world: #6b3a6e;
+  --world-ink: #512b54;
+  --world-soft: #f3e6f4;
+  --world-gradient: linear-gradient(135deg, #512b54 0%, #9a5f9e 100%);
+}
+
+/* ---- High contrast — synced from the profile's highContrast flag ----------- */
+html[data-high-contrast='true'] {
+  --color-primary: #0a3d47;
+  --color-primary-dark: #062a31;
+  --color-primary-soft: #ffffff;
+  --color-text: #000000;
+  --color-text-muted: #1a1a1a;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #ffffff;
+  --color-border: #000000;
+  --color-border-strong: #000000;
+  --color-accent: #ffd27a;        /* ink on it 13:1; used for filled accent buttons */
+  --color-accent-ink: #6b4500;
+  --color-accent-soft: #ffffff;
+  --color-night: #000000;
+  --color-on-night: #ffffff;
+  --color-on-night-muted: #ffffff;
+  --shadow-card: 0 0 0 2px #000000;
+  --shadow-lift: 0 0 0 3px #000000;
+  --shadow-inset: none;
+  --gradient-cta: none;
+  --gradient-hero: linear-gradient(0deg, #000000, #000000); /* flat black band */
+  --texture-opacity: 0;
+  --focus-ring: 3px solid #000000;
+}
+html[data-high-contrast='true'] [data-world],
+html[data-high-contrast='true'] {
+  --world: #000000;
+  --world-ink: #000000;
+  --world-soft: #ffffff;
+  --world-gradient: none;
+}
+
+/* ---- Font size preference from the user profile --------------------------- */
+html[data-font-size='default'] { --font-size-base: 16px; }
+html[data-font-size='large']   { --font-size-base: 18px; }
+html[data-font-size='xl']      { --font-size-base: 20px; }
+html[data-font-size='huge']    { --font-size-base: 24px; }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --texture-opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -8,10 +8,15 @@ const {
 } = require('../utils/jwtHelper');
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
+// Scoped to the auth routes: the refresh token is only ever needed by
+// /refresh and /logout, so no other service should receive it.
+const REFRESH_COOKIE_PATH = process.env.REFRESH_COOKIE_PATH || '/api/v1/auth';
+
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',
+  path: REFRESH_COOKIE_PATH,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -50,15 +55,15 @@ const issueAuthSession = async (req, res, user, { message = 'Login successful', 
 
 const rotateRefreshSession = async (req, res, user, rawToken) => {
   const tokenHash = hashRefreshToken(rawToken);
-  const storedToken = await RefreshToken.findOne({ tokenHash, userId: user.userId });
+  // Find-and-delete in one step: two concurrent refreshes with the same token
+  // cannot both succeed, so the token family cannot fork (SEC-4).
+  const storedToken = await RefreshToken.findOneAndDelete({ tokenHash, userId: user.userId });
 
   if (!storedToken) {
     console.warn(`[SECURITY] Refresh token reuse detected for userId: ${user.userId}`);
     await RefreshToken.deleteMany({ userId: user.userId });
     throw new AppError('Session expired. Please log in again.', 401, ERROR_CODES.E_AUTH_REFRESH_INVALID);
   }
-
-  await storedToken.deleteOne();
 
   const { rawToken: newRaw, tokenHash: newHash } = signRefreshToken(user.userId);
   await persistRefreshToken(req, user.userId, newHash);
@@ -100,6 +105,7 @@ const clearRefreshCookie = (res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
+    path: REFRESH_COOKIE_PATH,
   });
 };
 

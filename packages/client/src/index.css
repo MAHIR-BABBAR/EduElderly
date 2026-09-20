@@ -1,0 +1,224 @@
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: var(--font-size-base);
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-brand-surface text-brand-text font-sans antialiased;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-body);
+    position: relative;
+  }
+
+  /* Paper grain (SIG-1). Fixed, non-interactive, removed in high contrast and
+     under prefers-reduced-transparency via --texture-opacity. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: var(--texture-grain);
+    opacity: var(--texture-opacity);
+  }
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* One visible focus treatment everywhere, thick enough to find at a glance. */
+  :focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-brand-primary-dark;
+    line-height: var(--line-height-tight);
+    font-optical-sizing: auto;
+  }
+
+  /* One italic accent word per headline (SIG-3). Decorative emphasis only. */
+  .accent-word {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--color-accent-ink);
+  }
+  .on-night .accent-word,
+  .on-night.accent-word {
+    color: var(--color-accent);
+  }
+
+  /* Anything placed on the night surface: paper text and a brighter ring. */
+  .on-night {
+    color: var(--color-on-night);
+  }
+  .on-night h1,
+  .on-night h2,
+  .on-night h3 {
+    color: var(--color-on-night);
+  }
+  .on-night :focus-visible {
+    outline: var(--focus-ring-on-night);
+  }
+
+  /* Big numerals line up. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1 { @apply text-2xl; }
+  h2 { @apply text-xl; }
+  h3 { @apply text-lg; }
+
+  /* Long-form copy gets a comfortable measure; 65 characters is the readable
+     line length the accessibility guidance in DESIGN.md asks for. */
+  p { max-width: 68ch; }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-primary-dark);
+  }
+}
+
+@layer components {
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]
+      focus:rounded-lg focus:bg-brand-primary focus:px-5 focus:py-3 focus:text-white focus:shadow-lift;
+  }
+
+  .page-container {
+    @apply mx-auto w-full max-w-content px-4 py-8 sm:px-6 lg:px-8;
+  }
+
+  .card-surface {
+    @apply rounded-lg border border-brand-border bg-brand-surface-raised p-6 shadow-card;
+  }
+
+  .btn-touch {
+    min-height: var(--touch-min);
+    min-width: var(--touch-min);
+  }
+
+  /* Lesson reading view: larger type, generous spacing, capped measure. */
+  .prose-lesson {
+    @apply text-lg leading-relaxed text-brand-text;
+  }
+  .prose-lesson > * + * {
+    @apply mt-4;
+  }
+
+  .course-cover.has-image .cover-initial {
+    display: none;
+  }
+
+  /* SkyBand in high contrast: flat black, no gradient, no sun. */
+  html[data-high-contrast='true'] .sky-band :is(.sky-gradient, .sky-disc, .sky-scrim) {
+    display: none;
+  }
+
+  /* CourseCover in high contrast: no photo, no gradient, black on white. */
+  html[data-high-contrast='true'] .course-cover {
+    background: #ffffff;
+    border: 2px solid #000000;
+  }
+  html[data-high-contrast='true'] .course-cover :is(.cover-photo, .cover-duotone, .cover-pattern) {
+    display: none;
+  }
+  html[data-high-contrast='true'] .course-cover .cover-initial {
+    display: block;
+    color: #000000;
+    opacity: 1;
+  }
+  html[data-high-contrast='true'] .course-cover .cover-scrim {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  /* Interactive card: lift on hover (pointer devices only), photo zooms inside
+     its clipped frame. Calm tier. */
+  .card-lift {
+    @apply transition-[transform,box-shadow] duration-calm;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .card-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lift);
+    }
+    .card-lift:hover .cover-photo {
+      transform: scale(1.03);
+    }
+  }
+  .cover-photo {
+    @apply transition-transform duration-calm;
+  }
+
+  /* Pointer spotlight painted from --mx/--my (set by useSpotlight). */
+  .spotlight {
+    --mx: 50%;
+    --my: 50%;
+  }
+  .spotlight::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: radial-gradient(
+      420px circle at var(--mx) var(--my),
+      rgba(233, 162, 59, 0.16),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity var(--motion-calm) var(--motion-ease);
+  }
+  .spotlight:hover::after {
+    opacity: 1;
+  }
+
+  /* Admin console tables: one recipe for every admin page. */
+  .admin-console table {
+    @apply w-full border-separate border-spacing-0 overflow-hidden rounded-lg border border-brand-border bg-brand-surface-raised text-left;
+  }
+  .admin-console thead th {
+    @apply bg-brand-surface-sunken px-4 py-3 text-sm font-semibold uppercase tracking-[0.06em] text-brand-muted;
+  }
+  .admin-console tbody td {
+    @apply border-t border-brand-border px-4 py-3 align-middle;
+    min-height: var(--touch-min);
+  }
+  .admin-console tbody tr:hover td {
+    background: var(--color-primary-soft);
+  }
+  .admin-console .card-surface {
+    @apply shadow-card;
+  }
+  /* A wide table scrolls inside its card instead of being clipped. */
+  .admin-console :is(.card-surface, .overflow-hidden):has(> table, > div > table) {
+    overflow-x: auto;
+  }
+
+  /* Decorative divider used between marketing bands. */
+  .rule-soft {
+    @apply h-px w-full border-0 bg-brand-border;
+  }
+}
+
+@layer utilities {
+  /* Horizontal scroll container that never pushes the page wide. */
+  .scroll-x {
+    @apply overflow-x-auto;
+    scrollbar-width: thin;
+  }
+}

@@ -1,11 +1,13 @@
-const { AppError, ERROR_CODES } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, isQueueEnabled } = require('@eduelderly/shared');
 const {
   NOTIFICATION_CHANNEL,
   NOTIFICATION_STATUS,
+  SECRET_NOTIFICATION_TYPES,
 } = require('@eduelderly/shared/constants/notificationTypes');
 const { Notification } = require('../models/Notification');
-const { sendTransactionalEmail } = require('../clients/brevoClient');
 const { renderEmail } = require('../templates');
+const { deliverNotification } = require('./delivery.service');
+const { enqueueEmail } = require('../queue/emailQueue');
 
 const IN_APP_CHANNELS = [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.BOTH];
 
@@ -20,15 +22,21 @@ const sendNotification = async ({ userId, email, type, templateData = {} }) => {
     throw new AppError('email or userId is required', 400, ERROR_CODES.E_VALIDATION);
   }
 
-  const channel = resolveChannel(userId, email);
-  const { subject, htmlContent, textContent } = renderEmail(type, templateData);
+  const secret = SECRET_NOTIFICATION_TYPES.includes(type);
+  if (secret && !email) {
+    throw new AppError('email is required for this notification type', 400, ERROR_CODES.E_VALIDATION);
+  }
+  // A code or reset link is delivered to the inbox only; it is never listed
+  // in the in-app feed, and it is not tied to the user record at all.
+  const channel = secret ? NOTIFICATION_CHANNEL.EMAIL : resolveChannel(userId, email);
+  const { subject, textContent } = renderEmail(type, templateData);
 
   const notification = await Notification.create({
-    userId: userId || null,
+    userId: secret ? null : userId || null,
     type,
     channel,
     subject,
-    body: textContent,
+    body: secret ? '[sent by email]' : textContent,
     payload: { email, templateData },
     status: NOTIFICATION_STATUS.PENDING,
   });
@@ -36,33 +44,27 @@ const sendNotification = async ({ userId, email, type, templateData = {} }) => {
   const sendsEmail = channel === NOTIFICATION_CHANNEL.EMAIL
     || channel === NOTIFICATION_CHANNEL.BOTH;
 
-  if (sendsEmail) {
-    if (!email) {
-      throw new AppError('email is required for email notifications', 400, ERROR_CODES.E_VALIDATION);
-    }
-
-    try {
-      await sendTransactionalEmail({
-        to: email,
-        subject,
-        htmlContent,
-        textContent,
-      });
-      notification.status = NOTIFICATION_STATUS.SENT;
-      notification.sentAt = new Date();
-    } catch (error) {
-      notification.status = NOTIFICATION_STATUS.FAILED;
-      notification.error = error.message;
-      await notification.save();
-      throw error;
-    }
-  } else {
+  if (!sendsEmail) {
     notification.status = NOTIFICATION_STATUS.SENT;
     notification.sentAt = new Date();
+    await notification.save();
+    return notification;
   }
 
-  await notification.save();
-  return notification;
+  if (!email) {
+    throw new AppError('email is required for email notifications', 400, ERROR_CODES.E_VALIDATION);
+  }
+
+  // With Redis configured the email is delivered by a worker with retries and
+  // the caller gets an immediate 202. Without it, deliver inline so the service
+  // still works on a laptop with nothing but Mongo.
+  if (isQueueEnabled()) {
+    await enqueueEmail(notification.notificationId);
+    return notification;
+  }
+
+  await deliverNotification(notification.notificationId, { attempt: 1, maxAttempts: 1 });
+  return (await Notification.findOne({ notificationId: notification.notificationId })) ?? notification;
 };
 
 const listForUser = async (userId, { page = 1, limit = 20 } = {}) => {

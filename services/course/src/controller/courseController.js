@@ -8,19 +8,27 @@ const { AUDIT_ACTION } = require('@eduelderly/shared/constants/auditActions');
 const courseService = require('../services/course.service');
 const adminClient = require('../clients/adminClient');
 
+const plain = (doc) => (doc && typeof doc.toObject === 'function' ? doc.toObject() : doc);
+
 const mapPublicCourseDetail = ({ course, modules, totalTopics }) => {
+  const courseObj = plain(course);
   const publicModules = modules.map((mod) => toPublicModuleDTO(mod, mod.topics || []));
   return {
     ...toPublicCourseDTO(
-      { ...course.toObject(), moduleCount: course.moduleIds.length },
+      { ...courseObj, moduleCount: (courseObj.moduleIds || []).length },
       { totalTopics },
     ),
     modules: publicModules,
   };
 };
 
+const setCacheHeader = (res, hit) => {
+  if (hit !== undefined) res.setHeader('X-Cache', hit ? 'HIT' : 'MISS');
+};
+
 const listCourses = catchAsync(async (req, res) => {
-  const { courses, pagination } = await courseService.listPublishedCourses(req.query);
+  const { courses, pagination, cacheHit } = await courseService.listPublishedCourses(req.query);
+  setCacheHeader(res, cacheHit);
   res.status(200).json({
     success: true,
     data: {
@@ -42,10 +50,11 @@ const listAdminCourses = catchAsync(async (req, res) => {
 });
 
 const getCourse = catchAsync(async (req, res) => {
-  const { course, modules, totalTopics } = await courseService.getCourseDetail(
+  const { course, modules, totalTopics, cacheHit } = await courseService.getCourseDetail(
     req.params.courseId,
     { publishedOnly: true },
   );
+  setCacheHeader(res, cacheHit);
   res.status(200).json({
     success: true,
     data: mapPublicCourseDetail({ course, modules, totalTopics }),

@@ -42,17 +42,17 @@ const internalRequest = async (path, { method = 'GET', body } = {}) => {
 };
 
 const getCourse = async (courseId) => {
-  const result = await internalRequest(`/internal/courses/${courseId}`);
+  const result = await internalRequest(`/internal/courses/${encodeURIComponent(courseId)}`);
   return result.data;
 };
 
 const getCourseStats = async (courseId) => {
-  const result = await internalRequest(`/internal/courses/${courseId}/stats`);
+  const result = await internalRequest(`/internal/courses/${encodeURIComponent(courseId)}/stats`);
   return result.data;
 };
 
 const getTopic = async (topicId) => {
-  const result = await internalRequest(`/internal/topics/${topicId}`);
+  const result = await internalRequest(`/internal/topics/${encodeURIComponent(topicId)}`);
   return result.data;
 };
 

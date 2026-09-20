@@ -1,7 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, assertRequiredEnv, requestId } = require('@eduelderly/shared');
+const { AppError, ERROR_CODES, globalErrorHandler, requireGateway, requireInternalAuth, assertRequiredEnv, requestId, mountDocs} = require('@eduelderly/shared');
+const openApiSpec = require('./docs/openapi');
 const internalRoutes = require('./routes/internalRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 
@@ -27,6 +28,10 @@ const createApp = () => {
     });
   });
 
+  // API docs are public documentation; mounted before gateway trust so they
+  // open directly on the service port during host development.
+  mountDocs(app, openApiSpec);
+
   app.use(requireGateway);
   app.use(requestId);
 
@@ -44,7 +49,7 @@ const createApp = () => {
     next();
   });
 
-  app.use('/internal', internalRoutes);
+  app.use('/internal', requireInternalAuth, internalRoutes);
   app.use('/', profileRoutes);
 
   // 404 handler

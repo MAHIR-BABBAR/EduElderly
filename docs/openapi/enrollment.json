@@ -1,0 +1,1221 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EduElderly Enrollment Service",
+    "version": "1.0.0",
+    "description": "Enrollment, lesson progress, XP awards, resume position, and the enrolled-only content gate. Owns the course-completion decision: a certificate is issued only when every lesson is done and every course quiz is passed.",
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1/enrollments",
+      "description": "Through the API gateway"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Enrollment",
+      "description": "Enroll, list, drop"
+    },
+    {
+      "name": "Learning",
+      "description": "Progress, resume, lesson content"
+    },
+    {
+      "name": "Internal",
+      "description": "Service-to-service endpoints. Require the shared `X-Service-Key`; not routed by the gateway."
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Enrollment"
+        ],
+        "summary": "Enroll in a course",
+        "description": "Free courses create the enrollment immediately (201). Paid courses create a pending order in the payment service and return 202 with a checkout URL; the enrollment is created when the payment is confirmed.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "courseId"
+                ],
+                "properties": {
+                  "courseId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Enrolled (free course)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Enrollment"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "requiresPayment": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "checkout": {
+                          "$ref": "#/components/schemas/Checkout"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Enrollment"
+        ],
+        "summary": "List my enrollments with course summaries",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Items per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "enrollments",
+                        "pagination"
+                      ],
+                      "properties": {
+                        "enrollments": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/EnrollmentWithCourse"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/{enrollmentId}": {
+      "get": {
+        "tags": [
+          "Enrollment"
+        ],
+        "summary": "Get an enrollment with course summary and resume position",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollmentId",
+            "in": "path",
+            "required": true,
+            "description": "Enrollment id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EnrollmentDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Enrollment"
+        ],
+        "summary": "Drop an enrollment (soft)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollmentId",
+            "in": "path",
+            "required": true,
+            "description": "Enrollment id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Enrollment"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/{enrollmentId}/resume": {
+      "get": {
+        "tags": [
+          "Learning"
+        ],
+        "summary": "Where to continue",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollmentId",
+            "in": "path",
+            "required": true,
+            "description": "Enrollment id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EnrollmentDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/{enrollmentId}/progress": {
+      "patch": {
+        "tags": [
+          "Learning"
+        ],
+        "summary": "Mark a topic complete",
+        "description": "Idempotent per topic. Awards topic XP once, recomputes module and course progress, and at 100 percent marks the enrollment completed, awards course XP once, and runs the certificate eligibility check.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollmentId",
+            "in": "path",
+            "required": true,
+            "description": "Enrollment id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "topicId"
+                ],
+                "properties": {
+                  "topicId": {
+                    "type": "string"
+                  },
+                  "timeSpentMinutes": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              },
+              "example": {
+                "topicId": "0192b1d2-0000-7a1b-9f2e-000000000031",
+                "timeSpentMinutes": 7
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Enrollment"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/{enrollmentId}/topics/{topicId}/content": {
+      "get": {
+        "tags": [
+          "Learning"
+        ],
+        "summary": "Content gate: fetch a lesson URL",
+        "description": "The only place a topic `contentUrl` is served. Requires an active or completed enrollment on that course.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollmentId",
+            "in": "path",
+            "required": true,
+            "description": "Enrollment id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "topicId",
+            "in": "path",
+            "required": true,
+            "description": "Topic id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TopicContent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/internal/enroll": {
+      "post": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Create an enrollment after a confirmed payment",
+        "description": "Idempotent: returns the existing active enrollment if one exists.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userId",
+                  "courseId"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  },
+                  "courseId": {
+                    "type": "string"
+                  },
+                  "paymentRef": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Enrollment"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://enrollment:3004",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    },
+    "/internal/users/{userId}/courses/{courseId}": {
+      "get": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Look up an active or completed enrollment (quiz access check)",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "User id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "description": "Course id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Enrollment",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "http://enrollment:3004",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    },
+    "/internal/certificate-eligibility": {
+      "post": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Re-run the certificate eligibility check (called by quiz after a pass)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userId",
+                  "courseId"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  },
+                  "courseId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CertificateEligibility"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "http://enrollment:3004",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    },
+    "/internal/stats": {
+      "get": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Enrollment counts for the admin dashboard",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalEnrollments": {
+                          "type": "integer"
+                        },
+                        "activeEnrollments": {
+                          "type": "integer"
+                        },
+                        "completedEnrollments": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "http://enrollment:3004",
+            "description": "Docker network only (not via gateway)"
+          }
+        ],
+        "security": [
+          {
+            "serviceKey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token from `POST /api/v1/auth/login`. The gateway validates it and forwards `X-User-Id` / `X-User-Role` to services."
+      },
+      "serviceKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Service-Key",
+        "description": "Shared secret (`INTERNAL_SERVICE_KEY`) injected by the gateway or another service."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "success",
+          "statusCode",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "statusCode": {
+            "type": "integer",
+            "example": 404
+          },
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "description": "Machine-readable error code from @eduelderly/shared ERROR_CODES",
+            "example": "E_NOT_FOUND"
+          },
+          "message": {
+            "type": "string",
+            "example": "Enrollment not found"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "example": 42
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 3
+          }
+        }
+      },
+      "Enrollment": {
+        "type": "object",
+        "properties": {
+          "enrollmentId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0192b1d2-0000-7a1b-9f2e-000000000041"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "courseId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "dropped"
+            ]
+          },
+          "progressPercent": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 50
+          },
+          "completedModules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "completedTopics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "currentModuleId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentLessonId": {
+            "type": "string",
+            "nullable": true
+          },
+          "enrolledAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-13T10:00:00.000Z"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-13T10:00:00.000Z",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-13T10:00:00.000Z",
+            "nullable": true
+          },
+          "certificateIssued": {
+            "type": "boolean"
+          },
+          "certificateId": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastAccessedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-13T10:00:00.000Z",
+            "nullable": true
+          },
+          "totalTimeSpentMinutes": {
+            "type": "integer"
+          }
+        }
+      },
+      "CourseSummary": {
+        "type": "object",
+        "description": "Merged from the course service per request; never duplicated in the enrollment database.",
+        "properties": {
+          "courseId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "instructorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Drives the subject colour world in the client."
+          },
+          "topicCount": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Total lessons, so screens can say \"2 of 5 lessons\"."
+          },
+          "estimatedHours": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "EnrollmentWithCourse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Enrollment"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "course": {
+                "$ref": "#/components/schemas/CourseSummary"
+              }
+            }
+          }
+        ]
+      },
+      "EnrollmentDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EnrollmentWithCourse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "nextTopicId": {
+                "type": "string",
+                "nullable": true,
+                "description": "First incomplete topic in curriculum order"
+              }
+            }
+          }
+        ]
+      },
+      "Checkout": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "checkoutUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "TopicContent": {
+        "type": "object",
+        "properties": {
+          "topicId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "video",
+              "article",
+              "pdf",
+              "audio"
+            ]
+          },
+          "contentUrl": {
+            "type": "string",
+            "description": "Only returned to enrolled learners"
+          },
+          "durationMinutes": {
+            "type": "integer"
+          }
+        }
+      },
+      "CertificateEligibility": {
+        "type": "object",
+        "properties": {
+          "issued": {
+            "type": "boolean"
+          },
+          "certId": {
+            "type": "string"
+          },
+          "alreadyIssued": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "not_completed",
+              "quizzes_incomplete",
+              "issue_failed"
+            ]
+          },
+          "eligibility": {
+            "type": "object",
+            "properties": {
+              "allPassed": {
+                "type": "boolean"
+              },
+              "totalQuizzes": {
+                "type": "integer"
+              },
+              "passedCount": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request failed validation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 400,
+              "code": "E_VALIDATION",
+              "message": "courseId is required"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid credentials",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 401,
+              "code": "E_AUTH_INVALID",
+              "message": "No token provided"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Authenticated but not allowed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 403,
+              "code": "E_FORBIDDEN",
+              "message": "Admin access required"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 404,
+              "code": "E_NOT_FOUND",
+              "message": "Enrollment not found"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "State conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 409,
+              "code": "E_ALREADY_ENROLLED",
+              "message": "Already enrolled in this course"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 429,
+              "code": "E_RATE_LIMIT",
+              "message": "Too many requests, please try again later"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "A downstream dependency is unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "statusCode": 503,
+              "code": "E_SERVICE_UNAVAILABLE",
+              "message": "The requested service is temporarily unavailable"
+            }
+          }
+        }
+      }
+    }
+  }
+}
