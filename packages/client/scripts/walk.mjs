@@ -63,6 +63,8 @@ async function applyPrefs() {
 }
 
 async function login(creds) {
+  // A signed-in visitor is bounced away from /login, so drop the session first.
+  await context.clearCookies();
   await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
   await page.getByLabel('Email address').fill(creds.email);
   await page.getByLabel('Password').fill(creds.password);

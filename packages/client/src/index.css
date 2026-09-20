@@ -119,6 +119,15 @@
     @apply mt-4;
   }
 
+  .course-cover.has-image .cover-initial {
+    display: none;
+  }
+
+  /* SkyBand in high contrast: flat black, no gradient, no sun. */
+  html[data-high-contrast='true'] .sky-band :is(.sky-gradient, .sky-disc, .sky-scrim) {
+    display: none;
+  }
+
   /* CourseCover in high contrast: no photo, no gradient, black on white. */
   html[data-high-contrast='true'] .course-cover {
     background: #ffffff;
@@ -128,6 +137,7 @@
     display: none;
   }
   html[data-high-contrast='true'] .course-cover .cover-initial {
+    display: block;
     color: #000000;
     opacity: 1;
   }
