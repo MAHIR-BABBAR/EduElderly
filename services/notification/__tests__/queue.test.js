@@ -13,7 +13,9 @@ jest.mock('../src/clients/brevoClient', () => ({
 const REDIS_URL = process.env.TEST_REDIS_URL || process.env.REDIS_URL;
 const describeIfRedis = REDIS_URL ? describe : describe.skip;
 
-const waitFor = async (predicate, { timeoutMs = 15000, intervalMs = 100 } = {}) => {
+// In the full suite the worker's first pick-up has been observed to take
+// ~15s (instant when this file runs alone), so the wait is generous.
+const waitFor = async (predicate, { timeoutMs = 45000, intervalMs = 100 } = {}) => {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const value = await predicate();
@@ -28,14 +30,21 @@ describeIfRedis('Email queue (BullMQ)', () => {
   let worker;
   let closeQueues;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     process.env.REDIS_URL = REDIS_URL;
     process.env.QUEUE_ENABLED = 'true';
+    // A prefix unique to this run: nothing else on the shared Redis (another
+    // test file, a previous run's leftovers, a live worker) can take the job.
+    process.env.QUEUE_PREFIX = `test-notification-${Date.now()}`;
     ({ closeQueues } = require('@eduelderly/shared'));
     const { createApp } = require('../src/index');
     const { startEmailWorker } = require('../src/queue/emailQueue');
     app = createApp();
     worker = startEmailWorker();
+    // Do not send the job until the worker is actually connected and
+    // listening; otherwise a slow connect leaves the job to be processed
+    // after this file has finished, during another file's cleanup.
+    await worker.waitUntilReady();
   });
 
   afterAll(async () => {
@@ -66,7 +75,7 @@ describeIfRedis('Email queue (BullMQ)', () => {
 
     expect(delivered.sentAt).toBeTruthy();
     expect(delivered.attempts).toBe(1);
-  }, 20000);
+  }, 60000);
 
   it('exposes queue counts on the internal stats route', async () => {
     const res = await request(app)

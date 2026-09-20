@@ -120,6 +120,7 @@ export function AccountMenu() {
           ref={menuRef}
           role="menu"
           aria-label="Account"
+          tabIndex={-1}
           onKeyDown={onMenuKeyDown}
           className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 rounded-lg border border-brand-border bg-brand-surface-raised p-2 shadow-lift"
         >

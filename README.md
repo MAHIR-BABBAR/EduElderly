@@ -7,6 +7,20 @@
 
 An accessible e-learning platform designed with an **elderly-first** approach, built as a microservices monorepo using Node.js, Express, MongoDB, and React.
 
+## What it looks like
+
+A warm, editorial interface built for readers over 60: paper surfaces, a colour "world" per subject, illustrated course covers, large type that scales with a one-tap control, and every screen checked at the largest text size, in high contrast and under reduced motion.
+
+| Before | After |
+|---|---|
+| ![Dashboard before](docs/screenshots/before/ui-dashboard.png) | ![Dashboard after](docs/screenshots/after/dashboard.png) |
+| ![Catalog before](docs/screenshots/before/ui-catalog.png) | ![Catalog after](docs/screenshots/after/catalog.png) |
+| ![Quiz before](docs/screenshots/before/ui-quiz.png) | ![Quiz after](docs/screenshots/after/quiz.png) |
+
+Every route, at desktop and phone width: [`docs/screenshots/after/`](docs/screenshots/after/). Design decisions: [`DESIGN.md`](DESIGN.md); the implementation plan and security review: [`docs/NEXT-GEN-PLAN.md`](docs/NEXT-GEN-PLAN.md).
+
+To reproduce the screenshots (and the accessibility gate behind them): `npm run walk -w packages/client` walks every route as the demo learner and admin, asserts one `h1` per page, scans each with axe-core, and fails on console errors or serious violations.
+
 ## Architecture Overview
 
 EduElderly uses a **microservices architecture** with an API Gateway as the single entry point. Services communicate over REST with internal service authentication (`X-Service-Key`).
