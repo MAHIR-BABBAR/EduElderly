@@ -149,7 +149,7 @@ html[data-high-contrast='true'] {
   --color-surface-sunken: #ffffff;
   --color-border: #000000;
   --color-border-strong: #000000;
-  --color-accent: #8a5a00;
+  --color-accent: #ffd27a;        /* ink on it 13:1; used for filled accent buttons */
   --color-accent-ink: #6b4500;
   --color-accent-soft: #ffffff;
   --color-night: #000000;

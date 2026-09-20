@@ -47,6 +47,7 @@ export function CourseCover({
       style={{ aspectRatio: ratio, containerType: 'size' }}
       className={cn(
         'course-cover relative w-full overflow-hidden rounded-xl border border-brand-border bg-world-gradient',
+        showImage && 'has-image',
         className,
       )}
     >
@@ -76,14 +77,16 @@ export function CourseCover({
               <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="white" strokeWidth="0.6" />
             ))}
           </svg>
-          <span
-            className="cover-initial absolute -bottom-[10%] -right-[2%] select-none font-display leading-none text-white opacity-25"
-            style={{ fontSize: 'min(45cqh, 12rem)' }}
-          >
-            {initial}
-          </span>
         </div>
       )}
+      {/* The initial is the whole cover in high contrast, and the fallback art otherwise. */}
+      <span
+        aria-hidden="true"
+        className="cover-initial absolute -bottom-[10%] -right-[2%] select-none font-display leading-none text-white opacity-25"
+        style={{ fontSize: 'min(45cqh, 12rem)' }}
+      >
+        {initial}
+      </span>
 
       {children && (
         <div className="cover-scrim absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-brand-night/75 via-brand-night/25 to-transparent p-4 text-brand-on-night">
