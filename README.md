@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/MAHIR-BABBAR/EduElderly/actions/workflows/ci.yml/badge.svg)](https://github.com/MAHIR-BABBAR/EduElderly/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/MAHIR-BABBAR/EduElderly/branch/main/graph/badge.svg)](https://codecov.io/gh/MAHIR-BABBAR/EduElderly)
-![Node 20](https://img.shields.io/badge/node-20-339933?logo=node.js&logoColor=white)
+![Node 24](https://img.shields.io/badge/node-24-339933?logo=node.js&logoColor=white)
 ![License ISC](https://img.shields.io/badge/license-ISC-blue)
 
 An accessible e-learning platform designed with an **elderly-first** approach, built as a microservices monorepo using Node.js, Express, MongoDB, and React.
@@ -118,7 +118,7 @@ EduElderly/
 
 ## Prerequisites
 
-- **Node.js** >= 18
+- **Node.js** >= 20 (24 LTS recommended; CI and Docker use 24)
 - **npm** >= 8 (workspace support)
 - **Docker** & **Docker Compose** (recommended)
 - **MongoDB** 7.x and **Redis** 7.x (included in Docker Compose)
@@ -464,7 +464,7 @@ Production posture:
 
 ## Tech stack
 
-- **Runtime**: Node.js 20 (Alpine in Docker)
+- **Runtime**: Node.js 24 LTS (Alpine in Docker)
 - **Framework**: Express 5
 - **Database**: MongoDB 7 (Mongoose)
 - **Cache**: Redis 7 (OTP / rate-style limits)
