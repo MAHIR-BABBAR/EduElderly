@@ -1,6 +1,6 @@
 # Monorepo dev image — build with: docker compose build <service>
 # Requires build-arg SERVICE_DIR (e.g. enrollment, course, gateway)
-FROM node:20-alpine
+FROM node:24-alpine
 
 ARG SERVICE_DIR
 
