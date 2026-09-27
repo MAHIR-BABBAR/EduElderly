@@ -22,6 +22,9 @@ beforeAll(async () => {
   }
 
   await mongoose.connect(TEST_DB_URI, { dbName: 'eduelderly-course-test' });
+  // Mongoose builds indexes in the background; the catalog search test needs
+  // the text index to exist before the first $text query runs.
+  await Promise.all(Object.values(mongoose.models).map((model) => model.init()));
 }, 30000);
 
 afterAll(async () => {
