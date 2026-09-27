@@ -11,12 +11,14 @@ process.env.USER_SERVICE_URL = 'http://user:3002';
 process.env.PAYMENT_SERVICE_URL = 'http://payment:3006';
 process.env.NOTIFICATION_SERVICE_URL = 'http://notification:3007';
 process.env.CERTIFICATE_SERVICE_URL = 'http://certificate:3009';
+process.env.QUIZ_SERVICE_URL = 'http://quiz:3005';
 
 jest.mock('../src/clients/courseClient');
 jest.mock('../src/clients/userClient');
 jest.mock('../src/clients/paymentClient');
 jest.mock('../src/clients/notificationClient');
 jest.mock('../src/clients/certificateClient');
+jest.mock('../src/clients/quizClient');
 
 jest.mock('uuid', () => ({
   v7: jest.fn(() => `mocked-uuid-${Math.random().toString(36).substring(7)}`),

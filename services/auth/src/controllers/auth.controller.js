@@ -1,4 +1,4 @@
-const { catchAsync, extractUser, createLogger } = require('@eduelderly/shared');
+const { catchAsync, createLogger } = require('@eduelderly/shared');
 const {
   registerUser,
   verifyEmailWithToken,
@@ -41,7 +41,8 @@ const register = catchAsync(async (req, res) => {
 });
 
 const verifyEmail = catchAsync(async (req, res) => {
-  const { user, alreadyVerified } = await verifyEmailWithToken(req.query.token);
+  // Body is preferred so the token does not sit in server logs and referers.
+  const { user, alreadyVerified } = await verifyEmailWithToken(req.body?.token || req.query.token);
 
   res.status(200).json({
     success: true,
@@ -65,13 +66,14 @@ const resendVerificationEmailHandler = catchAsync(async (req, res) => {
 
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-  const { user, requiresOtp } = await authenticateCredentials(email, password);
+  const { user, requiresOtp, otpToken } = await authenticateCredentials(email, password);
 
   if (requiresOtp) {
     return res.status(200).json({
       success: true,
       message: 'OTP sent to your email. Please verify to complete login.',
       requiresOtp: true,
+      otpToken,
     });
   }
 
@@ -80,13 +82,13 @@ const login = catchAsync(async (req, res) => {
 });
 
 const verifyOtpHandler = catchAsync(async (req, res) => {
-  const { email, otp, type } = req.body;
-  const user = await verifyLoginOtp(email, otp, type);
+  const { email, otp, type, otpToken } = req.body;
+  const user = await verifyLoginOtp(email, otp, type || 'login', otpToken);
   await issueAuthSession(req, res, user, { message: 'Login successful' });
 });
 
 const resendOtp = catchAsync(async (req, res) => {
-  await resendLoginOtp(req.body.email, req.body.type);
+  await resendLoginOtp(req.body.email, req.body.type || 'login', req.body.otpToken);
 
   res.status(200).json({
     success: true,

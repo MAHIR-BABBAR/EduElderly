@@ -1,6 +1,7 @@
 const { AppError, ERROR_CODES, catchAsync } = require('@eduelderly/shared');
 const { VALID_TYPES } = require('../templates');
 const notificationService = require('../services/notification.service');
+const { getEmailQueueStats } = require('../queue/emailQueue');
 
 const sendInternalEmail = catchAsync(async (req, res) => {
   const { userId, email, type, templateData } = req.body;
@@ -36,11 +37,16 @@ const sendInternalEmail = catchAsync(async (req, res) => {
     templateData,
   });
 
-  res.status(200).json({
+  const queued = notification.status === 'pending';
+  res.status(queued ? 202 : 200).json({
     success: true,
-    message: 'Notification sent',
-    data: { notificationId: notification.notificationId },
+    message: queued ? 'Notification queued' : 'Notification sent',
+    data: { notificationId: notification.notificationId, status: notification.status },
   });
 });
 
-module.exports = { sendInternalEmail };
+const getQueueStats = catchAsync(async (_req, res) => {
+  res.status(200).json({ success: true, data: await getEmailQueueStats() });
+});
+
+module.exports = { sendInternalEmail, getQueueStats };

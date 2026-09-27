@@ -2,6 +2,7 @@ const { Category } = require('../models/Category');
 const { Course } = require('../models/Course');
 const { AppError, ERROR_CODES } = require('@eduelderly/shared');
 const { slugify } = require('../utils/slug');
+const { invalidateCatalogCache } = require('./course.service');
 
 const listCategories = async () => Category.find().sort({ name: 1 });
 
@@ -19,7 +20,9 @@ const createCategory = async ({ name, description }) => {
   if (existing) {
     throw new AppError('Category slug already exists', 400, ERROR_CODES.E_VALIDATION);
   }
-  return Category.create({ name, slug, description });
+  const category = await Category.create({ name, slug, description });
+  await invalidateCatalogCache();
+  return category;
 };
 
 const updateCategory = async (categoryId, { name, description }) => {
@@ -49,6 +52,7 @@ const updateCategory = async (categoryId, { name, description }) => {
   if (!category) {
     throw new AppError('Category not found', 404, ERROR_CODES.E_NOT_FOUND);
   }
+  await invalidateCatalogCache();
   return category;
 };
 
@@ -65,6 +69,7 @@ const deleteCategory = async (categoryId) => {
   if (!category) {
     throw new AppError('Category not found', 404, ERROR_CODES.E_NOT_FOUND);
   }
+  await invalidateCatalogCache();
   return category;
 };
 

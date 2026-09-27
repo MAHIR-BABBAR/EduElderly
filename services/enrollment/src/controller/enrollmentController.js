@@ -6,6 +6,7 @@ const {
 } = require('@eduelderly/shared');
 const enrollmentService = require('../services/enrollment.service');
 const progressService = require('../services/progress.service');
+const { checkAndIssueCertificate } = require('../services/certificateEligibility.service');
 
 const enroll = catchAsync(async (req, res) => {
   const result = await enrollmentService.enroll(req.user.userId, req.body.courseId);
@@ -121,6 +122,12 @@ const getInternalStats = catchAsync(async (_req, res) => {
   res.status(200).json({ success: true, data: stats });
 });
 
+const triggerCertificateEligibility = catchAsync(async (req, res) => {
+  const { userId, courseId } = req.body;
+  const result = await checkAndIssueCertificate(userId, courseId);
+  res.status(200).json({ success: true, data: result });
+});
+
 module.exports = {
   enroll,
   listEnrollments,
@@ -132,4 +139,5 @@ module.exports = {
   internalEnroll,
   internalLookup,
   getInternalStats,
+  triggerCertificateEligibility,
 };

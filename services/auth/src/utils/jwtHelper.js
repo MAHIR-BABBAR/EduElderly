@@ -18,7 +18,7 @@ const signAccessToken = (payload) => {
 };
 
 const verifyAccessToken = (token) =>
-  jwt.verify(token, process.env.JWT_ACCESS_SECRET, {
+  jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'],
     issuer: 'eduelderly',
     audience: 'eduelderly-client',
   });
@@ -28,7 +28,9 @@ const signRefreshToken = (userId) => {
     throw new AppError('signRefreshToken requires userId', 400, ERROR_CODES.E_INTERNAL);
   }
 
-  const rawToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
+  // A unique id per token: two refreshes in the same second must not hash to
+  // the same value (unique index collision surfaced as a bogus 409) (SEC-4).
+  const rawToken = jwt.sign({ userId, jti: crypto.randomUUID() }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d',
     issuer: 'eduelderly',
   });
@@ -38,7 +40,7 @@ const signRefreshToken = (userId) => {
 };
 
 const verifyRefreshToken = (token) =>
-  jwt.verify(token, process.env.JWT_REFRESH_SECRET, { issuer: 'eduelderly' });
+  jwt.verify(token, process.env.JWT_REFRESH_SECRET, { algorithms: ['HS256'], issuer: 'eduelderly' });
 
 const hashRefreshToken = (rawToken) =>
   crypto.createHash('sha256').update(rawToken).digest('hex');
@@ -55,7 +57,7 @@ const signEmailVerificationToken = (userId, email) => {
 };
 
 const verifyEmailVerificationToken = (token) => {
-  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { issuer: 'eduelderly' });
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'], issuer: 'eduelderly' });
   if (decoded.purpose !== 'email-verification') {
     throw new Error('Invalid token purpose');
   }
@@ -74,14 +76,35 @@ const signPasswordResetToken = (userId, email) => {
 };
 
 const verifyPasswordResetToken = (token) => {
-  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { issuer: 'eduelderly' });
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'], issuer: 'eduelderly' });
   if (decoded.purpose !== 'password-reset') {
     throw new Error('Invalid token purpose');
   }
   return decoded;
 };
 
+/**
+ * Proof that a password was just accepted for this account (SEC-3). The OTP
+ * endpoints require it, so a code can never be requested or guessed for an
+ * account without first passing its password.
+ */
+const signOtpPendingToken = (userId, email) =>
+  jwt.sign({ userId, email, purpose: 'otp-pending' }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: '5m',
+    issuer: 'eduelderly',
+  });
+
+const verifyOtpPendingToken = (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { issuer: 'eduelderly', algorithms: ['HS256'] });
+  if (decoded.purpose !== 'otp-pending') {
+    throw new Error('Invalid token purpose');
+  }
+  return decoded;
+};
+
 module.exports = {
+  signOtpPendingToken,
+  verifyOtpPendingToken,
   signAccessToken,
   verifyAccessToken,
   signRefreshToken,

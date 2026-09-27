@@ -1,10 +1,9 @@
 const request = require('supertest');
 const { createApp } = require('../src/index');
 const { User } = require('../src/models/User');
-const { RefreshToken } = require('../src/models/RefreshToken');
 
 const app = createApp();
-const { verifyEmailVerificationToken, signPasswordResetToken, signRefreshToken } = require('../src/utils/jwtHelper');
+const { signPasswordResetToken } = require('../src/utils/jwtHelper');
 const bcrypt = require('bcrypt');
 
 const VALID_USER_DATA = {
@@ -228,8 +227,8 @@ describe('Auth Service - Comprehensive Test Suite', () => {
   });
 
   describe('POST /verify-otp', () => {
-    let user;
     let capturedOtp;
+    let otpToken;
 
     beforeEach(async () => {
       const { sendOtpEmail } = require('../src/services/mailService');
@@ -240,7 +239,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
 
       const salt = await bcrypt.genSalt(1);
       const passHash = await bcrypt.hash('Password123!', salt);
-      user = await User.create({
+      await User.create({
         name: '2FA User',
         email: '2fa@test.com',
         passHash,
@@ -248,10 +247,11 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         is2FAEnabled: true,
       });
 
-      await request(app).post('/login').send({
+      const loginRes = await request(app).post('/login').send({
         email: '2fa@test.com',
         password: 'Password123!',
       });
+      otpToken = loginRes.body.otpToken;
     });
 
     it('should complete login with valid OTP', async () => {
@@ -259,6 +259,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         email: '2fa@test.com',
         otp: capturedOtp,
         type: 'login',
+        otpToken,
       });
 
       expect(res.status).toBe(200);
@@ -266,11 +267,24 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       expect(res.body.data.accessToken).toBeDefined();
     });
 
+    it('refuses the OTP step without the token from the password step (SEC-3)', async () => {
+      const res = await request(app).post('/verify-otp').send({
+        email: '2fa@test.com',
+        otp: capturedOtp,
+        type: 'login',
+        otpToken: 'not-a-real-token-at-all-xxxxxxxx',
+      });
+      expect(res.status).toBe(401);
+      const resend = await request(app).post('/resend-otp').send({ email: '2fa@test.com', type: 'login' });
+      expect(resend.status).toBe(400);
+    });
+
     it('should reject invalid OTP', async () => {
       const res = await request(app).post('/verify-otp').send({
         email: '2fa@test.com',
         otp: '000000',
         type: 'login',
+        otpToken,
       });
 
       expect(res.status).toBe(401);
@@ -283,6 +297,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
           email: '2fa@test.com',
           otp: '000000',
           type: 'login',
+          otpToken,
         });
         expect(attempt.status).toBe(401);
         expect(attempt.body.message).toMatch(/Invalid or expired OTP/i);
@@ -292,6 +307,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         email: '2fa@test.com',
         otp: '000000',
         type: 'login',
+        otpToken,
       });
 
       expect(res.status).toBe(401);
@@ -312,14 +328,26 @@ describe('Auth Service - Comprehensive Test Suite', () => {
         is2FAEnabled: true,
       });
 
-      const res = await request(app).post('/resend-otp').send({
-        email: 'resend@test.com',
-        type: 'login',
-      });
+      // The OTP step is only reachable with the token from the password step.
+      const loginRes = await request(app).post('/login').send({ email: 'resend@test.com', password: 'Password123!' });
+      const { otpToken } = loginRes.body;
+      sendOtpEmail.mockClear();
 
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(sendOtpEmail).toHaveBeenCalled();
+      // Straight away: inside the 60s cooldown.
+      const tooSoon = await request(app).post('/resend-otp').send({ email: 'resend@test.com', type: 'login', otpToken });
+      expect(tooSoon.status).toBe(429);
+
+      // A minute later: allowed.
+      const realNow = Date.now;
+      Date.now = () => realNow() + 61_000;
+      try {
+        const res = await request(app).post('/resend-otp').send({ email: 'resend@test.com', type: 'login', otpToken });
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(sendOtpEmail).toHaveBeenCalled();
+      } finally {
+        Date.now = realNow;
+      }
     });
   });
 
@@ -328,7 +356,7 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       // Must have logged in first
       const salt = await bcrypt.genSalt(1);
       const passHash = await bcrypt.hash('Password123!', salt);
-      const user = await User.create({
+      await User.create({
         name: 'Refresh User',
         email: 'refresh@test.com',
         passHash,
@@ -444,5 +472,28 @@ describe('Auth Service - Comprehensive Test Suite', () => {
       const cookies = res.headers['set-cookie'];
       expect(cookies[0]).toMatch(/refresh_token=;/); // Cookie effectively cleared
     });
+  });
+});
+
+describe('input validation (SEC-7 / SEC-10)', () => {
+  it('rejects an operator object where an email string is expected', async () => {
+    const res = await request(app).post('/resend-verification').send({ email: { $regex: '^a' } });
+    expect(res.status).toBe(400);
+    const login = await request(app).post('/login').send({ email: { $gt: '' }, password: 'x' });
+    expect(login.status).toBe(400);
+  });
+
+  it('enforces a password policy on registration', async () => {
+    const weak = await request(app).post('/register').send({ ...VALID_USER_DATA, email: 'weak@test.com', password: 'a' });
+    expect(weak.status).toBe(400);
+    const noDigit = await request(app).post('/register').send({ ...VALID_USER_DATA, email: 'weak2@test.com', password: 'abcdefghij' });
+    expect(noDigit.status).toBe(400);
+  });
+
+  it('gives every refresh token a unique id so same-second logins cannot collide', () => {
+    const { signRefreshToken } = require('../src/utils/jwtHelper');
+    const a = signRefreshToken('user-1');
+    const b = signRefreshToken('user-1');
+    expect(a.tokenHash).not.toBe(b.tokenHash);
   });
 });

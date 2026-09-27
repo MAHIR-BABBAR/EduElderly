@@ -41,6 +41,32 @@ const createCoursePayload = (categoryId) => ({
 
 describe('Course Service', () => {
   describe('GET /', () => {
+    it('filters, searches and sorts on the server (B-1)', async () => {
+      const category = await createCategory();
+      const other = await Category.create({ name: 'Digital', slug: 'digital', description: 'd' });
+      await Course.create({ ...createCoursePayload(category.categoryId), title: 'Walking for health', slug: 'walking', isPublished: true, isPaid: false });
+      await Course.create({ ...createCoursePayload(other.categoryId), title: 'Using a tablet', slug: 'tablet', isPublished: true, isPaid: true, price: 5, difficulty: 'intermediate' });
+      await Course.create({ ...createCoursePayload(category.categoryId), title: 'Balance basics', slug: 'balance', isPublished: true, isPaid: false });
+
+      const byCategory = await request(app).get(`/?categoryId=${other.categoryId}`);
+      expect(byCategory.status).toBe(200);
+      expect(byCategory.body.data.courses.map((c) => c.slug)).toEqual(['tablet']);
+
+      const paidOnly = await request(app).get('/?isPaid=true');
+      expect(paidOnly.body.data.courses.map((c) => c.slug)).toEqual(['tablet']);
+
+      const searched = await request(app).get('/?search=walking');
+      expect(searched.body.data.courses.map((c) => c.slug)).toEqual(['walking']);
+
+      const az = await request(app).get('/?sort=a-z');
+      expect(az.body.data.courses.map((c) => c.title)).toEqual(['Balance basics', 'Using a tablet', 'Walking for health']);
+
+      const bad = await request(app).get('/?difficulty=impossible');
+      expect(bad.status).toBe(400);
+      const badId = await request(app).get('/?categoryId=$ne%3Anull');
+      expect(badId.status).toBe(400);
+    });
+
     it('should list only published courses with totalTopics', async () => {
       const category = await createCategory();
       const published = await Course.create({
@@ -158,6 +184,36 @@ describe('Course Service', () => {
       expect(res.status).toBe(201);
       expect(res.body.data.title).toBe('Intro to Wellness');
       expect(res.body.data.categoryId).toBe(category.categoryId);
+    });
+
+    it('refuses non-https lesson and thumbnail URLs (SEC-6)', async () => {
+      const category = await createCategory();
+      const bad = await request(app)
+        .post('/')
+        .set(adminHeaders)
+        .send({ ...createCoursePayload(category.categoryId), slug: 'bad-thumb', thumbnailUrl: 'javascript:alert(1)' });
+      expect(bad.status).toBe(400);
+
+      const ok = await request(app)
+        .post('/')
+        .set(adminHeaders)
+        .send({ ...createCoursePayload(category.categoryId), slug: 'ok-thumb', thumbnailUrl: '/covers/walking.svg' });
+      expect(ok.status).toBe(201);
+
+      const mod = await request(app)
+        .post(`/${ok.body.data.courseId}/modules`)
+        .set(adminHeaders)
+        .send({ title: 'Week 1', order: 0 });
+      const topic = await request(app)
+        .post(`/modules/${mod.body.data.moduleId}/topics`)
+        .set(adminHeaders)
+        .send({ title: 'Lesson', contentType: 'video', contentUrl: 'javascript:fetch("/api/v1/auth/refresh")', order: 0 });
+      expect(topic.status).toBe(400);
+      const httpTopic = await request(app)
+        .post(`/modules/${mod.body.data.moduleId}/topics`)
+        .set(adminHeaders)
+        .send({ title: 'Lesson', contentType: 'video', contentUrl: 'http://example.com/x', order: 0 });
+      expect(httpTopic.status).toBe(400);
     });
 
     it('should return 403 for learner', async () => {

@@ -39,11 +39,12 @@ services:
         SERVICE_DIR: gateway
     container_name: eduelderly-gateway
     ports:
-      - "8080:8080"
+      # Host port is configurable: some backup/agent software squats on 8080.
+      - "${GATEWAY_HOST_PORT:-8080}:8080"
     volumes:
       - ./services/gateway:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/gateway/.env
     environment:
@@ -56,6 +57,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification:3007
       ADMIN_SERVICE_URL: http://admin:3008
       CERTIFICATE_SERVICE_URL: http://certificate:3009
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
     networks:
@@ -71,7 +73,7 @@ services:
     volumes:
       - ./services/auth:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/auth/.env
     environment:
@@ -80,6 +82,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification:3007
       USER_SERVICE_URL: http://user:3002
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
       - redis
@@ -96,12 +99,13 @@ services:
     volumes:
       - ./services/user:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/user/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-user
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
     networks:
@@ -117,12 +121,14 @@ services:
     volumes:
       - ./services/course:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/course/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-course
+      REDIS_URL: redis://redis:6379
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
     networks:
@@ -138,7 +144,7 @@ services:
     volumes:
       - ./services/enrollment:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/enrollment/.env
     environment:
@@ -148,7 +154,9 @@ services:
       PAYMENT_SERVICE_URL: http://payment:3006
       NOTIFICATION_SERVICE_URL: http://notification:3007
       CERTIFICATE_SERVICE_URL: http://certificate:3009
+      QUIZ_SERVICE_URL: http://quiz:3005
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
     networks:
@@ -164,13 +172,14 @@ services:
     volumes:
       - ./services/quiz:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/quiz/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-quiz
       ENROLLMENT_SERVICE_URL: http://enrollment:3004
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
     networks:
@@ -186,14 +195,19 @@ services:
     volumes:
       - ./services/payment:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/payment/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-payment
       ENROLLMENT_SERVICE_URL: http://enrollment:3004
+      COURSE_SERVICE_URL: http://course:3003
       MOCK_CHECKOUT_BASE_URL: http://localhost:5173/#order-pending
+      PAYMENT_PROVIDER: mock
+      MOCK_WEBHOOK_SECRET: mock-webhook-secret
+      APP_URL: http://localhost:5173
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
     networks:
@@ -209,14 +223,17 @@ services:
     volumes:
       - ./services/notification:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/notification/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-notification
+      REDIS_URL: redis://redis:6379
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
+      - redis
     networks:
       - eduelderly-net
 
@@ -230,7 +247,7 @@ services:
     volumes:
       - ./services/admin:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/admin/.env
     environment:
@@ -241,6 +258,7 @@ services:
       PAYMENT_SERVICE_URL: http://payment:3006
       CERTIFICATE_SERVICE_URL: http://certificate:3009
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
     networks:
@@ -256,14 +274,19 @@ services:
     volumes:
       - ./services/certificate:/app
       - /app/node_modules
-      - ./packages/shared:/app/node_modules/@eduelderly/shared
+      - ./packages/shared:/deps/shared
     env_file:
       - ./services/certificate/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/eduelderly-certificate
+      REDIS_URL: redis://redis:6379
+      CERT_STORAGE_DIR: /app/storage
+      APP_URL: http://localhost:5173
       GATEWAY_TRUST_ENFORCED: "true"
+      GATEWAY_KEY: dev_gateway_key_change_in_production_123456789
     depends_on:
       - mongo
+      - redis
     networks:
       - eduelderly-net
 

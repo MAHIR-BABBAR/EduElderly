@@ -22,7 +22,6 @@ const DATA_PATH = path.join(__dirname, 'data', 'sample-courses.json');
 const isReset = process.argv.includes('--reset');
 
 const loadData = () => {
-  // eslint-disable-next-line import/no-dynamic-require, global-require
   return require(DATA_PATH);
 };
 
@@ -68,6 +67,7 @@ const upsertCourseTree = async (entry, categoryId) => {
       difficulty: entry.difficulty || 'beginner',
       estimatedHours: entry.estimatedHours ?? 0,
       instructorName: entry.instructorName,
+      credits: entry.credits || '',
       moduleIds: [],
     });
   } else {
@@ -82,6 +82,7 @@ const upsertCourseTree = async (entry, categoryId) => {
       difficulty: entry.difficulty || 'beginner',
       estimatedHours: entry.estimatedHours ?? 0,
       instructorName: entry.instructorName,
+      credits: entry.credits || '',
       moduleIds: [],
     });
     await course.save();

@@ -1,7 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { logger } = require('./logger');
 const { authValidation } = require('./authValidation');
-const { ERROR_CODES, getInternalServiceKey } = require('@eduelderly/shared');
+const { ERROR_CODES, getGatewayKey } = require('@eduelderly/shared');
 const { ROUTES_CONFIG } = require('../routes.config');
 
 
@@ -63,13 +63,25 @@ const services = {
 
 const onProxyReq = (proxyReq, req, _res) => {
   proxyReq.removeHeader('Authorization');
-  proxyReq.setHeader('X-Service-Key', getInternalServiceKey());
+  // Prove the request came through the gateway with the gateway key — never the
+  // internal service key, which alone opens `/internal` service-to-service routes.
+  proxyReq.setHeader('X-Gateway-Key', getGatewayKey());
+  proxyReq.removeHeader('X-Service-Key');
+
   const requestId =
     req.requestId ||
     req.get('X-Request-ID') ||
     `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   proxyReq.setHeader('X-Request-ID', requestId);
+  // The client IP as this gateway determined it (honouring its own trust-proxy
+  // setting), never a client-supplied X-Forwarded-For — rate limits and audit
+  // logs downstream rely on it (SEC-5).
+  proxyReq.setHeader('X-Forwarded-For', req.ip || '');
 
+  // Always clear any client-supplied identity headers before (re)setting them,
+  // so a forged X-User-* on a public route can never reach a service.
+  proxyReq.removeHeader('X-User-Id');
+  proxyReq.removeHeader('X-User-Role');
   if (req.user) {
     proxyReq.setHeader('X-User-Id', req.user.userId);
     proxyReq.setHeader('X-User-Role', req.user.role);
@@ -99,10 +111,24 @@ const onError = (err, req, res, target) => {
   }
 };
 
-const createProxy = (target, prefix, pathRewrite) => {
+/**
+ * Express strips the mount path before a proxy mounted with `app.use(prefix, …)`
+ * ever sees the request, so by the time we get here `req.url` is already
+ * relative: `/api/v1/courses/abc` arrives as `/abc`, and `/api/v1/courses` as
+ * `/`. Rewrites therefore have to be expressed against that relative path, not
+ * the original URL.
+ *
+ * Most services are mounted at their target's root and need no rewrite at all.
+ * The ones that live under a sub-path (categories on the course service, public
+ * stats on the admin service) declare `targetBasePath`, which is prepended here.
+ */
+const createProxy = (target, basePath = '') => {
   return createProxyMiddleware({
     target,
-    pathRewrite: pathRewrite || { [`^${prefix}`]: '' },
+    pathRewrite: (path) => {
+      const relative = path === '/' ? '' : path;
+      return `${basePath}${relative}` || '/';
+    },
     changeOrigin: true,
     timeout: 30000,
     proxyTimeout: 30000,
@@ -122,7 +148,7 @@ const setupProxy = app => {
     const service = ROUTES_CONFIG[key];
 
     if (service.target) {
-      app.use(service.prefix, createProxy(service.target, service.prefix, service.pathRewrite));
+      app.use(service.prefix, createProxy(service.target, service.targetBasePath));
     }
   }
 

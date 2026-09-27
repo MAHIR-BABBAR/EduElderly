@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22386B"/><stop offset="1" stop-color="#5673BD"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FAF6EF" stop-opacity="0.35"/><stop offset="1" stop-color="#FAF6EF" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="750" fill="url(#g)"/>
+  <g fill="none" stroke="#FAF6EF" stroke-opacity="0.12" stroke-width="2">
+    <circle cx="1200" cy="750" r="220"/>
+    <circle cx="1200" cy="750" r="340"/>
+    <circle cx="1200" cy="750" r="460"/>
+    <circle cx="1200" cy="750" r="580"/>
+  </g>
+  <circle cx="980" cy="160" r="154" fill="url(#glow)"/><circle cx="980" cy="160" r="70" fill="#E9A23B"/>
+    <rect x="300" y="150" width="600" height="450" rx="36" fill="#FAF6EF" fill-opacity="0.18" stroke="#FAF6EF" stroke-width="14"/>
+    <circle cx="600" cy="560" r="14" fill="#FAF6EF"/>
+    <path d="M360 380 H 470 L 520 300 L 580 460 L 640 340 L 680 380 H 840" fill="none" stroke="#FAF6EF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

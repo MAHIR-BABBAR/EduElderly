@@ -1,3 +1,4 @@
+const path = require('path');
 const mongoose = require('mongoose');
 
 const TEST_DB_URI =
@@ -11,12 +12,20 @@ jest.mock('uuid', () => ({
   v7: jest.fn(() => `mocked-uuid-${Math.random().toString(36).substring(7)}`),
 }));
 
+// One database per test file. The queue test polls Mongo while a BullMQ
+// worker runs; sharing a database let another file's cleanup delete the
+// notification it was waiting for.
+const dbNameFor = (testPath = '') => {
+  const file = path.basename(testPath, '.test.js').replace(/[^\w-]/g, '-') || 'shared';
+  return `eduelderly-notification-test-${file}`;
+};
+
 beforeAll(async () => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }
 
-  await mongoose.connect(TEST_DB_URI, { dbName: 'eduelderly-notification-test' });
+  await mongoose.connect(TEST_DB_URI, { dbName: dbNameFor(expect.getState().testPath) });
 }, 60000);
 
 afterAll(async () => {
@@ -35,3 +44,6 @@ afterEach(async () => {
   }
   jest.clearAllMocks();
 });
+
+// Isolate test queues from any live worker sharing this Redis.
+process.env.QUEUE_PREFIX = process.env.QUEUE_PREFIX || 'test-notification';

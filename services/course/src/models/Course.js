@@ -68,6 +68,14 @@ const CourseSchema = new mongoose.Schema({
     trim: true,
     maxlength: 120,
   },
+  // Source attribution shown small on the course page, kept out of the
+  // learner-facing description.
+  credits: {
+    type: String,
+    trim: true,
+    maxlength: 300,
+    default: '',
+  },
   moduleIds: {
     type: [String],
     default: [],

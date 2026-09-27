@@ -120,38 +120,50 @@ const renderQuizResultEmail = (templateData = {}) => {
 const renderCompletionEmail = (templateData = {}) => {
   const name = escapeHtml(templateData.name || 'there');
   const rawName = templateData.name || 'there';
-  const courseTitle = escapeHtml(templateData.courseTitle || 'your course');
+  const rawTitle = templateData.courseTitle || 'your course';
+  const courseTitle = escapeHtml(rawTitle);
   const verifyUrl = templateData.verifyUrl ? escapeHtml(templateData.verifyUrl) : null;
+  const quizzesRemaining = Number(templateData.quizzesRemaining) || 0;
+  const certificateReady = Boolean(verifyUrl);
 
-  let certSection = '';
-  if (verifyUrl) {
-    certSection = `${renderButton(verifyUrl, 'View certificate')}`;
-  }
+  const quizWord = quizzesRemaining === 1 ? 'quiz' : 'quizzes';
+  const bodyCopy = certificateReady
+    ? `Congratulations! You completed <strong>${courseTitle}</strong>. Your certificate is ready.`
+    : `You finished every lesson in <strong>${courseTitle}</strong>. Pass the remaining ${quizzesRemaining} ${quizWord} to earn your certificate.`;
+  const infoCopy = certificateReady
+    ? 'Share your verify link with others to confirm your achievement.'
+    : 'Open the course from your dashboard and take the quizzes whenever you feel ready. There is no time limit.';
 
   const bodyHtml = `
     ${greeting(name)}
     <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:1.6;color:${BRAND.text};">
-      Congratulations! You completed <strong>${courseTitle}</strong>. Your certificate is ready.
+      ${bodyCopy}
     </p>
-    ${certSection}
+    ${certificateReady ? renderButton(verifyUrl, 'View certificate') : ''}
     ${renderInfoCard(`
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:${BRAND.text};">
-        Share your verify link with others to confirm your achievement.
+        ${infoCopy}
       </p>
     `)}`;
 
   return {
-    subject: `Course completed: ${templateData.courseTitle || 'Course'}`,
+    subject: certificateReady
+      ? `Certificate ready: ${rawTitle}`
+      : `Lessons complete: ${rawTitle}`,
     htmlContent: wrapEmail({
-      preheader: `You completed ${templateData.courseTitle || 'your course'}!`,
+      preheader: certificateReady
+        ? `You completed ${rawTitle}! Your certificate is ready.`
+        : `All lessons done in ${rawTitle}. ${quizzesRemaining} ${quizWord} to go.`,
       eyebrow: 'Achievement',
-      headline: 'Course complete',
+      headline: certificateReady ? 'Course complete' : 'Lessons complete',
       bodyHtml,
     }),
     textContent: [
       `Hi ${rawName},`,
       '',
-      `Congratulations! You completed ${templateData.courseTitle || 'your course'}.`,
+      certificateReady
+        ? `Congratulations! You completed ${rawTitle}. Your certificate is ready.`
+        : `You finished every lesson in ${rawTitle}. Pass the remaining ${quizzesRemaining} ${quizWord} to earn your certificate.`,
       templateData.verifyUrl ? `Verify your certificate: ${templateData.verifyUrl}` : '',
       '',
       '— EduElderly',

@@ -5,6 +5,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { logger, requestLogger } = require('./logger');
 const { setupProxy } = require('./proxy');
+const { createDocsRouter } = require('./docs');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
+const { createAdminGate } = require('./adminGate');
 const { corsOptions } = require('./cors');
 const { globalLimiter, authLimiter } = require('./rateLimiter');
 const {
@@ -20,13 +23,22 @@ const SERVICE_NAME = 'gateway';
 
 const createApp = () => {
   const app = express();
+  // Hops between the internet and this gateway (a TLS terminator or load
+  // balancer). 0 = none, so a client-sent X-Forwarded-For is ignored.
+  app.set('trust proxy', parseInt(process.env.TRUST_PROXY_HOPS, 10) || 0);
 
   app.use(helmet());
   app.use(cors(corsOptions));
   app.use(requestId);
   app.use(requestLogger);
+  app.use(metricsMiddleware);
   app.use(globalLimiter);
-  app.use('/api/v1/auth', authLimiter);
+  app.use('/api/v1/auth', (req, res, next) => {
+    if (req.path === '/refresh' || req.path === '/logout') {
+      return next();
+    }
+    return authLimiter(req, res, next);
+  });
 
   app.get('/health', (_req, res) => {
     res.status(200).json({
@@ -50,14 +62,18 @@ const createApp = () => {
       certificate: process.env.CERTIFICATE_SERVICE_URL,
     };
 
-    const serviceUrl = serviceUrls[service];
+    const serviceUrl = Object.hasOwn(serviceUrls, service) ? serviceUrls[service] : undefined;
     if (!serviceUrl) {
       return next(new AppError(`Service '${service}' not found`, 404, ERROR_CODES.E_ROUTE_NOT_FOUND));
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
     try {
       const response = await fetch(`${serviceUrl}/health`, {
         method: 'GET',
+        signal: controller.signal,
       });
 
       if (response.ok) {
@@ -75,14 +91,20 @@ const createApp = () => {
         });
       }
     } catch (error) {
-      logger.error(`Health check failed for ${service}:`, error.message);
+      const message = error.name === 'AbortError' ? 'Upstream health check timed out' : error.message;
+      logger.error(`Health check failed for ${service}:`, message);
       res.status(503).json({
         service,
         status: 'unhealthy',
-        error: error.message,
+        error: message,
       });
+    } finally {
+      clearTimeout(timeout);
     }
   });
+
+  app.get('/metrics', createAdminGate('METRICS_PUBLIC'), metricsHandler);
+  app.use('/docs', createDocsRouter());
 
   setupProxy(app);
 

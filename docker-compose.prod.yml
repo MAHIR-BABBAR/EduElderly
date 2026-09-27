@@ -52,6 +52,7 @@ services:
       - ./services/gateway/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       AUTH_SERVICE_URL: http://auth:3001
       USER_SERVICE_URL: http://user:3002
@@ -81,6 +82,7 @@ services:
       - ./services/auth/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-auth?authSource=admin
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
@@ -106,6 +108,7 @@ services:
       - ./services/user/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-user?authSource=admin
     depends_on:
@@ -126,8 +129,10 @@ services:
       - ./services/course/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-course?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       ADMIN_SERVICE_URL: http://admin:3008
     depends_on:
       mongo:
@@ -147,6 +152,7 @@ services:
       - ./services/enrollment/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-enrollment?authSource=admin
       COURSE_SERVICE_URL: http://course:3003
@@ -172,6 +178,7 @@ services:
       - ./services/quiz/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-quiz?authSource=admin
       ENROLLMENT_SERVICE_URL: http://enrollment:3004
@@ -193,6 +200,7 @@ services:
       - ./services/payment/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-payment?authSource=admin
       ENROLLMENT_SERVICE_URL: http://enrollment:3004
@@ -216,8 +224,10 @@ services:
       - ./services/notification/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-notification?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       mongo:
         condition: service_healthy
@@ -236,6 +246,7 @@ services:
       - ./services/admin/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-admin?authSource=admin
       USER_SERVICE_URL: http://user:3002
@@ -257,12 +268,17 @@ services:
         SERVICE_DIR: certificate
     container_name: eduelderly-certificate-prod
     restart: unless-stopped
+    volumes:
+      - cert-storage-prod:/app/storage
     env_file:
       - ./services/certificate/.env
     environment:
       NODE_ENV: production
+      GATEWAY_KEY: ${GATEWAY_KEY:?set GATEWAY_KEY in .env.prod (must differ from INTERNAL_SERVICE_KEY)}
       GATEWAY_TRUST_ENFORCED: "true"
       MONGO_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/eduelderly-certificate?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      CERT_STORAGE_DIR: /app/storage
     depends_on:
       mongo:
         condition: service_healthy
@@ -274,4 +290,5 @@ networks:
     driver: bridge
 
 volumes:
+  cert-storage-prod:
   mongo-data-prod:

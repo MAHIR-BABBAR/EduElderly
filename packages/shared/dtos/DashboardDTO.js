@@ -9,6 +9,7 @@ const toDashboardDTO = (raw) => ({
   revenue: raw.revenue ?? null,
   completions: raw.completions ?? 0,
   certificates: raw.certificates ?? 0,
+  queues: raw.queues ?? null,
   partialErrors: raw.partialErrors?.length ? raw.partialErrors : undefined,
 });
 

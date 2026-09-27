@@ -1,5 +1,6 @@
 const express = require('express');
 const { extractUser } = require('@eduelderly/shared');
+const V = require('../validators/authValidators');
 const { authSensitiveLimiter } = require('../middleware/rateLimiter');
 const {
   register,
@@ -17,19 +18,19 @@ const {
 
 const router = express.Router();
 
-router.post('/register', authSensitiveLimiter, register);
-router.post('/verify-email', verifyEmail);
-router.post('/resend-verification', authSensitiveLimiter, resendVerificationEmail);
+router.post('/register', authSensitiveLimiter, V.registerRules, register);
+router.post('/verify-email', V.verifyEmailRules, verifyEmail);
+router.post('/resend-verification', authSensitiveLimiter, V.emailOnlyRules, resendVerificationEmail);
 
-router.post('/login', authSensitiveLimiter, login);
-router.post('/verify-otp', authSensitiveLimiter, verifyOtpHandler);
-router.post('/resend-otp', authSensitiveLimiter, resendOtp);
+router.post('/login', authSensitiveLimiter, V.loginRules, login);
+router.post('/verify-otp', authSensitiveLimiter, V.otpRules, verifyOtpHandler);
+router.post('/resend-otp', authSensitiveLimiter, V.resendOtpRules, resendOtp);
 
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 
-router.post('/forgot-password', authSensitiveLimiter, forgotPassword);
-router.post('/reset-password', resetPassword);
-router.post('/change-password', extractUser, changePassword);
+router.post('/forgot-password', authSensitiveLimiter, V.emailOnlyRules, forgotPassword);
+router.post('/reset-password', V.resetPasswordRules, resetPassword);
+router.post('/change-password', extractUser, V.changePasswordRules, changePassword);
 
 module.exports = router;

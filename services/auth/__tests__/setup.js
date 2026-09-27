@@ -31,6 +31,13 @@ const createMockRedisClient = () => ({
     return chain;
   }),
   hGetAll: jest.fn((key) => Promise.resolve({ ...(otpStore[key] || {}) })),
+  hGet: jest.fn(async (key, field) => (otpStore[key] ? otpStore[key][field] ?? null : null)),
+  hIncrBy: jest.fn(async (key, field, by) => {
+    if (!otpStore[key]) otpStore[key] = {};
+    const next = (parseInt(otpStore[key][field], 10) || 0) + by;
+    otpStore[key][field] = String(next);
+    return next;
+  }),
   hSet: jest.fn(async (key, field, value) => {
     if (!otpStore[key]) otpStore[key] = {};
     if (typeof field === 'object') {

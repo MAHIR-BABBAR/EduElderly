@@ -1,10 +1,29 @@
 # EduElderly — Accessible Learning Platform
 
+[![CI](https://github.com/MAHIR-BABBAR/EduElderly/actions/workflows/ci.yml/badge.svg)](https://github.com/MAHIR-BABBAR/EduElderly/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/MAHIR-BABBAR/EduElderly/branch/main/graph/badge.svg)](https://codecov.io/gh/MAHIR-BABBAR/EduElderly)
+![Node 20](https://img.shields.io/badge/node-20-339933?logo=node.js&logoColor=white)
+![License ISC](https://img.shields.io/badge/license-ISC-blue)
+
 An accessible e-learning platform designed with an **elderly-first** approach, built as a microservices monorepo using Node.js, Express, MongoDB, and React.
+
+## What it looks like
+
+A warm, editorial interface built for readers over 60: paper surfaces, a colour "world" per subject, illustrated course covers, large type that scales with a one-tap control, and every screen checked at the largest text size, in high contrast and under reduced motion.
+
+| Before | After |
+|---|---|
+| ![Dashboard before](docs/screenshots/before/ui-dashboard.png) | ![Dashboard after](docs/screenshots/after/dashboard.png) |
+| ![Catalog before](docs/screenshots/before/ui-catalog.png) | ![Catalog after](docs/screenshots/after/catalog.png) |
+| ![Quiz before](docs/screenshots/before/ui-quiz.png) | ![Quiz after](docs/screenshots/after/quiz.png) |
+
+Every route, at desktop and phone width: [`docs/screenshots/after/`](docs/screenshots/after/). Design decisions: [`DESIGN.md`](DESIGN.md); the implementation plan and security review: [`docs/NEXT-GEN-PLAN.md`](docs/NEXT-GEN-PLAN.md).
+
+To reproduce the screenshots (and the accessibility gate behind them): `npm run walk -w packages/client` walks every route as the demo learner and admin, asserts one `h1` per page, scans each with axe-core, and fails on console errors or serious violations.
 
 ## Architecture Overview
 
-EduElderly uses a **microservices architecture** with an API Gateway as the single entry point. Services communicate over REST with internal service authentication (`X-Service-Key`).
+EduElderly uses a **microservices architecture** with an API Gateway as the single entry point. The gateway verifies the JWT once and stamps `X-Gateway-Key` + `X-User-*` on proxied requests; services call each other over REST with a separate `X-Service-Key` on `/internal/*` routes. The request flow, the trust model and the internal route map are in [`docs/architecture.md`](docs/architecture.md); the reasoning behind the main choices is in [`docs/adr/`](docs/adr/).
 
 ```
 ┌─────────────┐
@@ -109,7 +128,7 @@ EduElderly/
 ### 1. Clone
 
 ```bash
-git clone https://github.com/your-org/EduElderly.git
+git clone https://github.com/MAHIR-BABBAR/EduElderly.git
 cd EduElderly
 ```
 
@@ -148,15 +167,26 @@ npm install
 
 ```bash
 docker compose up --build
+npm run demo:seed      # sample courses, quizzes, demo accounts, demo progress
+npm run dev:client     # React client on http://localhost:5173
 ```
 
-Starts MongoDB, Redis, backend services on the internal network, and the gateway on **8080**. All microservices run with `GATEWAY_TRUST_ENFORCED=true` (gateway injects `X-Service-Key` on every proxied request), matching production trust behavior.
+Demo accounts (created by `demo:seed`): learner `learner@demo.eduelderly` and admin `admin@demo.eduelderly`, both with password `Demo1234!`.
+
+Starts MongoDB, Redis, backend services on the internal network, and the gateway on **8080**. All microservices run with `GATEWAY_TRUST_ENFORCED=true` (the gateway stamps `X-Gateway-Key` on every proxied request), matching production trust behavior.
+
+If something else already listens on 8080 (some backup/agent software does), pick another host port and point the client's dev proxy at it:
+
+```bash
+GATEWAY_HOST_PORT=8081 docker compose up -d
+VITE_GATEWAY_URL=http://localhost:8081 npm run dev -w packages/client
+```
 
 ### 5. Run services locally (without Docker)
 
 Ensure MongoDB and Redis are running. Copy `.env` files and use **localhost** URLs in `services/gateway/.env` (see `services/gateway/.env.example`). `JWT_ACCESS_SECRET` must match auth.
 
-**Gateway trust (local dev):** Downstream services only accept identity headers (`X-User-Id`, `X-User-Role`) when the request includes a valid `X-Service-Key` from the gateway. In production this is always enforced; locally it is enforced when `GATEWAY_TRUST_ENFORCED=true` or `NODE_ENV=production`. If you run microservices directly on host ports (3001–3009) without the gateway in front, set `GATEWAY_TRUST_ENFORCED=true` in each service `.env` so spoofed headers cannot bypass auth. Alternatively, bind services to localhost only and route all traffic through the gateway on port 8080.
+**Gateway trust (two keys):** Downstream services only accept identity headers (`X-User-Id`, `X-User-Role`) when the request carries the gateway's `X-Gateway-Key` (`GATEWAY_KEY`). Service-to-service `/internal/*` routes are guarded by a *different* secret, `X-Service-Key` (`INTERNAL_SERVICE_KEY`), which the gateway never holds — and the gateway returns 404 for any client request aimed at `/internal`, `/docs` or `/metrics` on a service. In production both checks are always enforced and services refuse to start if the two keys are equal; locally they are enforced when `GATEWAY_TRUST_ENFORCED=true`. If you run microservices directly on host ports (3001–3009) without the gateway in front, set `GATEWAY_TRUST_ENFORCED=true` in each service `.env` so spoofed headers cannot bypass auth.
 
 **Dev compose note:** `docker-compose.yml` exposes MongoDB (`27017`) and Redis (`6379`) on the host for local tooling. These ports are **not** exposed in `docker-compose.prod.yml`. Do not use the dev compose Mongo/Redis exposure on any network-accessible machine.
 
@@ -264,6 +294,52 @@ See `services/gateway/.env.example` for all downstream service URLs.
 | `/api/v1/admin/*` | admin | JWT required (admin role) |
 | `/api/v1/certificates/*` | certificate | JWT required |
 
+## API documentation
+
+Every service publishes an OpenAPI 3 document at `/docs.json` and a Swagger UI at `/docs` on its own port. The gateway aggregates all of them at **http://localhost:8080/docs** with a service picker, so one page covers the whole platform.
+
+- Specs live in `services/<name>/src/docs/openapi.js` and are built with the helpers in `packages/shared/docs/openapi.js`, so error responses, pagination, and security schemes are declared once.
+- Internal service-to-service routes are documented under the `Internal` tag with their Docker-network address; they are not reachable through the gateway.
+- `npm run docs:validate` checks every operation has a summary, tags, security, and responses, and that every `$ref` resolves. CI runs it. `npm run docs:export` writes the JSON documents to `docs/openapi/`.
+- In production the gateway docs require an admin JWT unless `DOCS_PUBLIC=true`.
+
+## Caching and observability
+
+- **Catalog cache.** The course service caches public catalog reads (`GET /courses`, `GET /courses/:id`, internal stats) in Redis for 60 s and answers with `X-Cache: HIT|MISS`. Every write to courses, modules, topics, or categories invalidates the `course:` prefix, so admins never see stale data. Without Redis the service simply reads from Mongo.
+- **Metrics.** The gateway exposes Prometheus metrics at `/metrics`: process defaults plus `http_requests_total` and `http_request_duration_seconds` labelled by service prefix, method, and status (never full paths, so cardinality stays bounded).
+- **Request ids.** Every request gets an `X-Request-ID` that the gateway forwards to services and services echo back; logs from every service are JSON lines carrying it.
+
+## Payments
+
+Payments go through a provider adapter (`services/payment/src/providers/`) so the order state machine never depends on a specific vendor:
+
+| `PAYMENT_PROVIDER` | Checkout | Confirmation |
+|--------------------|----------|--------------|
+| `mock` (default in dev) | Fake checkout URL | Learner self-confirm button, or an HMAC-signed fake webhook |
+| `razorpay` | Razorpay Orders API (amount in paise, our order id in `notes`) | Razorpay webhook signed with the webhook secret |
+| `none` (default in prod) | Refused with 503 until a provider is configured | — |
+
+Rules that hold for every provider:
+
+- Orders move `pending → success | failed` and `success → refunded` only; invalid transitions are rejected.
+- `POST /api/v1/payments/webhook` is public but verifies an HMAC-SHA256 signature over the raw request body before doing anything.
+- A capture **enrolls the learner first, then marks the order paid**. If enrollment fails the order stays pending and the webhook returns 5xx so the provider retries.
+- Webhooks are idempotent: a replay or a capture for an already-paid order returns `duplicate: true` and never enrolls twice.
+
+## Async jobs (BullMQ)
+
+Two side effects are slow and failure-prone, so they run off the request path on Redis-backed BullMQ queues:
+
+| Queue | Service | Job | Fallback without Redis |
+|-------|---------|-----|------------------------|
+| `email` | notification | Deliver a persisted notification via Brevo | Sent inline |
+| `certificate-pdf` | certificate | Pre-render and store the certificate PDF | Rendered inline at issue; downloads regenerate on demand |
+
+- Every job retries 5 times with exponential backoff (2 s to 32 s); failed jobs are kept for 7 days.
+- Processors are idempotent (job id = record id; already-sent or already-rendered records are skipped) so a retry after a partial success is safe.
+- Queue counts appear on the admin dashboard and at each service's `/internal/queue/stats`.
+- `QUEUE_ENABLED=false` forces inline mode; tests run inline by default and the queue integration test runs when `REDIS_URL` is set.
+
 ## Enrollment flow (Phase 3)
 
 Learners enroll through the enrollment service; topic `contentUrl` is **not** exposed on public course APIs.
@@ -316,15 +392,15 @@ Run per service (`npm test` runs both projects):
 |---------|-------|
 | auth | 25 |
 | user | 28 |
-| payment | 19 |
-| course | 16 |
-| enrollment | 18 |
+| payment | 38 |
+| course | 18 |
+| enrollment | 21 |
 | quiz | 13 |
 | admin | 9 |
-| notification | 8 |
-| certificate | 13 |
-| gateway | 19 |
-| **Total** | **168** |
+| notification | 19 |
+| certificate | 17 |
+| gateway | 28 |
+| **Total** | **216** |
 
 ```bash
 cd services/auth && npm test
@@ -348,6 +424,7 @@ cd services/auth; npm test
 | Command | Description |
 |---------|-------------|
 | `npm test` | Run tests in all workspaces |
+| `npm run dev:client` | Start React frontend (Vite, port 5173) |
 | `docker compose up --build` | Build and start stack |
 | `docker compose down` | Stop stack |
 | `docker compose logs -f gateway` | Follow gateway logs |
@@ -382,7 +459,7 @@ Production posture:
 | **5** | Payment service | Done |
 | **6** | Notification + certificate | Done |
 | **7** | Admin service | Done |
-| **8** | Frontend (React) | Planned |
+| **8** | Frontend (React) | Done |
 | **9** | Production hardening + deploy | Done |
 
 ## Tech stack

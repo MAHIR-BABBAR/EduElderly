@@ -4,7 +4,7 @@ const { Enrollment } = require('../models/Enrollment');
 const enrollmentService = require('./enrollment.service');
 const courseClient = require('../clients/courseClient');
 const userClient = require('../clients/userClient');
-const { handleCourseCompletion } = require('./completion.service');
+const { checkAndIssueCertificate } = require('./certificateEligibility.service');
 
 const syncCompletedModules = (enrollment, modules) => {
   const completedTopics = new Set(enrollment.completedTopics);
@@ -32,6 +32,14 @@ const markTopicComplete = async (enrollmentId, userId, { topicId, timeSpentMinut
   }
 
   const stats = await courseClient.getCourseStats(enrollment.courseId);
+
+  // The topic must genuinely be one of the course's topics before it can count
+  // toward progress. This is the second half of the SEC-2 defence: even if a
+  // crafted id slipped past validation and resolved to a real topic, it cannot
+  // be recorded unless it is in this course's own topic set.
+  if (!Array.isArray(stats.topicIds) || !stats.topicIds.includes(topicId)) {
+    throw new AppError('Topic does not belong to this course', 400, ERROR_CODES.E_VALIDATION);
+  }
 
   const topicUpdatePayload = {
     $addToSet: { completedTopics: topicId },
@@ -105,7 +113,9 @@ const markTopicComplete = async (enrollmentId, userId, { topicId, timeSpentMinut
   }
 
   if (enrollment.status === ENROLLMENT_STATUS.COMPLETED && enrollment.progressPercent >= 100) {
-    handleCourseCompletion(enrollment, stats);
+    checkAndIssueCertificate(userId, enrollment.courseId, { notifyOnIncomplete: true }).catch((error) => {
+      console.error('[enrollment] certificate eligibility check failed:', error.message);
+    });
   }
 
   return enrollment;

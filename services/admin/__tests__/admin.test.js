@@ -56,6 +56,32 @@ describe('Admin Service', () => {
     mockStats();
   });
 
+  describe('GET /public-stats', () => {
+    it('is public and returns only non-sensitive counts', async () => {
+      userClient.getStats.mockResolvedValue({ totalUsers: 12, activeUsers: 10 });
+      courseClient.getStats.mockResolvedValue({ totalCourses: 9, publishedCourses: 7 });
+      certificateClient.getStats.mockResolvedValue({ totalCertificates: 4 });
+
+      const res = await request(app).get('/public-stats');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual({ learners: 12, courses: 7, certificates: 4 });
+      expect(JSON.stringify(res.body)).not.toMatch(/revenue/i);
+    });
+
+    it('reports zero for a service that is down instead of failing', async () => {
+      userClient.getStats.mockRejectedValue(new Error('user service down'));
+      courseClient.getStats.mockResolvedValue({ publishedCourses: 7 });
+      certificateClient.getStats.mockResolvedValue({ totalCertificates: 4 });
+
+      const res = await request(app).get('/public-stats');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.learners).toBe(0);
+      expect(res.body.data.courses).toBe(7);
+    });
+  });
+
   describe('GET /dashboard', () => {
     it('returns 403 for learner', async () => {
       const res = await request(app).get('/dashboard').set(learnerHeaders);
