@@ -1,34 +1,35 @@
 version: 2
 updates:
+  # One grouped PR a month for npm; majors are upgraded by hand.
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     groups:
-      minor-and-patch:
+      npm-minor-and-patch:
         update-types: [minor, patch]
     ignore:
-      # Major bumps are reviewed by hand.
       - dependency-name: '*'
         update-types: [version-update:semver-major]
-      # mongoose 9.10 pulls mongodb driver 7.6.0, whose async runtime-adapter
-      # change breaks the handshake under Jest (Automattic/mongoose#16499).
-      # Lift this once a driver release fixes it.
+      # mongoose 9.10+ pulls mongodb driver 7.6.0, which hangs connect() under
+      # Jest (Automattic/mongoose#16499). Patch updates only until it is fixed.
       - dependency-name: mongoose
-        versions: ['>=9.10.0']
+        update-types: [version-update:semver-minor]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
 
   - package-ecosystem: docker
     directory: /docker
     schedule:
       interval: monthly
     ignore:
-      # Stay on the LTS line; runtime majors are moved by hand together with CI.
+      # Stay on the Node LTS line; runtime majors move by hand together with CI.
       - dependency-name: node
         update-types: [version-update:semver-major]
