@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { certificateApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -11,15 +11,19 @@ import { Alert } from '@/components/ui/alert';
 export function CertificateVerifyPage() {
   usePageTitle('Verify a certificate');
   const [searchParams] = useSearchParams();
-  const [certId, setCertId] = useState(searchParams.get('certId') || '');
+  const paramCertId = searchParams.get('certId') || '';
+  const [certId, setCertId] = useState(paramCertId);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const param = searchParams.get('certId');
-    if (param) setCertId(param);
-  }, [searchParams]);
+  // A verify link with ?certId= fills the field; track the last value seen so
+  // the user's own typing is not overwritten on every render.
+  const [seenParamCertId, setSeenParamCertId] = useState(paramCertId);
+  if (seenParamCertId !== paramCertId) {
+    setSeenParamCertId(paramCertId);
+    if (paramCertId) setCertId(paramCertId);
+  }
 
   const handleVerify = async (e) => {
     e.preventDefault();

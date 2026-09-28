@@ -13,6 +13,11 @@ updates:
       # Major bumps are reviewed by hand.
       - dependency-name: '*'
         update-types: [version-update:semver-major]
+      # mongoose 9.10 pulls mongodb driver 7.6.0, whose async runtime-adapter
+      # change breaks the handshake under Jest (Automattic/mongoose#16499).
+      # Lift this once a driver release fixes it.
+      - dependency-name: mongoose
+        versions: ['>=9.10.0']
 
   - package-ecosystem: github-actions
     directory: /

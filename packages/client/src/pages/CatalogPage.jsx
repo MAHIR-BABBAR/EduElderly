@@ -39,16 +39,6 @@ export function CatalogPage() {
   const urlSearch = params.get('q') || '';
   const page = Math.max(1, parseInt(params.get('page') || '1', 10) || 1);
 
-  // Local text state so typing is instant; the URL (and the query) update 300ms later.
-  const [search, setSearch] = useState(urlSearch);
-  useEffect(() => setSearch(urlSearch), [urlSearch]);
-  useEffect(() => {
-    if (search === urlSearch) return undefined;
-    const t = setTimeout(() => update({ q: search || null, page: null }), 300);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
-
   const update = (changes) => {
     const next = new URLSearchParams(params);
     for (const [key, value] of Object.entries(changes)) {
@@ -57,6 +47,22 @@ export function CatalogPage() {
     }
     setParams(next, { replace: true });
   };
+
+  // Local text state so typing is instant; the URL (and the query) update 300ms later.
+  // When the URL changes underneath us (back button, shared link) the field
+  // follows it — reset during render rather than in an effect.
+  const [search, setSearch] = useState(urlSearch);
+  const [syncedSearch, setSyncedSearch] = useState(urlSearch);
+  if (syncedSearch !== urlSearch) {
+    setSyncedSearch(urlSearch);
+    setSearch(urlSearch);
+  }
+  useEffect(() => {
+    if (search === urlSearch) return undefined;
+    const t = setTimeout(() => update({ q: search || null, page: null }), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const { data: catData, byId } = useCategories();
   const categories = catData?.data ?? [];
