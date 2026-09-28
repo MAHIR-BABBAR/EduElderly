@@ -1,6 +1,6 @@
 ---
 name: EduElderly Design System
-description: Warm Immersive Learning — elderly-first e-learning UI contract for AI agents and developers.
+description: Warm Immersive Learning — elderly-first e-learning UI contract for anyone building screens.
 tokens:
   color:
     primary: "#1B5E6B"
