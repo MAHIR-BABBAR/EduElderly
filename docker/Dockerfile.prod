@@ -1,5 +1,5 @@
 # Production image — build with: docker compose -f docker-compose.prod.yml build <service>
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 
 ARG SERVICE_DIR
 
@@ -20,7 +20,7 @@ WORKDIR /deps/app
 RUN npm pkg set "dependencies.@eduelderly/shared=file:/deps/shared" \
     && npm install --omit=dev
 
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 ARG SERVICE_DIR
 
